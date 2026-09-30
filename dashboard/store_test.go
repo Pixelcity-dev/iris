@@ -94,8 +94,7 @@ func TestStorePerUserCap(t *testing.T) {
 func TestSanitizeRejects(t *testing.T) {
 	cases := []scanEntry{
 		{Target: ""},                                                // missing
-		{Target: "notaurl"},                                         // no scheme
-		{Target: "ftp://x.test"},                                    // bad scheme
+		{Target: "path/with\x00nul"},                                // control char
 		{Target: "https://x.test", Findings: -1},                    // negative
 		{Target: "https://x.test", DurationS: 999999},               // too long
 		{Target: "https://x.test", Time: time.Now().Add(time.Hour)}, // future
@@ -112,6 +111,13 @@ func TestSanitizeRejects(t *testing.T) {
 	}
 	if ok.Scanner != "webscan" || ok.Time.IsZero() {
 		t.Fatalf("defaults not applied: %+v", ok)
+	}
+	// Local scan roots (paths, images, repos) are valid targets too.
+	for _, tgt := range []string{"/home/me/repo", "ubuntu:22.04", "git@github.com:o/r.git"} {
+		e := scanEntry{Scanner: "sast", Target: tgt}
+		if err := sanitizeScanInput(&e); err != nil {
+			t.Fatalf("local target %q rejected: %v", tgt, err)
+		}
 	}
 }
 

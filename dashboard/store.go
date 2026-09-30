@@ -483,8 +483,12 @@ func sanitizeScanInput(e *scanEntry) error {
 	if len(e.Target) > maxTargetLen {
 		return fmt.Errorf("target too long")
 	}
-	if !(strings.HasPrefix(e.Target, "http://") || strings.HasPrefix(e.Target, "https://")) {
-		return fmt.Errorf("target must be an http(s) URL")
+	// Targets are http(s) URLs or local scan roots (paths, images,
+	// repos) — reject control chars, allow any printable target.
+	for _, r := range e.Target {
+		if r < 0x20 || r == 0x7f {
+			return fmt.Errorf("target contains control characters")
+		}
 	}
 	if e.Findings < 0 || e.Findings > 1000000 {
 		return fmt.Errorf("findings out of range")
