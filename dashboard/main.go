@@ -662,6 +662,28 @@ func randHex(n int) string {
 	return string(out)
 }
 
+// accessLog emits one line per request: method, path, status, duration.
+// Paths only (no query strings) so OAuth codes never reach the log.
+func accessLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		lw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(lw, r)
+		log.Printf("%s %s -> %d (%s)", r.Method, r.URL.Path, lw.status,
+			time.Since(start).Round(time.Millisecond))
+	})
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(code int) {
+	w.status = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
 func main() {
 	ver := flag.Bool("version", false, "print version")
 	flag.Parse()
@@ -710,7 +732,7 @@ func main() {
 
 	log.Printf("Iris dashboard listening on %s (issuer=%s, redirect=%s)",
 		cfg.Listen, cfg.Issuer, cfg.RedirectURL)
-	log.Fatal(http.ListenAndServe(cfg.Listen, mux))
+	log.Fatal(http.ListenAndServe(cfg.Listen, accessLog(mux)))
 }
 
 func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {

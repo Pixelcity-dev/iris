@@ -472,6 +472,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
         </table>
       </div>
       <h3 style="margin-top:22px;">All scans</h3>
+      <div id="admin-scans-filter" style="display:none;margin-bottom:8px;font-size:0.8rem;color:var(--color-muted)"></div>
       <div class="table-shell">
         <table class="data-table">
           <thead><tr><th>Time</th><th>User</th><th>Scanner</th><th>Target</th><th>Findings</th></tr></thead>
@@ -704,11 +705,15 @@ async function loadScans() {
   }
 }
 
+let adminUserFilter = '';
+let adminUsers = [];
+
 async function loadAdmin() {
   try {
     const u = await api('/api/v1/admin/users');
-    $('admin-users-body').innerHTML = (u.users || []).map(x => `<tr>
-      <td class="mono">${esc(x.username || '—')}</td>
+    adminUsers = u.users || [];
+    $('admin-users-body').innerHTML = adminUsers.map((x, i) => `<tr style="cursor:pointer" title="Show this user's scans" onclick="filterAdminScans(${i})">
+      <td class="mono"><span style="border-bottom:1px dashed var(--color-dim)">${esc(x.username || '—')}</span></td>
       <td class="mono" style="font-size:0.78rem">${esc(x.email || '—')}</td>
       <td>${x.scans ?? 0}</td>
       <td class="mono" style="font-size:0.78rem">${x.last_scan ? new Date(x.last_scan).toLocaleString() : '—'}</td>
@@ -716,8 +721,30 @@ async function loadAdmin() {
   } catch (e) {
     $('admin-users-body').innerHTML = '<tr><td colspan="4" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
   }
+  await loadAdminScans(adminUserFilter);
+}
+
+function filterAdminScans(i) {
+  const u = (typeof adminUsers !== 'undefined' && adminUsers[i]) || null;
+  if (!u) return;
+  adminUserFilter = u.username || u.email || '';
+  if (adminUserFilter) loadAdminScans(adminUserFilter);
+}
+
+function clearAdminFilter() { adminUserFilter = ''; loadAdminScans(''); }
+
+async function loadAdminScans(userFilter) {
   try {
-    const s = await api('/api/v1/admin/scans?limit=50');
+    const q = '/api/v1/admin/scans?limit=50' + (userFilter ? '&user=' + encodeURIComponent(userFilter) : '');
+    const s = await api(q);
+    const f = $('admin-scans-filter');
+    if (userFilter) {
+      f.style.display = 'block';
+      f.innerHTML = `Filtered: <strong>${esc(userFilter)}</strong> — ${s.total} scan(s) · <a href="#" onclick="clearAdminFilter(); return false">show all</a>`;
+    } else {
+      f.style.display = 'none';
+      f.innerHTML = '';
+    }
     $('admin-scans-body').innerHTML = (s.entries || []).map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
       <td class="mono" style="font-size:0.78rem">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
       <td class="mono">${esc(e.username || e.email || '—')}</td>
