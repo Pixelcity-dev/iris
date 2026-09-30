@@ -150,6 +150,25 @@ func (ss *shareStore) revokeForScan(scanID string) int {
 	return n
 }
 
+// revokeForSub revokes every active share owned by a user (account
+// revoke / delete paths).
+func (ss *shareStore) revokeForSub(sub string) int {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
+	n := 0
+	for k, v := range ss.m {
+		if v.Sub == sub && !v.Revoked {
+			v.Revoked = true
+			ss.m[k] = v
+			n++
+		}
+	}
+	if n > 0 {
+		ss.persistLocked()
+	}
+	return n
+}
+
 // ---- handlers ----
 
 // handleShareCreate issues (POST) or lists (GET) shares for a scan.

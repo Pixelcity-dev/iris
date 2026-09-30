@@ -184,11 +184,11 @@ header {
 @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
 .form-row { display: grid; gap: 6px; margin-bottom: 12px; }
 .form-row label { font-size: 0.78rem; color: var(--color-muted); }
-.form-row input {
+.form-row input, .form-row select {
   background: var(--color-panel-2); border: 1px solid var(--color-line);
   border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit; width: 100%;
 }
-.form-row input:focus { outline: none; border-color: var(--pc-orange); }
+.form-row input:focus, .form-row select:focus { outline: none; border-color: var(--pc-orange); }
 #section-tools input, #section-tools select {
   background: var(--color-panel-2); border: 1px solid var(--color-line);
   border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit;
@@ -235,6 +235,92 @@ header {
 
 .share-box { margin-top: 8px; font-size: 0.78rem; }
 .share-box input { width: 100%; background: var(--color-panel-2); border: 1px solid var(--color-line); color: var(--color-bright); border-radius: 4px; padding: 7px 10px; font-family: var(--font-mono); font-size: 0.74rem; }
+
+/* ---------------- app shell (sidebar + sections) ---------------- */
+
+.app-grid { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 30px; align-items: start; }
+
+#sidebar {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 4px 4px 0;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 9px 12px;
+  text-align: left;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+.nav-item:hover { color: var(--color-bright); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--color-bright); background: rgba(212,168,83,0.08); border-left-color: #d4a853; }
+.nav-item .nav-ico { width: 15px; height: 15px; flex: 0 0 auto; opacity: 0.7; }
+.nav-item.active .nav-ico { opacity: 1; color: #d4a853; }
+.nav-item:focus-visible { outline: 1px solid var(--color-accent); outline-offset: -1px; }
+
+.nav-foot {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-line-soft);
+  font: 500 0.62rem/1.7 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--color-dim);
+}
+
+.app-sec { display: none; min-width: 0; }
+.app-sec.active { display: block; }
+
+.sec-head { margin-bottom: 24px; }
+.sec-head .section-title { margin-top: 10px; }
+.sec-head .sub { margin-top: 8px; max-width: 640px; }
+
+.stat-note { margin-top: 8px; font-size: 0.72rem; color: var(--color-dim); font-family: var(--font-mono); }
+.stat-note.warn { color: var(--color-warn); }
+
+/* admin: create form + user editor */
+.create-box {
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.user-editor {
+  margin-top: 18px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .app-grid { grid-template-columns: 1fr; gap: 12px; }
+  #sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-line-soft);
+  }
+  .nav-item { border-left: 0; border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0; white-space: nowrap; width: auto; }
+  .nav-item.active { border-left: 0; border-bottom-color: #d4a853; }
+  .nav-foot { display: none; }
+}
 
 /* ---------------- layout ---------------- */
 
@@ -511,242 +597,402 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
   <div id="view-app" class="view" style="display:none;">
     <div id="error-box" class="error" style="display:none;"></div>
 
-    <div class="rule-label"><span class="eyebrow" id="plan-sub">Loading your plan…</span></div>
-    <h1 class="section-title" id="greeting" style="margin-top:12px;">Welcome back</h1>
+    <div class="app-grid">
+      <nav id="sidebar" aria-label="Dashboard sections">
+        <button class="nav-item active" data-sec="overview" onclick="showSection('overview')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview</button>
+        <button class="nav-item" data-sec="scans" onclick="showSection('scans')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scans</button>
+        <button class="nav-item" data-sec="tools" onclick="showSection('tools')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Tools</button>
+        <button class="nav-item" data-sec="billing" onclick="showSection('billing')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Billing</button>
+        <button class="nav-item" data-sec="account" onclick="showSection('account')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account</button>
+        <button class="nav-item" data-sec="plans" onclick="showSection('plans')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Plans</button>
+        <button class="nav-item" data-sec="roadmap" onclick="showSection('roadmap')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Roadmap</button>
+        <button class="nav-item" data-sec="admin" id="nav-admin" style="display:none" onclick="showSection('admin')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</button>
+        <div class="nav-foot">CTRL + K<br>COMMAND PALETTE</div>
+      </nav>
 
-    <div class="stats">
-      <div class="card">
-        <div class="label">Plan</div>
-        <div class="value" id="plan-tier">—</div>
-      </div>
-      <div class="card">
-        <div class="label">Scans this period</div>
-        <div class="value" id="scans-used">—</div>
-        <div class="bar"><div class="bar-fill" id="scans-bar" style="width:0%"></div></div>
-      </div>
-      <div class="card">
-        <div class="label">AI pages</div>
-        <div class="value" id="ai-used">—</div>
-        <div class="bar"><div class="bar-fill" id="ai-bar" style="width:0%"></div></div>
-      </div>
-      <div class="card">
-        <div class="label">Renews</div>
-        <div class="value" style="font-size:1.15rem;" id="renew-date">—</div>
-      </div>
-    </div>
+      <div id="content">
 
-    <section class="panel" id="section-admin" style="display:none;">
-      <h2>Administration</h2>
-      <div id="admin-trend" style="margin-bottom:14px"></div>
-      <div class="table-shell">
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Email</th><th>Scans</th><th>Last scan</th></tr></thead>
-          <tbody id="admin-users-body"><tr><td colspan="4"><span class="spinner"></span></td></tr></tbody>
-        </table>
-      </div>
-      <h3 style="margin-top:22px;">System</h3>
-      <div class="sys-grid" id="admin-system"><div class="sys-cell"><div class="k">status</div><div class="v">loading…</div></div></div>
-      <h3 style="margin-top:22px;">All scans</h3>
-      <div id="admin-scans-filter" style="display:none;margin-bottom:8px;font-size:0.8rem;color:var(--color-muted)"></div>
-      <div class="table-shell">
-        <table class="data-table">
-          <thead><tr><th>Time</th><th>User</th><th>Scanner</th><th>Target</th><th>Findings</th></tr></thead>
-          <tbody id="admin-scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel" id="section-overview">
-      <h2 style="display:flex;align-items:center;gap:12px;">Security overview <span class="badge" id="ov-badge">loading</span></h2>
-      <div class="ov-grid">
-        <div>
-          <div id="ov-donut" style="display:flex;justify-content:center"></div>
-          <div class="donut-legend" id="ov-legend"></div>
+      <!-- ======== overview ======== -->
+      <section class="app-sec active" id="sec-overview">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow" id="plan-sub">Loading your plan…</span></div>
+          <h1 class="section-title" id="greeting">Welcome back</h1>
         </div>
-        <div>
-          <h3>Top rules</h3>
-          <div id="ov-top-rules"><span class="spinner"></span></div>
-        </div>
-        <div>
-          <h3>Scanners</h3>
-          <div id="ov-scanners"></div>
-          <div style="margin-top:14px;color:var(--color-dim);font-size:0.78rem" id="ov-note"></div>
-        </div>
-      </div>
-    </section>
 
-    <section class="panel">
-      <h2>Scan history</h2>
-      <div class="toolbar">
-        <button class="btn btn-ghost" onclick="loadScans();loadTrend();toast('Refreshed.')">Refresh</button>
-        <button class="btn btn-ghost" id="auto-btn" onclick="toggleAutoRefresh()">Auto-refresh: off</button>
-        <span class="spacer"></span>
-        <button class="btn btn-ghost danger-zone" id="bulk-btn" onclick="bulkDeleteSelected()" disabled>Delete selected</button>
-      </div>
-      <div id="trend-chart" style="margin-bottom:14px"></div>
-      <div class="table-shell">
-        <table class="data-table">
-          <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all" onclick="toggleSelectAll(this)"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
-          <tbody id="scans-body"><tr><td colspan="6"><span class="spinner"></span></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel" id="section-tools">
-      <h2>Tools</h2>
-      <div class="grid-2" style="align-items:end;margin-bottom:14px;">
-        <div>
-          <h3>Findings explorer</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input id="fx-q" placeholder="Search findings…" style="flex:1;min-width:180px" onkeydown="if(event.key==='Enter')runFindings()">
-            <select id="fx-sev">
-              <option value="">All severities</option>
-              <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>INFO</option>
-            </select>
-            <button class="btn btn-secondary" onclick="runFindings()">Search</button>
-            <button class="btn btn-ghost" onclick="exportFindingsCSV()">CSV</button>
+        <div class="stats">
+          <div class="card">
+            <div class="label">Plan</div>
+            <div class="value" id="plan-tier">—</div>
           </div>
-          <label id="fx-allwrap" style="display:none;margin-top:8px;font-size:0.78rem;color:var(--color-muted);cursor:pointer">
-            <input type="checkbox" id="fx-all" style="vertical-align:-2px"> Search all users (admin)
-          </label>
-        </div>
-        <div>
-          <h3>Compare scans</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <select id="cmp-a" style="flex:1;min-width:140px"></select>
-            <span style="color:var(--color-muted)">vs</span>
-            <select id="cmp-b" style="flex:1;min-width:140px"></select>
-            <button class="btn btn-secondary" onclick="runCompare()">Compare</button>
+          <div class="card">
+            <div class="label">Scans today</div>
+            <div class="value" id="today-used">—</div>
+            <div class="bar"><div class="bar-fill" id="today-bar" style="width:0%"></div></div>
+            <div class="stat-note" id="today-reset">resets 00:00 UTC</div>
+          </div>
+          <div class="card">
+            <div class="label">All-time scans</div>
+            <div class="value" id="scans-used">—</div>
+            <div class="bar"><div class="bar-fill" id="scans-bar" style="width:0%"></div></div>
+            <div class="stat-note" id="scans-note"></div>
+          </div>
+          <div class="card">
+            <div class="label">AI pages</div>
+            <div class="value" id="ai-used">—</div>
+            <div class="bar"><div class="bar-fill" id="ai-bar" style="width:0%"></div></div>
           </div>
         </div>
-      </div>
-      <div id="findings-results" style="display:none"></div>
-      <div id="compare-results" style="display:none"></div>
-      <div style="margin-top:18px;border-top:1px solid rgba(148,163,184,0.18);padding-top:14px;">
-        <h3>Web search</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input id="ws-q" placeholder="Search the web…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')runWebSearch()">
-          <button class="btn btn-secondary" onclick="runWebSearch()">Search</button>
-        </div>
-        <div id="ws-results" style="margin-top:12px"></div>
-      </div>
-    </section>
 
-    <section class="panel">
-      <h2>Billing history</h2>
-      <div class="table-shell">
-        <table class="data-table">
-          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-          <tbody id="usage-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel" id="section-account">
-      <h2>Account</h2>
-      <div class="grid-2">
-        <div>
-          <h3>Profile</h3>
-          <div class="form-row"><label>Username</label><input id="acct-username" autocomplete="username"></div>
-          <div class="form-row"><label>Email</label><input id="acct-email" type="email" autocomplete="email"></div>
-          <div class="form-row"><label>First name</label><input id="acct-firstname" autocomplete="given-name"></div>
-          <div class="form-row"><label>Last name</label><input id="acct-lastname" autocomplete="family-name"></div>
-          <button class="btn btn-secondary" onclick="saveProfile()">Save profile</button>
-          <span class="form-note" id="profile-note"></span>
-        </div>
-        <div>
-          <h3>Change password</h3>
-          <div class="form-row"><label>Current password</label><input id="pw-current" type="password" autocomplete="current-password"></div>
-          <div class="form-row"><label>New password</label><input id="pw-new" type="password" autocomplete="new-password"></div>
-          <div class="form-row"><label>Confirm new password</label><input id="pw-confirm" type="password" autocomplete="new-password"></div>
-          <button class="btn btn-secondary" onclick="changePassword()">Update password</button>
-          <span class="form-note" id="pw-note"></span>
-        </div>
-      </div>
-      <h3 style="margin-top:22px;">Active sessions</h3>
-      <div class="table-shell">
-        <table class="data-table">
-          <thead><tr><th>Started</th><th>Last access</th><th>IP address</th><th>Clients</th><th></th></tr></thead>
-          <tbody id="sessions-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel" id="section-plans">
-      <h2>Upgrade your plan</h2>
-      <div class="plan-cards">
-        <div class="plan-card">
-          <h2>Free</h2>
-          <div class="price">€0 <small>/ month</small></div>
-          <ul>
-            <li>All 10 core scanners</li>
-            <li>Automated build tests</li>
-            <li>Community rules &amp; formats</li>
-            <li>CLI + CI integrations</li>
-          </ul>
-          <span class="badge">Current default</span>
-        </div>
-        <div class="plan-card featured">
-          <span class="badge filled">Most popular</span>
-          <h2>Pro</h2>
-          <div class="price">$15 <small>/ month</small><br><span class="sub">or $150 / year</span></div>
-          <ul>
-            <li>Everything in Free</li>
-            <li>Priority scan queue</li>
-            <li>Extended rule packs &amp; history</li>
-            <li>AI Agent (fair-use limits, your code never trains models)</li>
-            <li>Email support</li>
-          </ul>
-          <div class="billing-toggle" role="group" aria-label="Pro billing interval">
-            <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="monthly" onclick="setInterval('pro','monthly',this)">Monthly</button>
-            <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="yearly" onclick="setInterval('pro','yearly',this)">Yearly −17%</button>
+        <section class="panel" id="section-overview">
+          <h2 style="display:flex;align-items:center;gap:12px;">Security overview <span class="badge" id="ov-badge">loading</span></h2>
+          <div class="ov-grid">
+            <div>
+              <div id="ov-donut" style="display:flex;justify-content:center"></div>
+              <div class="donut-legend" id="ov-legend"></div>
+            </div>
+            <div>
+              <h3>Top rules</h3>
+              <div id="ov-top-rules"><span class="spinner"></span></div>
+            </div>
+            <div>
+              <h3>Scanners</h3>
+              <div id="ov-scanners"></div>
+              <div style="margin-top:14px;color:var(--color-dim);font-size:0.78rem" id="ov-note"></div>
+            </div>
           </div>
-          <button class="btn btn-orange" onclick="checkout('pro')">Buy Pro</button>
-        </div>
-        <div class="plan-card">
-          <span class="badge">Enterprise</span>
-          <h2>Enterprise</h2>
-          <div class="price">$49 <small>/ month</small><br><span class="sub">or $490 / year</span></div>
-          <ul>
-            <li>Everything in Pro</li>
-            <li>Unlimited seats &amp; org management</li>
-            <li>SSO / SCIM via PixelCity ID</li>
-            <li>Air-gapped DB updates, SLA 99.9%</li>
-            <li>Dedicated support channel</li>
-          </ul>
-          <div class="billing-toggle" role="group" aria-label="Enterprise billing interval">
-            <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="monthly" onclick="setInterval('enterprise','monthly',this)">Monthly</button>
-            <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="yearly" onclick="setInterval('enterprise','yearly',this)">Yearly −17%</button>
-          </div>
-          <button class="btn btn-secondary" onclick="checkout('enterprise')">Buy Enterprise</button>
-        </div>
-      </div>
-    </section>
+        </section>
+      </section>
 
-    <section class="panel" id="section-upcoming">
-      <h2 style="display:flex;align-items:center;gap:12px;">Upcoming Features <span class="badge badge-warn">Roadmap</span></h2>
-      <div class="notice">
-        These features are announced and in development — documentation is available, runtime is not
-        enabled yet. The AI Agent ships with <strong>active usage limits</strong>; your code and findings
-        are <strong>never used for model training</strong>.
-      </div>
-      <div class="upcoming-item">
-        <h4>AI Agent <span class="badge badge-orange">Upcoming</span></h4>
-        <p>AI-assisted remediation: ask questions about findings, generate fixes, review patches.
-           Rate-limited per plan; data stays yours — no model training, ever.</p>
-        <div class="meta"><span class="tag">docs</span><span class="tag">iris.ai</span><span class="tag">no-training</span></div>
-      </div>
-      <div class="upcoming-item">
-        <h4>Team &amp; Organizations</h4>
-        <p>Shared baselines, org-wide policies and per-team usage reporting.</p>
-        <div class="meta"><span class="tag">roadmap</span></div>
-      </div>
-      <div class="upcoming-item">
-        <h4>Scheduled Cloud Scans</h4>
-        <p>Cron-style recurring scans of repos and URLs with drift alerts.</p>
-        <div class="meta"><span class="tag">roadmap</span></div>
-      </div>
-    </section>
+      <!-- ======== scans ======== -->
+      <section class="app-sec" id="sec-scans">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">Activity · your scans</span></div>
+          <h1 class="section-title">Scan history</h1>
+          <p class="sub">Recent scans with expandable reports, exports, share links and bulk actions.</p>
+        </div>
+        <section class="panel">
+          <div class="toolbar">
+            <button class="btn btn-ghost" onclick="loadScans();loadTrend();toast('Refreshed.')">Refresh</button>
+            <button class="btn btn-ghost" id="auto-btn" onclick="toggleAutoRefresh()">Auto-refresh: off</button>
+            <span class="spacer"></span>
+            <button class="btn btn-ghost danger-zone" id="bulk-btn" onclick="bulkDeleteSelected()" disabled>Delete selected</button>
+          </div>
+          <div id="trend-chart" style="margin-bottom:14px"></div>
+          <div class="table-shell">
+            <table class="data-table">
+              <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all" onclick="toggleSelectAll(this)"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
+              <tbody id="scans-body"><tr><td colspan="6"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== tools ======== -->
+      <section class="app-sec" id="sec-tools">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">Workbench</span></div>
+          <h1 class="section-title">Tools</h1>
+          <p class="sub">Findings explorer with CSV export, scan comparison and privacy-respecting web search.</p>
+        </div>
+        <section class="panel" id="section-tools">
+          <div class="grid-2" style="align-items:end;margin-bottom:14px;">
+            <div>
+              <h3>Findings explorer</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="fx-q" placeholder="Search findings…" style="flex:1;min-width:180px" onkeydown="if(event.key==='Enter')runFindings()">
+                <select id="fx-sev">
+                  <option value="">All severities</option>
+                  <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>INFO</option>
+                </select>
+                <button class="btn btn-secondary" onclick="runFindings()">Search</button>
+                <button class="btn btn-ghost" onclick="exportFindingsCSV()">CSV</button>
+              </div>
+              <label id="fx-allwrap" style="display:none;margin-top:8px;font-size:0.78rem;color:var(--color-muted);cursor:pointer">
+                <input type="checkbox" id="fx-all" style="vertical-align:-2px"> Search all users (admin)
+              </label>
+            </div>
+            <div>
+              <h3>Compare scans</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <select id="cmp-a" style="flex:1;min-width:140px"></select>
+                <span style="color:var(--color-muted)">vs</span>
+                <select id="cmp-b" style="flex:1;min-width:140px"></select>
+                <button class="btn btn-secondary" onclick="runCompare()">Compare</button>
+              </div>
+            </div>
+          </div>
+          <div id="findings-results" style="display:none"></div>
+          <div id="compare-results" style="display:none"></div>
+          <div style="margin-top:18px;border-top:1px solid rgba(148,163,184,0.18);padding-top:14px;">
+            <h3>Web search</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input id="ws-q" placeholder="Search the web…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')runWebSearch()">
+              <button class="btn btn-secondary" onclick="runWebSearch()">Search</button>
+            </div>
+            <div id="ws-results" style="margin-top:12px"></div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== billing ======== -->
+      <section class="app-sec" id="sec-billing">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">Payments</span></div>
+          <h1 class="section-title">Billing</h1>
+          <p class="sub">Payment history, receipts and your next renewal — upgrade from the Plans section.</p>
+        </div>
+        <section class="panel">
+          <h2>Billing history</h2>
+          <div class="table-shell">
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+              <tbody id="usage-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== account ======== -->
+      <section class="app-sec" id="sec-account">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">PixelCity ID</span></div>
+          <h1 class="section-title">Account</h1>
+          <p class="sub">Profile, password and active sessions — managed through PixelCity ID.</p>
+        </div>
+        <section class="panel" id="section-account">
+          <div class="grid-2">
+            <div>
+              <h3>Profile</h3>
+              <div class="form-row"><label>Username</label><input id="acct-username" autocomplete="username"></div>
+              <div class="form-row"><label>Email</label><input id="acct-email" type="email" autocomplete="email"></div>
+              <div class="form-row"><label>First name</label><input id="acct-firstname" autocomplete="given-name"></div>
+              <div class="form-row"><label>Last name</label><input id="acct-lastname" autocomplete="family-name"></div>
+              <button class="btn btn-secondary" onclick="saveProfile()">Save profile</button>
+              <span class="form-note" id="profile-note"></span>
+            </div>
+            <div>
+              <h3>Change password</h3>
+              <div class="form-row"><label>Current password</label><input id="pw-current" type="password" autocomplete="current-password"></div>
+              <div class="form-row"><label>New password</label><input id="pw-new" type="password" autocomplete="new-password"></div>
+              <div class="form-row"><label>Confirm new password</label><input id="pw-confirm" type="password" autocomplete="new-password"></div>
+              <button class="btn btn-secondary" onclick="changePassword()">Update password</button>
+              <span class="form-note" id="pw-note"></span>
+            </div>
+          </div>
+          <h3 style="margin-top:22px;">Active sessions</h3>
+          <div class="table-shell">
+            <table class="data-table">
+              <thead><tr><th>Started</th><th>Last access</th><th>IP address</th><th>Clients</th><th></th></tr></thead>
+              <tbody id="sessions-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== plans ======== -->
+      <section class="app-sec" id="sec-plans">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">Upgrades</span></div>
+          <h1 class="section-title">Plans</h1>
+          <p class="sub">Daily limits reset at 00:00 UTC. Paid plans add quota, AI pages and priority queues.</p>
+        </div>
+        <section class="panel" id="section-plans">
+          <div class="plan-cards">
+            <div class="plan-card">
+              <h2>Free</h2>
+              <div class="price">€0 <small>/ month</small></div>
+              <ul>
+                <li>All 10 core scanners</li>
+                <li>50 scans / day · 100 all-time</li>
+                <li>Community rules &amp; formats</li>
+                <li>CLI + CI integrations</li>
+              </ul>
+              <span class="badge">Current default</span>
+            </div>
+            <div class="plan-card featured">
+              <span class="badge filled">Most popular</span>
+              <h2>Pro</h2>
+              <div class="price">$15 <small>/ month</small><br><span class="sub">or $150 / year</span></div>
+              <ul>
+                <li>Everything in Free</li>
+                <li>250 scans / day · 1000 all-time</li>
+                <li>Extended rule packs &amp; history</li>
+                <li>AI Agent (fair-use limits, your code never trains models)</li>
+                <li>Email support</li>
+              </ul>
+              <div class="billing-toggle" role="group" aria-label="Pro billing interval">
+                <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="monthly" onclick="setBillingInterval('pro','monthly',this)">Monthly</button>
+                <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="yearly" onclick="setBillingInterval('pro','yearly',this)">Yearly −17%</button>
+              </div>
+              <button class="btn btn-orange" onclick="checkout('pro')">Buy Pro</button>
+            </div>
+            <div class="plan-card">
+              <span class="badge">Enterprise</span>
+              <h2>Enterprise</h2>
+              <div class="price">$49 <small>/ month</small><br><span class="sub">or $490 / year</span></div>
+              <ul>
+                <li>Everything in Pro</li>
+                <li>2000 scans / day · 10000 all-time</li>
+                <li>Unlimited seats &amp; org management</li>
+                <li>SSO / SCIM via PixelCity ID</li>
+                <li>Air-gapped DB updates, SLA 99.9%</li>
+              </ul>
+              <div class="billing-toggle" role="group" aria-label="Enterprise billing interval">
+                <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="monthly" onclick="setBillingInterval('enterprise','monthly',this)">Monthly</button>
+                <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="yearly" onclick="setBillingInterval('enterprise','yearly',this)">Yearly −17%</button>
+              </div>
+              <button class="btn btn-secondary" onclick="checkout('enterprise')">Buy Enterprise</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== roadmap ======== -->
+      <section class="app-sec" id="sec-roadmap">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">What's next</span></div>
+          <h1 class="section-title">Roadmap</h1>
+          <p class="sub">Announced features in development — documentation exists, runtime not enabled yet.</p>
+        </div>
+        <section class="panel" id="section-upcoming">
+          <div class="notice">
+            These features are announced and in development — documentation is available, runtime is not
+            enabled yet. The AI Agent ships with <strong>active usage limits</strong>; your code and findings
+            are <strong>never used for model training</strong>.
+          </div>
+          <div class="upcoming-item">
+            <h4>AI Agent <span class="badge badge-orange">Upcoming</span></h4>
+            <p>AI-assisted remediation: ask questions about findings, generate fixes, review patches.
+               Rate-limited per plan; data stays yours — no model training, ever.</p>
+            <div class="meta"><span class="tag">docs</span><span class="tag">iris.ai</span><span class="tag">no-training</span></div>
+          </div>
+          <div class="upcoming-item">
+            <h4>Team &amp; Organizations</h4>
+            <p>Shared baselines, org-wide policies and per-team usage reporting.</p>
+            <div class="meta"><span class="tag">roadmap</span></div>
+          </div>
+          <div class="upcoming-item">
+            <h4>Scheduled Cloud Scans</h4>
+            <p>Cron-style recurring scans of repos and URLs with drift alerts.</p>
+            <div class="meta"><span class="tag">roadmap</span></div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ======== admin ======== -->
+      <section class="app-sec" id="sec-admin">
+        <div class="sec-head">
+          <div class="rule-label"><span class="eyebrow">Administration · <span id="admin-kc-status">keycloak</span></span></div>
+          <h1 class="section-title">Administration</h1>
+          <p class="sub">Full user management — plans, daily limits, bans, passwords, sessions, deletion — plus system diagnostics.</p>
+        </div>
+
+        <section class="panel">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+            <h2 style="margin:0;margin-right:auto;">Users <span class="badge" id="admin-count">0</span></h2>
+            <input id="admin-search" placeholder="Filter users…" oninput="renderAdminUsers()" style="background:var(--color-panel-2);border:1px solid var(--color-line);border-radius:4px;color:var(--color-bright);padding:8px 12px;font:inherit;min-width:180px">
+            <button class="btn btn-ghost" onclick="loadAdmin()">Refresh</button>
+            <button class="btn btn-secondary" onclick="toggleCreateUser()">+ Create user</button>
+          </div>
+
+          <div id="admin-create" class="create-box" style="display:none">
+            <div class="form-row"><label>Username</label><input id="new-username" placeholder="e.g. jane.doe" autocomplete="off"></div>
+            <div class="form-row"><label>Email</label><input id="new-email" type="email" placeholder="jane@example.com" autocomplete="off"></div>
+            <div class="form-row"><label>First name</label><input id="new-first" autocomplete="off"></div>
+            <div class="form-row"><label>Last name</label><input id="new-last" autocomplete="off"></div>
+            <div class="form-row"><label>Initial password (min 8)</label><input id="new-password" type="password" autocomplete="new-password"></div>
+            <div class="form-row"><label>Plan tier</label>
+              <select id="new-tier">
+                <option value="">default (free)</option>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+                <option value="admin">Admin (unlimited)</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="adminCreate()">Create user</button>
+              <button class="btn btn-ghost" onclick="toggleCreateUser()">Cancel</button>
+              <span class="form-note" id="create-note"></span>
+            </div>
+          </div>
+
+          <div class="table-shell">
+            <table class="data-table">
+              <thead><tr><th>User</th><th>Plan</th><th>Today</th><th>Scans</th><th>Last scan</th><th>Status</th><th></th></tr></thead>
+              <tbody id="admin-users-body"><tr><td colspan="7"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+
+          <div id="adm-detail" class="user-editor" style="display:none">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <h3 id="adm-title" style="margin:0;font-size:1rem;">—</h3>
+              <span class="mono" id="adm-sub" style="font-size:0.7rem;color:var(--color-dim)"></span>
+              <span class="badge" id="adm-src-badge"></span>
+              <span class="badge badge-bad" id="adm-banned-badge" style="display:none">Banned</span>
+              <span class="badge badge-warn" id="adm-disabled-badge" style="display:none">Login disabled</span>
+              <span style="flex:1"></span>
+              <button class="btn btn-ghost" onclick="adminCloseDetail()">Close</button>
+            </div>
+            <div class="grid-2" style="margin-top:16px;gap:20px;">
+              <div>
+                <div class="form-row"><label>Plan tier</label>
+                  <select id="adm-tier">
+                    <option value="">default (billing / role)</option>
+                    <option value="free">Free</option>
+                    <option value="pro">Pro</option>
+                    <option value="enterprise">Enterprise</option>
+                    <option value="admin">Admin (unlimited)</option>
+                  </select>
+                </div>
+                <div class="form-row"><label>Daily scan limit (0 = tier default)</label><input id="adm-daily" type="number" min="0" max="100000"></div>
+                <div class="form-row"><label>Admin note</label><input id="adm-note" placeholder="optional"></div>
+                <button class="btn btn-secondary" onclick="adminSaveUser()">Save changes</button>
+                <span class="form-note" id="adm-save-note"></span>
+              </div>
+              <div>
+                <div class="form-row"><label>New password (min 8)</label><input id="adm-pw" type="password" autocomplete="new-password"></div>
+                <button class="btn btn-secondary" onclick="adminResetPw()">Reset password</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+                  <button class="btn btn-ghost" id="adm-ban-btn" onclick="adminToggleBan()">Ban user</button>
+                  <button class="btn btn-ghost" id="adm-enable-btn" onclick="adminToggleEnabled()">Disable login</button>
+                  <button class="btn btn-ghost" onclick="adminRevoke()">Revoke sessions</button>
+                  <button class="btn btn-ghost danger-zone" onclick="adminDeleteUser()">Delete user</button>
+                </div>
+                <div class="stat-note" style="line-height:1.6">Ban blocks API + sessions instantly. Disable login stops new sign-ins at Keycloak. Revoke ends live sessions, clears stored tokens and share links. Delete removes the account and purges all scans.</div>
+              </div>
+            </div>
+            <div style="margin-top:16px;">
+              <div class="label" style="color:var(--color-dim);font:600 0.66rem var(--font-mono);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px">Recent scans</div>
+              <div id="adm-scans" class="mono" style="font-size:0.76rem;color:var(--color-dim);line-height:1.8">—</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Activity</h2>
+          <div id="admin-trend" style="margin-bottom:6px"></div>
+        </section>
+
+        <section class="panel">
+          <h2>System</h2>
+          <div class="sys-grid" id="admin-system"><div class="sys-cell"><div class="k">status</div><div class="v">loading…</div></div></div>
+        </section>
+
+        <section class="panel">
+          <h2>All scans</h2>
+          <div id="admin-scans-filter" style="display:none;margin-bottom:8px;font-size:0.8rem;color:var(--color-muted)"></div>
+          <div class="table-shell">
+            <table class="data-table">
+              <thead><tr><th>Time</th><th>User</th><th>Scanner</th><th>Target</th><th>Findings</th></tr></thead>
+              <tbody id="admin-scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      </div><!-- /content -->
+    </div><!-- /app-grid -->
   </div>
 </main>
 
@@ -775,6 +1021,24 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 <script>
 const $ = (id) => document.getElementById(id);
 
+// ---- section routing (one page per dashboard category) ----
+const SECTIONS = ['overview', 'scans', 'tools', 'billing', 'account', 'plans', 'roadmap', 'admin'];
+let currentSec = 'overview';
+
+function showSection(name) {
+  if (SECTIONS.indexOf(name) === -1) name = 'overview';
+  if (name === 'admin' && !me_admin) name = 'overview';
+  currentSec = name;
+  document.querySelectorAll('.app-sec').forEach(s => s.classList.toggle('active', s.id === 'sec-' + name));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.sec === name));
+  if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+  if (name === 'scans') { loadScans(); loadTrend(); }
+  if (name === 'admin' && me_admin) { loadAdmin(); loadSystem(); }
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener('hashchange', () => showSection(location.hash.slice(1)));
+
 async function init() {
   try {
     const me = await api('/api/v1/me');
@@ -783,6 +1047,14 @@ async function init() {
     $('user-chip').style.display = 'flex';
     $('username').textContent = me.username || me.email;
     $('greeting').textContent = `Welcome back, ${me.username || 'user'}`;
+    if (me.admin) {
+      me_admin = true;
+      $('nav-admin').style.display = '';
+      $('fx-allwrap').style.display = 'block';
+      loadAdmin();
+      loadAdminTrend();
+      loadSystem();
+    }
     loadPlan();
     loadUsage();
     loadAccount();
@@ -790,14 +1062,7 @@ async function init() {
     loadScans();
     loadTrend();
     loadOverview();
-    if (me.admin) {
-      me_admin = true;
-      $('section-admin').style.display = 'block';
-      $('fx-allwrap').style.display = 'block';
-      loadAdmin();
-      loadAdminTrend();
-      loadSystem();
-    }
+    showSection(location.hash.slice(1) || 'overview');
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
     });
@@ -822,16 +1087,40 @@ async function loadPlan() {
     const badge = tier === 'admin' || tier === 'enterprise' ? 'badge-orange' : tier === 'pro' ? 'badge-accent' : '';
     $('plan-tier').innerHTML = `<span class="badge ${badge}">${tier.toUpperCase()}</span>`;
     $('plan-sub').textContent = p.name ? `${p.name} plan · PixelCity ID` : 'Iris plan · PixelCity ID';
-    const used = p.scans_used ?? 0, quota = p.scan_quota ?? 0;
     const unlimited = tier === 'admin';
+
+    // Daily quota (resets 00:00 UTC)
+    const dUsed = p.daily_used ?? 0, dQuota = p.daily_quota ?? 0;
+    $('today-used').textContent = dQuota ? `${dUsed} / ${dQuota}` : unlimited ? `${dUsed} · unlimited` : String(dUsed);
+    setBar('today-bar', dQuota ? dUsed / dQuota : 0);
+    planDailyResetAt = p.daily_resets_at || 0;
+    updateResetNote();
+
+    // Lifetime quota
+    const used = p.scans_used ?? 0, quota = p.scan_quota ?? 0;
     $('scans-used').textContent = quota ? `${used} / ${quota}` : unlimited ? `${used} · unlimited` : String(used);
     setBar('scans-bar', quota ? used / quota : 0);
+    $('scans-note').textContent = quota ? `${Math.max(0, quota - used)} left all-time` : '';
+
     const aiUsed = p.ai_pages_used ?? 0, aiQuota = p.ai_pages_quota ?? 0;
     $('ai-used').textContent = aiQuota ? `${aiUsed} / ${aiQuota}` : unlimited ? `${aiUsed} · unlimited` : tier === 'free' ? '—' : String(aiUsed);
     setBar('ai-bar', aiQuota ? aiUsed / aiQuota : 0);
-    if (p.valid_until) $('renew-date').textContent = new Date(p.valid_until).toLocaleDateString();
   } catch (e) { planFallback(); }
 }
+
+// ---- daily reset countdown (ticks once per second) ----
+let planDailyResetAt = 0;
+function updateResetNote() {
+  const el = $('today-reset');
+  if (!el) return;
+  if (!planDailyResetAt) { el.className = 'stat-note'; el.textContent = 'resets 00:00 UTC'; return; }
+  const secs = Math.max(0, Math.floor(planDailyResetAt - Date.now() / 1000));
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+  const pad = n => String(n).padStart(2, '0');
+  el.className = 'stat-note' + (secs < 1800 ? ' warn' : '');
+  el.textContent = `resets in ${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+setInterval(updateResetNote, 1000);
 
 function planFallback() {
   $('plan-tier').innerHTML = '<span class="badge">FREE</span>';
@@ -868,32 +1157,215 @@ async function loadScans() {
   }
 }
 
-let adminUserFilter = '';
 let adminUsers = [];
+let admCur = null;
 
 async function loadAdmin() {
   try {
     const u = await api('/api/v1/admin/users');
     adminUsers = u.users || [];
-    $('admin-users-body').innerHTML = adminUsers.map((x, i) => `<tr style="cursor:pointer" title="Show this user's scans" onclick="filterAdminScans(${i})">
-      <td class="mono"><span style="border-bottom:1px dashed var(--color-dim)">${esc(x.username || '—')}</span></td>
-      <td class="mono" style="font-size:0.78rem">${esc(x.email || '—')}</td>
-      <td>${x.scans ?? 0}</td>
-      <td class="mono" style="font-size:0.78rem">${x.last_scan ? new Date(x.last_scan).toLocaleString() : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--color-dim)">No users yet.</td></tr>';
+    const kc = $('admin-kc-status');
+    if (kc) kc.textContent = u.keycloak ? 'keycloak connected' : (u.keycloak_error ? 'keycloak unreachable' : 'local only');
+    renderAdminUsers();
   } catch (e) {
-    $('admin-users-body').innerHTML = '<tr><td colspan="4" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
+    $('admin-users-body').innerHTML = '<tr><td colspan="7" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
   }
   await loadAdminScans(adminUserFilter);
 }
 
-function filterAdminScans(i) {
-  const u = (typeof adminUsers !== 'undefined' && adminUsers[i]) || null;
-  if (!u) return;
-  adminUserFilter = u.username || u.email || '';
-  if (adminUserFilter) loadAdminScans(adminUserFilter);
+function renderAdminUsers() {
+  const q = ($('admin-search') ? $('admin-search').value : '').trim().toLowerCase();
+  const rows = adminUsers.filter(u => !q ||
+    (u.username || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q));
+  $('admin-count').textContent = adminUsers.length;
+  const status = u => {
+    let h = '';
+    if (u.banned) h += '<span class="badge badge-bad">banned</span> ';
+    if (!u.enabled) h += '<span class="badge badge-warn">login off</span> ';
+    if (!h) h = '<span class="badge badge-good">active</span>';
+    if (u.source === 'scans') h += ' <span class="badge" title="Known from scan history only">orphan</span>';
+    return h;
+  };
+  $('admin-users-body').innerHTML = rows.map(u => {
+    const i = adminUsers.indexOf(u);
+    const daily = u.daily_limit ? `${u.daily_used} / ${u.daily_limit}` : (u.tier === 'admin' ? `${u.daily_used} · ∞` : String(u.daily_used));
+    return `<tr style="cursor:pointer" onclick="adminSelect(${i})">
+      <td>
+        <div style="font-weight:600">${esc(u.username || '—')}</div>
+        <div class="mono" style="font-size:0.7rem;color:var(--color-dim)">${esc(u.email || u.sub || '')}</div>
+      </td>
+      <td><span class="badge ${u.tier === 'admin' || u.tier === 'enterprise' ? 'badge-orange' : u.tier === 'pro' ? 'badge-accent' : ''}">${esc((u.tier || 'free').toUpperCase())}</span></td>
+      <td class="mono" style="font-size:0.78rem;${u.daily_limit && u.daily_used >= u.daily_limit ? 'color:var(--color-warn)' : ''}">${daily}</td>
+      <td class="mono">${u.scans ?? 0}</td>
+      <td class="mono" style="font-size:0.75rem">${u.last_scan ? new Date(u.last_scan).toLocaleString() : '—'}</td>
+      <td style="white-space:nowrap">${status(u)}</td>
+      <td style="text-align:right"><button class="btn btn-ghost" onclick="event.stopPropagation();adminSelect(${i})">Manage</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:var(--color-dim)">No users match.</td></tr>';
 }
 
+function adminSelect(i) {
+  const u = adminUsers[i];
+  if (!u) return;
+  const switching = !admCur || admCur.sub !== u.sub;
+  admCur = u;
+  $('adm-title').textContent = u.username || u.sub;
+  $('adm-sub').textContent = u.sub;
+  $('adm-src-badge').textContent = u.source === 'keycloak' ? 'Keycloak' : u.source === 'scans' ? 'scan history' : 'local';
+  $('adm-banned-badge').style.display = u.banned ? '' : 'none';
+  $('adm-disabled-badge').style.display = u.enabled ? 'none' : '';
+  $('adm-tier').value = u.tier_source === 'override' ? u.tier : '';
+  $('adm-daily').value = (u.tier_source === 'override' || u.daily_limit) ? (u.daily_limit || 0) : 0;
+  $('adm-note').value = u.note || '';
+  $('adm-pw').value = '';
+  if (switching) {
+    $('adm-save-note').textContent = '';
+    $('adm-save-note').className = 'form-note';
+  }
+  $('adm-ban-btn').textContent = u.banned ? 'Unban user' : 'Ban user';
+  $('adm-enable-btn').textContent = u.enabled ? 'Disable login' : 'Enable login';
+  $('adm-detail').style.display = 'block';
+  loadAdminUserDetail(u.sub);
+  $('adm-detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function loadAdminUserDetail(sub) {
+  try {
+    const d = await api('/api/v1/admin/users/' + encodeURIComponent(sub));
+    if (!admCur || admCur.sub !== sub) return;
+    const kc = d.keycloak;
+    const recent = d.recent_scans || [];
+    $('adm-scans').innerHTML = recent.length
+      ? recent.map(e => `${e.time ? new Date(e.time).toLocaleString() : '—'} · ${esc(e.scanner)} · ${esc(shorten(e.target))}`).join('<br>')
+      : 'No scans recorded.';
+    if (kc) {
+      $('adm-sub').textContent = `${sub} · created ${kc.createdTimestamp ? new Date(kc.createdTimestamp).toLocaleDateString() : '—'} · ${kc.identityProvider || 'password'}`;
+    }
+  } catch (e) { $('adm-scans').innerHTML = 'Could not load detail.'; }
+}
+
+function adminCloseDetail() { $('adm-detail').style.display = 'none'; admCur = null; }
+
+async function adminPatch(sub, body) {
+  return api('/api/v1/admin/users/' + encodeURIComponent(sub), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+}
+
+async function adminSaveUser() {
+  if (!admCur) return;
+  const note = $('adm-save-note');
+  note.className = 'form-note'; note.textContent = 'Saving…';
+  try {
+    await adminPatch(admCur.sub, {
+      tier: $('adm-tier').value,
+      daily_limit: Math.max(0, parseInt($('adm-daily').value || '0', 10) || 0),
+      note: $('adm-note').value
+    });
+    note.className = 'form-note ok'; note.textContent = 'Saved.';
+    await loadAdmin();
+    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
+  } catch (e) {
+    note.className = 'form-note err'; note.textContent = 'Save failed: ' + e.message;
+  }
+}
+
+async function adminToggleBan() {
+  if (!admCur) return;
+  const next = !admCur.banned;
+  if (next && !confirm(`Ban ${admCur.username || admCur.sub}? They are signed out of the API immediately.`)) return;
+  try {
+    await adminPatch(admCur.sub, { banned: next });
+    toast(next ? 'User banned.' : 'User unbanned.');
+    await loadAdmin();
+    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
+  } catch (e) { toast('Ban update failed: ' + e.message, 'err'); }
+}
+
+async function adminToggleEnabled() {
+  if (!admCur) return;
+  const next = !admCur.enabled;
+  if (!next && !confirm(`Disable login for ${admCur.username || admCur.sub}? They will not be able to sign in.`)) return;
+  try {
+    await adminPatch(admCur.sub, { enabled: next });
+    toast(next ? 'Login enabled.' : 'Login disabled.');
+    await loadAdmin();
+    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
+  } catch (e) { toast('Login toggle failed: ' + e.message, 'err'); }
+}
+
+async function adminResetPw() {
+  if (!admCur) return;
+  const pw = $('adm-pw').value;
+  if (!pw || pw.length < 8) { toast('Password must be at least 8 characters.', 'warn'); return; }
+  if (!confirm(`Set a new password for ${admCur.username || admCur.sub}?`)) return;
+  try {
+    await api(`/api/v1/admin/users/${encodeURIComponent(admCur.sub)}/reset-password`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw, temporary: false })
+    });
+    $('adm-pw').value = '';
+    toast('Password reset.');
+  } catch (e) { toast('Password reset failed: ' + e.message, 'err'); }
+}
+
+async function adminRevoke() {
+  if (!admCur) return;
+  if (!confirm(`End every session for ${admCur.username || admCur.sub} and clear stored tokens + share links?`)) return;
+  try {
+    const r = await api(`/api/v1/admin/users/${encodeURIComponent(admCur.sub)}/revoke-sessions`, { method: 'POST' });
+    toast(`Sessions revoked (${r.shares_revoked} share link(s) closed).`);
+    loadAdminScans(adminUserFilter);
+  } catch (e) { toast('Revoke failed: ' + e.message, 'err'); }
+}
+
+async function adminDeleteUser() {
+  if (!admCur) return;
+  const who = admCur.username || admCur.sub;
+  if (!confirm(`Delete ${who} permanently? Their account and ALL scans, reports, tokens and share links are purged. This cannot be undone.`)) return;
+  try {
+    const r = await api('/api/v1/admin/users/' + encodeURIComponent(admCur.sub), { method: 'DELETE' });
+    toast(`Deleted ${who} · ${r.scans_purged} scan(s) purged.`);
+    adminCloseDetail();
+    await loadAdmin();
+    loadScans(); loadOverview(); loadPlan(); loadTrend();
+  } catch (e) { toast('Delete failed: ' + e.message, 'err'); }
+}
+
+function toggleCreateUser() {
+  const box = $('admin-create');
+  const open = box.style.display === 'none';
+  box.style.display = open ? 'grid' : 'none';
+  if (open) $('new-username').focus();
+}
+
+async function adminCreate() {
+  const note = $('create-note');
+  const body = {
+    username: $('new-username').value.trim(),
+    email: $('new-email').value.trim(),
+    first_name: $('new-first').value.trim(),
+    last_name: $('new-last').value.trim(),
+    password: $('new-password').value,
+    tier: $('new-tier').value
+  };
+  if (!body.username) { note.className = 'form-note err'; note.textContent = 'Username required.'; return; }
+  note.className = 'form-note'; note.textContent = 'Creating…';
+  try {
+    const r = await api('/api/v1/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    note.className = 'form-note ok'; note.textContent = 'Created ' + (r.username || body.username) + '.';
+    ['new-username', 'new-email', 'new-first', 'new-last', 'new-password'].forEach(id => $(id).value = '');
+    await loadAdmin();
+    setTimeout(() => { $('admin-create').style.display = 'none'; }, 900);
+  } catch (e) {
+    note.className = 'form-note err'; note.textContent = 'Create failed: ' + e.message;
+  }
+}
+
+let adminUserFilter = '';
 function clearAdminFilter() { adminUserFilter = ''; loadAdminScans(''); }
 
 async function loadAdminScans(userFilter) {
@@ -1109,7 +1581,7 @@ async function loadUsage() {
 
 const billingInterval = { pro: 'monthly', enterprise: 'monthly' };
 
-function setInterval(plan, interval, btn) {
+function setBillingInterval(plan, interval, btn) {
   billingInterval[plan] = interval;
   document.querySelectorAll(`.interval-btn[data-plan="${plan}"]`).forEach(b =>
     b.classList.toggle('active', b === btn));
@@ -1297,9 +1769,12 @@ function exportFindingsCSV() {
 }
 
 function toggleScanDetailByRow(id) {
-  const row = document.querySelector(`#scans-body tr[onclick*="'${id}'"]`);
-  if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); toggleScanDetail(row, id, 5); }
-  else toast('Scan not in the recent list — open Scan history.', 'warn');
+  showSection('scans');
+  setTimeout(() => {
+    const row = document.querySelector(`#scans-body tr[onclick*="'${id}'"]`);
+    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); toggleScanDetail(row, id, 6); }
+    else toast('Scan not in the recent list — open Scan history.', 'warn');
+  }, 120);
 }
 
 // ---- compare ----
@@ -1498,22 +1973,24 @@ function shareBoxHTML(id, url) {
 
 // ---- command palette ----
 const PAL_ITEMS = [
-  { t: 'Go to overview', k: 'G O', run: () => scrollToId('section-overview') },
-  { t: 'Go to scan history', k: 'G S', run: () => scrollToId('scans-body') },
-  { t: 'Go to tools (findings / compare / search)', k: 'G T', run: () => scrollToId('section-tools') },
-  { t: 'Go to billing history', k: 'G B', run: () => scrollToId('usage-body') },
-  { t: 'Go to account', k: 'G A', run: () => scrollToId('section-account') },
-  { t: 'Go to plans', k: 'G P', run: () => scrollToId('section-plans') },
-  { t: 'Findings explorer: focus search', k: 'F', run: () => { scrollToId('section-tools'); setTimeout(() => $('fx-q').focus(), 350); } },
+  { t: 'Go to overview', k: 'G O', run: () => showSection('overview') },
+  { t: 'Go to scan history', k: 'G S', run: () => showSection('scans') },
+  { t: 'Go to tools (findings / compare / search)', k: 'G T', run: () => showSection('tools') },
+  { t: 'Go to billing history', k: 'G B', run: () => showSection('billing') },
+  { t: 'Go to account', k: 'G A', run: () => showSection('account') },
+  { t: 'Go to plans', k: 'G P', run: () => showSection('plans') },
+  { t: 'Go to roadmap', k: 'G R', run: () => showSection('roadmap') },
+  { t: 'Findings explorer: focus search', k: 'F', run: () => { showSection('tools'); setTimeout(() => $('fx-q').focus(), 120); } },
   { t: 'Findings explorer: export CSV', k: 'C', run: () => exportFindingsCSV() },
-  { t: 'Web search: focus', k: 'W', run: () => { scrollToId('section-tools'); setTimeout(() => $('ws-q').focus(), 350); } },
-  { t: 'Compare scans: pick A/B', k: 'D', run: () => { scrollToId('section-tools'); setTimeout(() => $('cmp-a').focus(), 350); } },
-  { t: 'Refresh all data', k: 'R', run: () => { loadScans(); loadOverview(); loadTrend(); loadPlan(); toast('Refreshed.'); } },
+  { t: 'Web search: focus', k: 'W', run: () => { showSection('tools'); setTimeout(() => $('ws-q').focus(), 120); } },
+  { t: 'Compare scans: pick A/B', k: 'D', run: () => { showSection('tools'); setTimeout(() => $('cmp-a').focus(), 120); } },
+  { t: 'Refresh all data', k: 'R', run: () => { loadScans(); loadOverview(); loadTrend(); loadPlan(); if (me_admin) loadAdmin(); toast('Refreshed.'); } },
   { t: 'Toggle auto-refresh (20s)', k: 'A', run: () => toggleAutoRefresh() },
   { t: 'Sign out', k: 'Q', run: () => { location.href = '/auth/logout'; } },
-  { t: 'Admin: users', k: '', run: () => scrollToId('admin-users-body'), admin: true },
-  { t: 'Admin: all scans', k: '', run: () => scrollToId('admin-scans-body'), admin: true },
-  { t: 'Admin: system diagnostics', k: '', run: () => scrollToId('admin-system'), admin: true },
+  { t: 'Admin: users', k: '', run: () => showSection('admin'), admin: true },
+  { t: 'Admin: create user', k: '', run: () => { showSection('admin'); setTimeout(() => { if ($('admin-create').style.display === 'none') toggleCreateUser(); }, 120); }, admin: true },
+  { t: 'Admin: all scans', k: '', run: () => { showSection('admin'); setTimeout(() => scrollToId('admin-scans-body'), 120); }, admin: true },
+  { t: 'Admin: system diagnostics', k: '', run: () => { showSection('admin'); setTimeout(() => scrollToId('admin-system'), 120); }, admin: true },
 ];
 
 function scrollToId(id) {

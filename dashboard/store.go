@@ -360,6 +360,14 @@ func (s *scanStore) count(sub string) int {
 	return s.countWhere(func(eSub string) bool { return eSub == sub })
 }
 
+// countSince counts one user's scans at or after the given instant —
+// the basis for daily quota windows (resets at 00:00 UTC).
+func (s *scanStore) countSince(sub string, since time.Time) int {
+	return s.countWhereMatch(func(e *scanEntry) bool {
+		return e.Sub == sub && !e.Time.Before(since)
+	})
+}
+
 // countAll returns the total number of stored scans across all users.
 func (s *scanStore) countAll() int {
 	return s.countWhere(func(string) bool { return true })

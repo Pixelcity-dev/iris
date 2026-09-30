@@ -24,6 +24,7 @@ services:
       TOKENS_FILE: "/data/tokens.json"
       SEARXNG_BASE: "http://searxng:8080"
       SHARES_FILE: "/data/shares.json"
+      USER_OVERRIDES_FILE: "/data/user_overrides.json"
     networks:
       - pixelcity_net
     # Hardening: root FS read-only; only the scan store volume is writable.

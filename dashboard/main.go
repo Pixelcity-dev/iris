@@ -373,6 +373,8 @@ type server struct {
 	scans  *scanStore
 	tokens *tokenStore
 	shares *shareStore
+	meta   *userMetaStore
+	kc     *kcAdmin
 }
 
 // bearerIdentity validates a CLI Keycloak access token (aud: iris-cli,
@@ -393,14 +395,28 @@ func (s *server) bearerIdentity(r *http.Request) (*session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &session{
+	sess := &session{
 		Sub:      claims.Sub,
 		Username: orDefault(claims.PreferredUsername, claims.Email),
 		Email:    claims.Email,
 		Groups:   claims.Groups,
 		Roles:    claims.RealmAccess.Roles,
 		Exp:      time.Now().Add(5 * time.Minute).Unix(),
-	}, nil
+	}
+	if err := s.assertActive(sess); err != nil {
+		return nil, err
+	}
+	return sess, nil
+}
+
+// assertActive rejects identities disabled by an admin override. Banned
+// accounts are blocked at the identity layer — live Keycloak sessions
+// stop working immediately, without waiting for token expiry.
+func (s *server) assertActive(sess *session) error {
+	if o, ok := s.meta.get(sess.Sub); ok && o.Banned {
+		return errors.New("account disabled by administrator")
+	}
+	return nil
 }
 
 func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
@@ -416,6 +432,12 @@ func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
 		quota, _, _ := tierQuotas(tier)
 		if qerr := checkScanQuota(s.scans.count(ident.Sub), quota, tier); qerr != nil {
 			writeErr(w, http.StatusPaymentRequired, qerr)
+			return
+		}
+		// Daily limit: counts scans since 00:00 UTC, resets nightly.
+		daily := s.dailyLimitFor(ident.Sub, tier)
+		if qerr := checkDailyQuota(s.scans.countSince(ident.Sub, startOfUTCDay()), daily, tier); qerr != nil {
+			writeErr(w, http.StatusTooManyRequests, qerr)
 			return
 		}
 	}
@@ -588,6 +610,9 @@ func (s *server) requestIdentity(r *http.Request) (*session, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := s.assertActive(sess); err != nil {
+		return nil, err
+	}
 	return sess, nil
 }
 
@@ -651,14 +676,6 @@ func (s *server) handleAdminScans(w http.ResponseWriter, r *http.Request) {
 		entries = []scanEntry{}
 	}
 	writeJSON(w, map[string]interface{}{"entries": entries, "total": s.scans.countFiltered(user)})
-}
-
-func (s *server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
-	users := s.scans.userStats()
-	if users == nil {
-		users = []map[string]interface{}{}
-	}
-	writeJSON(w, map[string]interface{}{"users": users, "total": len(users)})
 }
 
 func atoiQuery(r *http.Request, key string, def int) int {
@@ -733,6 +750,8 @@ func main() {
 		scans:  newScanStore(os.Getenv("SCANS_FILE")),
 		tokens: newTokenStore(os.Getenv("TOKENS_FILE")),
 		shares: newShareStore(os.Getenv("SHARES_FILE")),
+		meta:   newUserMetaStore(os.Getenv("USER_OVERRIDES_FILE")),
+		kc:     newKCAdmin(cfg.Issuer, cfg.ClientID, cfg.ClientSecret),
 	}
 
 	mux := http.NewServeMux()
@@ -760,6 +779,12 @@ func main() {
 	mux.HandleFunc("GET /api/v1/admin/system", srv.requireAdmin(srv.handleAdminSystem))
 	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
 	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))
+	mux.HandleFunc("POST /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUserCreate))
+	mux.HandleFunc("GET /api/v1/admin/users/{sub}", srv.requireAdmin(srv.handleAdminUserGet))
+	mux.HandleFunc("PUT /api/v1/admin/users/{sub}", srv.requireAdmin(srv.handleAdminUserPatch))
+	mux.HandleFunc("DELETE /api/v1/admin/users/{sub}", srv.requireAdmin(srv.handleAdminUserDelete))
+	mux.HandleFunc("POST /api/v1/admin/users/{sub}/reset-password", srv.requireAdmin(srv.handleAdminUserResetPassword))
+	mux.HandleFunc("POST /api/v1/admin/users/{sub}/revoke-sessions", srv.requireAdmin(srv.handleAdminUserRevoke))
 	mux.HandleFunc("GET /api/v1/admin/trend", srv.requireAdmin(srv.handleAdminTrend))
 	mux.HandleFunc("GET /api/v1/account", srv.auth(srv.handleAccountGet))
 	mux.HandleFunc("PATCH /api/v1/account", srv.auth(srv.handleAccountPatch))
@@ -861,6 +886,11 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		Groups:   claims.Groups,
 		Roles:    claims.RealmAccess.Roles,
 		Exp:      time.Now().Add(12 * time.Hour).Unix(),
+	}
+	// Banned accounts never receive a session cookie.
+	if err := s.assertActive(&sess); err != nil {
+		http.Error(w, "account disabled — contact your administrator", http.StatusForbidden)
+		return
 	}
 	// Tokens go server-side (slim cookie — see tokenStore docs).
 	s.tokens.Set(sess.Sub, tokenPair{
@@ -1247,33 +1277,84 @@ func tierQuotas(tier string) (scans, aiPages int, name string) {
 	}
 }
 
+// dailyQuota returns the tier's per-day scan limit; 0 = unlimited.
+// Daily limits reset at 00:00 UTC.
+func dailyQuota(tier string) int {
+	switch tier {
+	case "admin":
+		return 0
+	case "enterprise":
+		return 2000
+	case "pro":
+		return 250
+	default:
+		return 50
+	}
+}
+
+// dailyLimitFor resolves a user's effective daily limit: the tier
+// default, overridden by a per-user admin override when set.
+func (s *server) dailyLimitFor(sub, tier string) int {
+	limit := dailyQuota(tier)
+	if o, ok := s.meta.get(sub); ok && o.DailyLimit > 0 {
+		limit = o.DailyLimit
+	}
+	return limit
+}
+
+// startOfUTCDay / nextUTCMidnight define the daily quota window.
+func startOfUTCDay() time.Time {
+	now := time.Now().UTC()
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func nextUTCMidnight() time.Time { return startOfUTCDay().Add(24 * time.Hour) }
+
+// billingTierCacheTTL is how long a billing-resolved tier is reused
+// before re-querying payments (also serves the admin user list).
+const billingTierCacheTTL = 15 * time.Minute
+
 func (s *server) handlePlan(w http.ResponseWriter, r *http.Request) {
 	sess := r.Context().Value(sessKey{}).(session)
 	ctx := r.Context()
 	tier := s.planTier(ctx, &sess)
 	scans, aiPages, name := tierQuotas(tier)
+	daily := s.dailyLimitFor(sess.Sub, tier)
+	resetAt := nextUTCMidnight()
 	writeJSON(w, map[string]interface{}{
 		"tier": tier, "name": name,
 		"scan_quota": scans, "scans_used": s.scans.count(sess.Sub),
 		"ai_pages_quota": aiPages, "ai_pages_used": 0,
+		"daily_quota": daily, "daily_used": s.scans.countSince(sess.Sub, startOfUTCDay()),
+		"daily_resets_at":     resetAt.Unix(),
+		"daily_reset_seconds": int(time.Until(resetAt).Seconds()),
 	})
 }
 
-// planTier resolves the caller's billing tier, defaulting to free on
-// any billing error (never blocks the product on payments outages).
-// Dashboard admins are unlimited regardless of billing state.
+// planTier resolves the caller's plan tier, defaulting to free on any
+// billing error (never blocks the product on payments outages).
+// Precedence: admin override > dashboard-admin membership > billing.
 func (s *server) planTier(ctx context.Context, sess *session) string {
+	if o, ok := s.meta.get(sess.Sub); ok && o.Tier != "" {
+		return o.Tier
+	}
 	if isAdmin(sess) {
+		s.meta.putEffective(sess.Sub, "admin")
 		return "admin"
 	}
 	tier := "free"
 	if err := s.paymentsConfigured(); err == nil && sess.Email != "" {
+		// Fresh cache keeps the admin user list cheap to serve.
+		if cached, ok := s.meta.effectiveFresh(sess.Sub, billingTierCacheTTL); ok {
+			return cached
+		}
 		if customerID, err := s.ensureCustomer(ctx, sess.Email, sess.Username); err == nil {
 			if t, err := s.resolveTier(ctx, customerID); err == nil {
 				tier = t
 			}
 		}
 	}
+	s.meta.putEffective(sess.Sub, tier)
 	return tier
 }
 
@@ -1284,6 +1365,15 @@ func checkScanQuota(used, quota int, tier string) error {
 		return nil
 	}
 	return fmt.Errorf("scan quota reached (%d/%d) on the %s plan — upgrade with 'iris cloud upgrade'", used, quota, tier)
+}
+
+// checkDailyQuota rejects scans past the per-day limit. limit <= 0
+// disables enforcement. The window resets at 00:00 UTC.
+func checkDailyQuota(used, limit int, tier string) error {
+	if limit <= 0 || used < limit {
+		return nil
+	}
+	return fmt.Errorf("daily scan limit reached (%d/%d) on the %s plan — resets at 00:00 UTC", used, limit, tier)
 }
 
 func (s *server) handleUsage(w http.ResponseWriter, r *http.Request) {
