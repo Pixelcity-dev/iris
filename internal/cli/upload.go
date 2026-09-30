@@ -47,8 +47,24 @@ func buildScanReport(results []core.ScanResult, start time.Time) json.RawMessage
 
 // uploadScan saves one scan (metadata + full report) to the dashboard
 // history. Best-effort: failures are printed but never fail the scan.
+// uploadDisabled reports whether scan-history upload was opted out via
+// the global --no-upload flag or IRIS_NO_UPLOAD=1 environment variable.
+func uploadDisabled() bool {
+	if v, err := rootCmd.PersistentFlags().GetBool("no-upload"); err == nil && v {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("IRIS_NO_UPLOAD"))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
 func uploadScan(ctx context.Context, cfg cloud.Config, token, scanner, target string,
 	findings int, duration float64, results []core.ScanResult, start time.Time) {
+	if uploadDisabled() {
+		return
+	}
 
 	err := cloud.ReportUsage(ctx, cfg, token, cloud.UsageEntry{
 		Time:           start.UTC(),
@@ -72,6 +88,9 @@ func uploadScan(ctx context.Context, cfg cloud.Config, token, scanner, target st
 // air-gapped runs are unaffected.
 func uploadScanBestEffort(ctx context.Context, scanner, target string,
 	findings int, duration float64, results []core.ScanResult, start time.Time) {
+	if uploadDisabled() {
+		return
+	}
 	cfg := cloud.DefaultConfig()
 	token, err := cloud.EnsureValidToken(ctx, cfg)
 	if err != nil {

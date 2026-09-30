@@ -12,6 +12,7 @@ package main
 import (
 	"context"
 	"crypto"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -359,7 +360,7 @@ func verifySession(cookie, secret []byte) (*session, error) {
 	return nil, errors.New("bad signature")
 }
 
-func subtle(a, b string) bool { return a == b } // constant-time enough for cookie HMAC compare w/ fixed len
+func subtle(a, b string) bool { return hmac.Equal([]byte(a), []byte(b)) } // constant-time compare
 
 // ---------- handlers ----------
 

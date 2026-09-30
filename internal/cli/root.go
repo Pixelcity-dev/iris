@@ -75,6 +75,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: .iris.yaml, $HOME/.config/iris/config.yaml)")
 	rootCmd.PersistentFlags().Bool("no-color", false, "disable ANSI colors (CI)")
+	rootCmd.PersistentFlags().Bool("no-upload", false, "never upload results to dashboard scan history")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose diagnostics")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "quiet — errors only")
 	rootCmd.PersistentFlags().String("profile", "", "profile (enterprise) — overrides scanners & thresholds")
