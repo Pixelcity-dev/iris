@@ -446,9 +446,20 @@ func ReportUsage(ctx context.Context, cfg Config, accessToken string, e UsageEnt
 		return err
 	}
 	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("usage report failed: %s", resp.Status)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		msg := ""
+		var e struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(body, &e) == nil && e.Error != "" {
+			msg = e.Error
+		} else if m := strings.TrimSpace(string(body)); m != "" {
+			msg = m
+		} else {
+			msg = resp.Status
+		}
+		return fmt.Errorf("usage report failed: %s: %s", resp.Status, msg)
 	}
 	return nil
 }

@@ -192,3 +192,22 @@ func TestSanitizeScrubsReportMeta(t *testing.T) {
 		t.Fatal("excess severity buckets accepted")
 	}
 }
+
+func TestCheckScanQuota(t *testing.T) {
+	if err := checkScanQuota(99, 100, "free"); err != nil {
+		t.Fatalf("under quota rejected: %v", err)
+	}
+	if err := checkScanQuota(100, 100, "free"); err == nil {
+		t.Fatal("at quota accepted")
+	}
+	err := checkScanQuota(150, 100, "free")
+	if err == nil {
+		t.Fatal("over quota accepted")
+	}
+	if !strings.Contains(err.Error(), "150/100") || !strings.Contains(err.Error(), "iris cloud upgrade") {
+		t.Fatalf("message: %s", err)
+	}
+	if err := checkScanQuota(9999, 0, "any"); err != nil {
+		t.Fatalf("quota 0 must disable enforcement: %v", err)
+	}
+}

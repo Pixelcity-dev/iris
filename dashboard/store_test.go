@@ -138,3 +138,63 @@ func TestAdminUsersEmpty(t *testing.T) {
 func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
+
+func TestCountAndRetention(t *testing.T) {
+	s := testStore(t)
+	for i := 0; i < 3; i++ {
+		e := scanEntry{Sub: "u1", Time: time.Now().UTC(), Scanner: "s", Target: "https://x.test"}
+		if err := sanitizeScanInput(&e); err != nil {
+			t.Fatal(err)
+		}
+		e.ID = fmt.Sprintf("u-%d", i)
+		if err := s.append(e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := s.count("u1"); got != 3 {
+		t.Fatalf("count: want 3 got %d", got)
+	}
+	if got := s.count("u2"); got != 0 {
+		t.Fatalf("cross-user count: %d", got)
+	}
+
+	// A 48h-old scan with a stored report survives until retention bites.
+	stale := scanEntry{Sub: "u1", Time: time.Now().Add(-48 * time.Hour).UTC(),
+		Scanner: "s", Target: "https://old.test"}
+	if err := sanitizeScanInput(&stale); err != nil {
+		t.Fatal(err)
+	}
+	stale.ID = "stale-1"
+	if err := s.saveReport("stale-1", []byte(`{"results":[]}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.append(stale); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.count("u1"); got != 4 {
+		t.Fatalf("pre-retention count: %d", got)
+	}
+
+	// Tighten retention to 24h: next append prunes the stale scan + report.
+	s.retention = time.Now().Add(-24 * time.Hour)
+	fresh := scanEntry{Sub: "u1", Time: time.Now().UTC(), Scanner: "s", Target: "https://y.test"}
+	if err := sanitizeScanInput(&fresh); err != nil {
+		t.Fatal(err)
+	}
+	fresh.ID = "fresh-1"
+	if err := s.append(fresh); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.count("u1"); got != 4 { // 3 + fresh, stale dropped
+		t.Fatalf("post-retention count: %d", got)
+	}
+	if _, err := s.loadReport("stale-1"); err != errReportMissing {
+		t.Fatalf("stale report not swept: %v", err)
+	}
+	got := s.list("u1", 50)
+	for _, e := range got {
+		if e.Target == "https://old.test" {
+			t.Fatal("stale scan still listed")
+		}
+	}
+}

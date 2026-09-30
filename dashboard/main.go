@@ -404,6 +404,16 @@ func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusUnauthorized, err)
 		return
 	}
+	// Enforce the plan's scan quota; fail open when billing is not
+	// configured (a payments outage must never lose scans).
+	if err := s.paymentsConfigured(); err == nil {
+		tier := s.planTier(r.Context(), ident)
+		quota, _, _ := tierQuotas(tier)
+		if qerr := checkScanQuota(s.scans.count(ident.Sub), quota, tier); qerr != nil {
+			writeErr(w, http.StatusPaymentRequired, qerr)
+			return
+		}
+	}
 	var payload struct {
 		scanEntry
 		Report json.RawMessage `json:"report,omitempty"`
@@ -1116,20 +1126,36 @@ func tierQuotas(tier string) (scans, aiPages int, name string) {
 func (s *server) handlePlan(w http.ResponseWriter, r *http.Request) {
 	sess := r.Context().Value(sessKey{}).(session)
 	ctx := r.Context()
+	tier := s.planTier(ctx, &sess)
+	scans, aiPages, name := tierQuotas(tier)
+	writeJSON(w, map[string]interface{}{
+		"tier": tier, "name": name,
+		"scan_quota": scans, "scans_used": s.scans.count(sess.Sub),
+		"ai_pages_quota": aiPages, "ai_pages_used": 0,
+	})
+}
+
+// planTier resolves the caller's billing tier, defaulting to free on
+// any billing error (never blocks the product on payments outages).
+func (s *server) planTier(ctx context.Context, sess *session) string {
 	tier := "free"
 	if err := s.paymentsConfigured(); err == nil && sess.Email != "" {
-		if customerID, cerr := s.ensureCustomer(ctx, sess.Email, sess.Username); cerr == nil {
-			if t, terr := s.resolveTier(ctx, customerID); terr == nil {
+		if customerID, err := s.ensureCustomer(ctx, sess.Email, sess.Username); err == nil {
+			if t, err := s.resolveTier(ctx, customerID); err == nil {
 				tier = t
 			}
 		}
 	}
-	scans, aiPages, name := tierQuotas(tier)
-	writeJSON(w, map[string]interface{}{
-		"tier": tier, "name": name,
-		"scan_quota": scans, "scans_used": 0,
-		"ai_pages_quota": aiPages, "ai_pages_used": 0,
-	})
+	return tier
+}
+
+// checkScanQuota rejects scans once the plan's scan quota is exhausted.
+// quota <= 0 disables enforcement.
+func checkScanQuota(used, quota int, tier string) error {
+	if quota <= 0 || used < quota {
+		return nil
+	}
+	return fmt.Errorf("scan quota reached (%d/%d) on the %s plan — upgrade with 'iris cloud upgrade'", used, quota, tier)
 }
 
 func (s *server) handleUsage(w http.ResponseWriter, r *http.Request) {

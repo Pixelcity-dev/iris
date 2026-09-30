@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -42,13 +43,26 @@ type scanEntry struct {
 type scanStore struct {
 	mu   sync.Mutex
 	path string
+	// retention, when non-zero, drops scans older than this instant
+	// during pruning. Derived from SCAN_RETENTION_DAYS (0 = keep forever).
+	retention time.Time
 }
 
 func newScanStore(path string) *scanStore {
 	if path == "" {
 		path = "./data/scans.jsonl"
 	}
-	return &scanStore{path: path}
+	s := &scanStore{path: path}
+	days := 365
+	if v := strings.TrimSpace(os.Getenv("SCAN_RETENTION_DAYS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			days = n
+		}
+	}
+	if days > 0 {
+		s.retention = time.Now().AddDate(0, 0, -days)
+	}
+	return s
 }
 
 const (
@@ -155,7 +169,7 @@ func (s *scanStore) pruneAndSweepLocked() {
 	if err != nil {
 		return
 	}
-	kept := pruneLines(lines)
+	kept := pruneLines(lines, s.retention)
 
 	if len(kept) != len(lines) {
 		if err := atomicWriteLines(s.path, kept); err != nil {
@@ -165,9 +179,10 @@ func (s *scanStore) pruneAndSweepLocked() {
 	s.sweepReportsLocked(kept)
 }
 
-// pruneLines keeps the newest ~80% of entries under the byte cap, then
-// caps entries per user (newest-first), restoring chronological order.
-func pruneLines(lines []string) []string {
+// pruneLines drops scans past the retention cutoff, keeps the newest
+// ~80% of entries under the byte cap, then caps entries per user
+// (newest-first), restoring chronological order.
+func pruneLines(lines []string, retention time.Time) []string {
 	// Byte cap: keep newest ~80% by size.
 	var total int64
 	keepFrom := 0
@@ -179,6 +194,19 @@ func pruneLines(lines []string) []string {
 		}
 	}
 	candidates := lines[keepFrom:]
+
+	// Retention: drop scans older than the cutoff (unknown ages kept).
+	if !retention.IsZero() {
+		fresh := make([]string, 0, len(candidates))
+		for _, l := range candidates {
+			var e scanEntry
+			if json.Unmarshal([]byte(l), &e) == nil && !e.Time.IsZero() && e.Time.Before(retention) {
+				continue
+			}
+			fresh = append(fresh, l)
+		}
+		candidates = fresh
+	}
 
 	// Per-user cap, newest-first.
 	kept := make([]string, 0, len(candidates))
@@ -259,6 +287,24 @@ func atomicWriteLines(path string, lines []string) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// count returns the total number of stored scans for one user.
+func (s *scanStore) count(sub string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	lines, err := readLines(s.path)
+	if err != nil {
+		return 0
+	}
+	n := 0
+	for _, l := range lines {
+		var e scanEntry
+		if json.Unmarshal([]byte(l), &e) == nil && e.Sub == sub {
+			n++
+		}
+	}
+	return n
 }
 
 // list returns newest-first entries for one user, capped by limit.
