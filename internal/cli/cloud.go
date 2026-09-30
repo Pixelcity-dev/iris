@@ -110,6 +110,10 @@ var cloudStatusCmd = &cobra.Command{
 	},
 }
 
+var (
+	usageJSON bool
+)
+
 var cloudUsageCmd = &cobra.Command{
 	Use:   "usage",
 	Short: "Show recent scan history",
@@ -123,6 +127,11 @@ var cloudUsageCmd = &cobra.Command{
 		hist, err := cloud.GetUsage(ctx, cfg, token, 25)
 		if err != nil {
 			return err
+		}
+		if usageJSON {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			return enc.Encode(hist)
 		}
 		if len(hist.Entries) == 0 {
 			fmt.Println("No scans recorded yet. Run iris scan . to get started.")
@@ -319,6 +328,7 @@ var cloudUpgradeCmd = &cobra.Command{
 
 func init() {
 	cloudUpgradeCmd.Flags().StringVar(&upInterval, "interval", "monthly", "billing interval: monthly | yearly")
+	cloudUsageCmd.Flags().BoolVar(&usageJSON, "json", false, "print the raw usage history as JSON")
 }
 
 func joinList(items []string) string {

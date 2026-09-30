@@ -804,7 +804,7 @@ function renderScanDetail(d) {
   if (e.report_bytes > 0) {
     const id = encodeURIComponent(e.id);
     const link = f => `<a href="/api/v1/scans/${id}?format=${f}" style="color:#818cf8" onclick="event.stopPropagation()">${f.toUpperCase()}</a>`;
-    h += `<span style="font-size:0.75rem;color:var(--color-muted)">Export: ${link('sarif')} · ${link('html')} · ${link('json')}</span>`;
+    h += `<span style="font-size:0.75rem;color:var(--color-muted)">Export: ${link('sarif')} · ${link('html')} · ${link('json')} · ${link('csv')}</span>`;
   }
   h += '</div>';
 

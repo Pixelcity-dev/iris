@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"html"
 	"net/http"
@@ -221,6 +223,89 @@ func TestScanExportHandler(t *testing.T) {
 
 	// Unknown format → 400.
 	if rec := get("/api/v1/scans/exp-full?format=pdf", owner); rec.Code != 400 {
+		t.Fatalf("bad format: %d", rec.Code)
+	}
+}
+
+func TestCsvFromReport(t *testing.T) {
+	doc, err := parseReport([]byte(fixtureReport))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := csvFromReport(fixtureEntry(), doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recs, err := csv.NewReader(bytes.NewReader(out)).ReadAll()
+	if err != nil {
+		t.Fatalf("invalid CSV: %v", err)
+	}
+	if len(recs) != 4 { // header + 3 findings
+		t.Fatalf("rows: %d", len(recs))
+	}
+	want := []string{"scan_id", "scan_time", "scanner", "target", "severity",
+		"rule_id", "title", "description", "artifact", "line", "category", "fix"}
+	for i, h := range recs[0] {
+		if h != want[i] {
+			t.Fatalf("header[%d]=%q want %q", i, h, want[i])
+		}
+	}
+	// Row 1: HIGH finding with fix and resolved artifact URI.
+	row := recs[1]
+	if row[0] != "scan-1" || row[4] != "HIGH" || row[5] != "r-hi" ||
+		row[6] != "Missing HSTS" || row[8] != "https://example.com" || row[11] != "Add the header" {
+		t.Fatalf("row1: %q", row)
+	}
+
+	// Escaping: commas, quotes and newlines survive a round-trip.
+	doc2, _ := parseReport([]byte(`{"results":[{"scanner":"x","findings":[
+	  {"rule_id":"r,1","severity":"LOW","title":"Quote \" and, comma",
+	   "description":"line1\nline2"}]}]}`))
+	out2, err := csvFromReport(fixtureEntry(), doc2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recs2, err := csv.NewReader(bytes.NewReader(out2)).ReadAll()
+	if err != nil {
+		t.Fatalf("escaping round-trip failed: %v", err)
+	}
+	if len(recs2) != 2 || recs2[1][5] != `r,1` ||
+		recs2[1][6] != `Quote " and, comma` || recs2[1][7] != "line1\nline2" {
+		t.Fatalf("escaped row: %q", recs2)
+	}
+}
+
+func TestScanExportHandlerCSVAndBadFormat(t *testing.T) {
+	secret := []byte("test-secret-0123456789abcdef-test")
+	srv := &server{
+		cfg:   config{SessionSecret: secret},
+		scans: newScanStore(filepath.Join(t.TempDir(), "scans.jsonl")),
+	}
+	seedScan(t, srv, "exp-csv", "u-owner", "alice", true)
+	mux := detailMux(t, srv)
+	owner := cookieFor(t, srv, "u-owner", "alice", nil)
+
+	get := func(url string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("GET", url, nil)
+		req.AddCookie(&http.Cookie{Name: "ds_session", Value: owner})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+	rec := get("/api/v1/scans/exp-csv?format=csv")
+	if rec.Code != 200 {
+		t.Fatalf("csv: %d %s", rec.Code, rec.Body.String())
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.Contains(ct, "text/csv") {
+		t.Fatalf("content-type: %q", ct)
+	}
+	if !strings.Contains(rec.Header().Get("Content-Disposition"), ".csv") {
+		t.Fatalf("disposition: %q", rec.Header().Get("Content-Disposition"))
+	}
+	if !strings.Contains(rec.Body.String(), "scan_id,scan_time,scanner") {
+		t.Fatalf("body: %s", rec.Body.String())
+	}
+	if rec := get("/api/v1/scans/exp-csv?format=xml"); rec.Code != 400 {
 		t.Fatalf("bad format: %d", rec.Code)
 	}
 }

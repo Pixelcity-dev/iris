@@ -5,6 +5,8 @@ package main
 // dashboard module stays dependency-free.
 
 import (
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -323,4 +325,40 @@ func htmlFromReport(e *scanEntry, doc *reportDoc) []byte {
 		" · dashboard.pixelcity.dev · scan " + esc(e.ID) + "</footer>")
 	b.WriteString("</div></body></html>")
 	return []byte(b.String())
+}
+
+// csvFromReport renders one CSV row per finding (RFC 4180 escaping via
+// encoding/csv). A clean scan produces a header-only file.
+func csvFromReport(e *scanEntry, doc *reportDoc) ([]byte, error) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	header := []string{"scan_id", "scan_time", "scanner", "target", "severity",
+		"rule_id", "title", "description", "artifact", "line", "category", "fix"}
+	if err := w.Write(header); err != nil {
+		return nil, err
+	}
+	for _, ff := range flattenFindings(e, doc) {
+		f := ff.f
+		if err := w.Write([]string{
+			e.ID,
+			e.Time.UTC().Format(time.RFC3339),
+			e.Scanner,
+			e.Target,
+			f.Severity,
+			f.RuleID,
+			f.Title,
+			f.Description,
+			ff.uri,
+			strconv.Itoa(f.Line),
+			f.Category,
+			f.Fix,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

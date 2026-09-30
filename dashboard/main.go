@@ -535,8 +535,24 @@ func (s *server) exportScan(w http.ResponseWriter, e *scanEntry, format string) 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Length", strconv.Itoa(len(out)))
 		_, _ = w.Write(out)
+	case "csv":
+		doc, err := parseReport(data)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, errors.New("stored report is corrupt"))
+			return
+		}
+		out, err := csvFromReport(e, doc)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, errors.New("could not render CSV"))
+			return
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition",
+			fmt.Sprintf("attachment; filename=%q", "iris-scan-"+e.ID+".csv"))
+		w.Header().Set("Content-Length", strconv.Itoa(len(out)))
+		_, _ = w.Write(out)
 	default:
-		writeErr(w, http.StatusBadRequest, errors.New("unknown format (use sarif, html, or json)"))
+		writeErr(w, http.StatusBadRequest, errors.New("unknown format (use sarif, html, json, or csv)"))
 	}
 }
 
@@ -684,11 +700,13 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+const appVersion = "1.0.0"
+
 func main() {
 	ver := flag.Bool("version", false, "print version")
 	flag.Parse()
 	if *ver {
-		fmt.Println("iris-dashboard 1.0.0")
+		fmt.Println("iris-dashboard " + appVersion)
 		return
 	}
 
@@ -712,6 +730,9 @@ func main() {
 	mux.HandleFunc("GET /auth/login", srv.handleLogin)
 	mux.HandleFunc("GET /auth/callback", srv.handleCallback)
 	mux.HandleFunc("GET /auth/logout", srv.handleLogout)
+	mux.HandleFunc("GET /api/v1/healthz", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]interface{}{"status": "ok", "version": appVersion})
+	})
 	mux.HandleFunc("GET /api/v1/me", srv.authEither(srv.handleMe))
 	mux.HandleFunc("GET /api/v1/scans", srv.handleScansGet)
 	mux.HandleFunc("GET /api/v1/scans/trend", srv.handleTrend)
