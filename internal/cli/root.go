@@ -66,13 +66,15 @@ Support: service@pixelcity.dev  •  MCP: iris mcp start for AI agents`,
 }
 
 func Execute() {
+	// cobra's error print is silenced; print once here.
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 }
 
 func init() {
+	rootCmd.SilenceErrors = true // Execute() prints the error exactly once
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: .iris.yaml, $HOME/.config/iris/config.yaml)")
 	rootCmd.PersistentFlags().Bool("no-color", false, "disable ANSI colors (CI)")
 	rootCmd.PersistentFlags().Bool("no-upload", false, "never upload results to dashboard scan history")

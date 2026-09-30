@@ -393,6 +393,7 @@ type Plan struct {
 
 // UsageEntry is a single historical scan record.
 type UsageEntry struct {
+	ID        string    `json:"id,omitempty"`
 	Time      time.Time `json:"time"`
 	Scanner   string    `json:"scanner"`
 	Target    string    `json:"target"`
@@ -402,6 +403,8 @@ type UsageEntry struct {
 	SeverityCounts map[string]int `json:"severity_counts,omitempty"`
 	// Report is the full structured scan output (findings, metadata).
 	Report json.RawMessage `json:"report,omitempty"`
+	// ReportOmitted marks scans whose report exceeded the size cap.
+	ReportOmitted bool `json:"report_omitted,omitempty"`
 	// Version is the CLI version that produced the scan.
 	Version string `json:"iris_version,omitempty"`
 }
@@ -428,6 +431,48 @@ func GetUsage(ctx context.Context, cfg Config, accessToken string, limit int) (U
 	}
 	err := apiGet(ctx, cfg, accessToken, fmt.Sprintf("/scans?limit=%d", limit), &u)
 	return u, err
+}
+
+// ScanDetail is one stored scan together with its full structured report.
+type ScanDetail struct {
+	Entry  UsageEntry      `json:"entry"`
+	Report json.RawMessage `json:"report"`
+}
+
+// GetScan fetches a single stored scan (metadata + full report).
+func GetScan(ctx context.Context, cfg Config, accessToken, id string) (ScanDetail, error) {
+	var d ScanDetail
+	req, err := http.NewRequestWithContext(ctx, "GET",
+		cfg.APIBase+"/scans/"+url.PathEscape(id), nil)
+	if err != nil {
+		return d, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	hc := &http.Client{Timeout: cfg.HTTPTimeout}
+	resp, err := hc.Do(req)
+	if err != nil {
+		return d, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
+	if err != nil {
+		return d, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		var e struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(body, &e)
+		msg := e.Error
+		if msg == "" {
+			msg = resp.Status
+		}
+		return d, fmt.Errorf("fetch scan: %s: %s", resp.Status, msg)
+	}
+	if err := json.Unmarshal(body, &d); err != nil {
+		return d, err
+	}
+	return d, nil
 }
 
 // ReportUsage posts a scan record to the cloud (best-effort; never fatal).
