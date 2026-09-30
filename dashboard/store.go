@@ -357,6 +357,31 @@ func (s *scanStore) trend(sub string, since time.Time, allUsers bool) []trendPoi
 
 // count returns the total number of stored scans for one user.
 func (s *scanStore) count(sub string) int {
+	return s.countWhere(func(eSub string) bool { return eSub == sub })
+}
+
+// countAll returns the total number of stored scans across all users.
+func (s *scanStore) countAll() int {
+	return s.countWhere(func(string) bool { return true })
+}
+
+// countFiltered mirrors listAll's admin filter: case-insensitive
+// substring on username/email; empty filter counts everything.
+func (s *scanStore) countFiltered(filter string) int {
+	if strings.TrimSpace(filter) == "" {
+		return s.countAll()
+	}
+	f := strings.ToLower(filter)
+	return s.countWhereMatch(func(e *scanEntry) bool {
+		return strings.Contains(strings.ToLower(e.Username+" "+e.Email), f)
+	})
+}
+
+func (s *scanStore) countWhere(match func(sub string) bool) int {
+	return s.countWhereMatch(func(e *scanEntry) bool { return match(e.Sub) })
+}
+
+func (s *scanStore) countWhereMatch(match func(e *scanEntry) bool) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	lines, err := readLines(s.path)
@@ -366,7 +391,7 @@ func (s *scanStore) count(sub string) int {
 	n := 0
 	for _, l := range lines {
 		var e scanEntry
-		if json.Unmarshal([]byte(l), &e) == nil && e.Sub == sub {
+		if json.Unmarshal([]byte(l), &e) == nil && match(&e) {
 			n++
 		}
 	}

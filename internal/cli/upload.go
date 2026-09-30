@@ -66,3 +66,16 @@ func uploadScan(ctx context.Context, cfg cloud.Config, token, scanner, target st
 	}
 	fmt.Fprintf(os.Stderr, "Saved to dashboard scan history.\n")
 }
+
+// uploadScanBestEffort uploads a completed scan when a session exists.
+// When logged out it silently skips — never fails or prompts, so CI and
+// air-gapped runs are unaffected.
+func uploadScanBestEffort(ctx context.Context, scanner, target string,
+	findings int, duration float64, results []core.ScanResult, start time.Time) {
+	cfg := cloud.DefaultConfig()
+	token, err := cloud.EnsureValidToken(ctx, cfg)
+	if err != nil {
+		return
+	}
+	uploadScan(ctx, cfg, token, scanner, target, findings, duration, results, start)
+}

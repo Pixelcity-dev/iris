@@ -116,6 +116,9 @@ func runBuildTest(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "✅ All build tests passed\n")
 	}
 
+	// Persist to dashboard history (best-effort) before any CI exit.
+	uploadScanBestEffort(context.Background(), "buildtest", target, total, duration, results, start)
+
 	rpt := reporter.GetReporter(btFormat)
 	if rpt == nil {
 		return fmt.Errorf("unknown format: %s", btFormat)

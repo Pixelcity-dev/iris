@@ -550,7 +550,7 @@ func (s *server) handleScansGet(w http.ResponseWriter, r *http.Request) {
 	if entries == nil {
 		entries = []scanEntry{}
 	}
-	writeJSON(w, map[string]interface{}{"entries": entries, "total": len(entries)})
+	writeJSON(w, map[string]interface{}{"entries": entries, "total": s.scans.count(ident.Sub)})
 }
 
 // requestIdentity resolves the caller from a bearer token (CLI) or the
@@ -629,7 +629,7 @@ func (s *server) handleAdminScans(w http.ResponseWriter, r *http.Request) {
 	if entries == nil {
 		entries = []scanEntry{}
 	}
-	writeJSON(w, map[string]interface{}{"entries": entries, "total": len(entries)})
+	writeJSON(w, map[string]interface{}{"entries": entries, "total": s.scans.countFiltered(user)})
 }
 
 func (s *server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {

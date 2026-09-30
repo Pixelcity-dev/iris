@@ -164,6 +164,7 @@ func runFmt(cmd *cobra.Command, args []string) error {
 	pipeline.SetProgress(sp)
 
 	targetObj := core.Target{Kind: core.TargetFS, URI: target}
+	start := time.Now()
 	results, err := pipeline.Scan(context.Background(), targetObj, []core.ScanType{core.ScanTypeFormat})
 	sp.Stop()
 	if err != nil {
@@ -179,6 +180,8 @@ func runFmt(cmd *cobra.Command, args []string) error {
 	}
 	if isCheck || isDiff {
 		fmt.Fprintf(os.Stderr, "Checked in %.2fs • %d formatting issues\n", dur, total)
+		// Persist to dashboard history (best-effort) before any CI exit.
+		uploadScanBestEffort(context.Background(), "fmt", target, total, dur, results, start)
 		if total == 0 {
 			fmt.Fprintf(os.Stderr, "Already formatted — no issues\n")
 		} else {
