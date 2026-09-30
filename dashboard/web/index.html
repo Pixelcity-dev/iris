@@ -156,6 +156,11 @@ header {
   border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit; width: 100%;
 }
 .form-row input:focus { outline: none; border-color: var(--pc-orange); }
+#section-tools input, #section-tools select {
+  background: var(--color-panel-2); border: 1px solid var(--color-line);
+  border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit;
+}
+#section-tools input:focus, #section-tools select:focus { outline: none; border-color: var(--pc-orange); }
 .form-note { font-size: 0.78rem; color: var(--color-dim); margin-left: 10px; }
 .form-note.ok { color: var(--color-good); }
 .form-note.err { color: var(--color-bad); }
@@ -390,6 +395,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 @media (max-width: 640px) {
   .container-shell { width: min(100% - 1.75rem, 1240px); }
 }
+@keyframes toastIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 </style>
 </head>
 <body>
@@ -489,6 +495,42 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <thead><tr><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
           <tbody id="scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="panel" id="section-tools">
+      <h2>Tools</h2>
+      <div class="grid-2" style="align-items:end;margin-bottom:14px;">
+        <div>
+          <h3>Findings explorer</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="fx-q" placeholder="Search findings…" style="flex:1;min-width:180px" onkeydown="if(event.key==='Enter')runFindings()">
+            <select id="fx-sev">
+              <option value="">All severities</option>
+              <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>INFO</option>
+            </select>
+            <button class="btn btn-secondary" onclick="runFindings()">Search</button>
+          </div>
+        </div>
+        <div>
+          <h3>Compare scans</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <select id="cmp-a" style="flex:1;min-width:140px"></select>
+            <span style="color:var(--color-muted)">vs</span>
+            <select id="cmp-b" style="flex:1;min-width:140px"></select>
+            <button class="btn btn-secondary" onclick="runCompare()">Compare</button>
+          </div>
+        </div>
+      </div>
+      <div id="findings-results" style="display:none"></div>
+      <div id="compare-results" style="display:none"></div>
+      <div style="margin-top:18px;border-top:1px solid rgba(148,163,184,0.18);padding-top:14px;">
+        <h3>Web search</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="ws-q" placeholder="Search the web…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')runWebSearch()">
+          <button class="btn btn-secondary" onclick="runWebSearch()">Search</button>
+        </div>
+        <div id="ws-results" style="margin-top:12px"></div>
       </div>
     </section>
 
@@ -639,6 +681,7 @@ async function init() {
     loadScans();
     loadTrend();
     if (me.admin) {
+      me_admin = true;
       $('section-admin').style.display = 'block';
       loadAdmin();
       loadAdminTrend();
@@ -661,14 +704,15 @@ async function loadPlan() {
   try {
     const p = await api('/api/v1/plan');
     const tier = p.tier || 'free';
-    const badge = tier === 'enterprise' ? 'badge-orange' : tier === 'pro' ? 'badge-accent' : '';
+    const badge = tier === 'admin' || tier === 'enterprise' ? 'badge-orange' : tier === 'pro' ? 'badge-accent' : '';
     $('plan-tier').innerHTML = `<span class="badge ${badge}">${tier.toUpperCase()}</span>`;
     $('plan-sub').textContent = p.name ? `${p.name} plan · PixelCity ID` : 'Iris plan · PixelCity ID';
     const used = p.scans_used ?? 0, quota = p.scan_quota ?? 0;
-    $('scans-used').textContent = quota ? `${used} / ${quota}` : used;
+    const unlimited = tier === 'admin';
+    $('scans-used').textContent = quota ? `${used} / ${quota}` : unlimited ? `${used} · unlimited` : String(used);
     setBar('scans-bar', quota ? used / quota : 0);
     const aiUsed = p.ai_pages_used ?? 0, aiQuota = p.ai_pages_quota ?? 0;
-    $('ai-used').textContent = aiQuota ? `${aiUsed} / ${aiQuota}` : tier === 'free' ? '—' : aiUsed;
+    $('ai-used').textContent = aiQuota ? `${aiUsed} / ${aiQuota}` : unlimited ? `${aiUsed} · unlimited` : tier === 'free' ? '—' : String(aiUsed);
     setBar('ai-bar', aiQuota ? aiUsed / aiQuota : 0);
     if (p.valid_until) $('renew-date').textContent = new Date(p.valid_until).toLocaleDateString();
   } catch (e) { planFallback(); }
@@ -693,6 +737,7 @@ async function loadScans() {
       body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
       return;
     }
+    fillCompareSelects(s.entries || []);
     body.innerHTML = s.entries.map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
       <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
       <td><span class="mono">${esc(e.scanner)}</span></td>
@@ -801,6 +846,7 @@ function renderScanDetail(d) {
   h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">${esc(e.scanner || '')} · ${e.time ? new Date(e.time).toLocaleString() : ''} · ${(e.duration_seconds ?? 0).toFixed(2)}s</span>`;
   if (e.iris_version) h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">iris ${esc(e.iris_version)}</span>`;
   h += `<span style="font-size:0.78rem">${sevChips(e)}</span>`;
+  h += `<span style="margin-left:auto;font-size:0.75rem"><button class="btn btn-ghost" style="color:var(--color-bad);border-color:rgba(252,165,165,.35)" onclick="event.stopPropagation();deleteScan('${e.id}')">Delete</button></span>`;
   if (e.report_bytes > 0) {
     const id = encodeURIComponent(e.id);
     const link = f => `<a href="/api/v1/scans/${id}?format=${f}" style="color:#818cf8" onclick="event.stopPropagation()">${f.toUpperCase()}</a>`;
@@ -1049,6 +1095,137 @@ function showError(msg) { const el = $('error-box'); el.textContent = msg; el.st
 function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 function shorten(s) { s = s ?? ''; return s.length > 42 ? s.slice(0, 39) + '…' : s; }
 function showLogin() { $('view-login').style.display = 'block'; $('view-app').style.display = 'none'; }
+
+// ---- toast notifications ----
+function toast(msg, kind) {
+  let el = $('toast-box');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast-box';
+    el.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99;display:flex;flex-direction:column;gap:8px;max-width:360px';
+    document.body.appendChild(el);
+  }
+  const t = document.createElement('div');
+  const color = kind === 'err' ? 'var(--color-bad)' : kind === 'warn' ? 'var(--color-warn)' : 'var(--color-good)';
+  t.style.cssText = `background:#141418;border:1px solid ${color};border-left-width:4px;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--color-bright);box-shadow:0 8px 24px rgba(0,0,0,.45);animation:toastIn .18s ease`;
+  t.textContent = msg;
+  el.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 350); }, kind === 'err' ? 6000 : 3500);
+}
+
+// ---- delete scan ----
+async function deleteScan(id) {
+  if (!confirm('Delete this scan and its stored report? This cannot be undone.')) return;
+  try {
+    await api('/api/v1/scans/' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Scan deleted.');
+    loadScans(); loadPlan(); loadTrend();
+    if (me_admin) { loadAdminScans(adminUserFilter); loadAdminTrend(); }
+  } catch (e) { toast('Delete failed: ' + e.message, 'err'); }
+}
+let me_admin = false;
+
+// ---- findings explorer ----
+async function runFindings() {
+  const box = $('findings-results');
+  box.style.display = 'block';
+  box.innerHTML = '<span class="spinner"></span>';
+  try {
+    const q = $('fx-q').value.trim(), sev = $('fx-sev').value;
+    const url = '/api/v1/scans/findings?limit=200' +
+      (q ? '&q=' + encodeURIComponent(q) : '') + (sev ? '&severity=' + encodeURIComponent(sev) : '');
+    const r = await api(url);
+    const rows = r.findings || [];
+    if (!rows.length) {
+      box.innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem;padding:8px 0">No findings match — try a broader search or run <span class="mono">iris scan ./repo</span>.</div>';
+      return;
+    }
+    let h = `<div style="color:var(--color-muted);font-size:0.78rem;margin-bottom:8px">${rows.length} finding(s)${r.truncated ? ' (truncated)' : ''} across ${r.scans_searched} scan(s)</div>`;
+    h += '<div class="table-shell"><table class="data-table"><thead><tr><th>Severity</th><th>Rule</th><th>Finding</th><th>File</th><th>Scan</th></tr></thead><tbody>';
+    rows.forEach(f => {
+      const sev = String(f.severity || 'INFO').toUpperCase();
+      h += `<tr>
+        <td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
+        <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
+        <td>${esc(f.title || '')}</td>
+        <td class="mono" style="font-size:0.74rem">${esc(f.file || '')}${f.line ? ':' + f.line : ''}</td>
+        <td class="mono" style="font-size:0.72rem;color:var(--color-muted);cursor:pointer" onclick="toggleScanDetailByRow('${esc(f.scan_id)}')">${esc(shorten(f.target || f.scan_id))}</td>
+      </tr>`;
+    });
+    box.innerHTML = h + '</tbody></table></div>';
+    toast(`${rows.length} finding(s) found.`);
+  } catch (e) { box.innerHTML = ''; toast('Findings search failed: ' + e.message, 'err'); }
+}
+
+function toggleScanDetailByRow(id) {
+  const row = document.querySelector(`#scans-body tr[onclick*="'${id}'"]`);
+  if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); toggleScanDetail(row, id, 5); }
+  else toast('Scan not in the recent list — open Scan history.', 'warn');
+}
+
+// ---- compare ----
+function fillCompareSelects(entries) {
+  const opts = entries.map(e =>
+    `<option value="${esc(e.id)}">${esc(new Date(e.time).toLocaleDateString())} · ${esc(e.scanner)} · ${esc(shorten(e.target))}</option>`).join('');
+  ['cmp-a', 'cmp-b'].forEach(id => {
+    const el = $(id); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = opts || '<option>No scans yet</option>';
+    if (cur && entries.some(e => e.id === cur)) el.value = cur;
+  });
+}
+
+async function runCompare() {
+  const box = $('compare-results');
+  const a = $('cmp-a').value, b = $('cmp-b').value;
+  if (!a || !b) { toast('Pick two scans to compare.', 'warn'); return; }
+  if (a === b) { toast('Pick two different scans.', 'warn'); return; }
+  box.style.display = 'block';
+  box.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await api(`/api/v1/scans/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+    const s = r.summary || {};
+    const chip = (n, color, label) => `<span class="badge" style="border-color:${color};margin-right:8px">${n} ${label}</span>`;
+    let h = `<div style="padding:4px 0 10px">${chip(s.added || 0, 'rgba(252,165,165,.5)', 'new')}${chip(s.resolved || 0, 'rgba(134,239,172,.5)', 'resolved')}${chip(s.unchanged || 0, 'rgba(148,163,184,.4)', 'unchanged')}</div>`;
+    const renderRows = (rows, label) => {
+      if (!rows.length) return '';
+      let x = `<h4 style="margin:10px 0 6px">${label}</h4><div class="table-shell"><table class="data-table"><thead><tr><th>Severity</th><th>Rule</th><th>Finding</th><th>File</th></tr></thead><tbody>`;
+      rows.forEach(f => {
+        const sev = String(f.severity || 'INFO').toUpperCase();
+        x += `<tr><td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
+          <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
+          <td>${esc(f.title || '')}</td>
+          <td class="mono" style="font-size:0.74rem">${esc(f.file || '')}${f.line ? ':' + f.line : ''}</td></tr>`;
+      });
+      return x + '</tbody></table></div>';
+    };
+    h += renderRows(r.added || [], 'New findings') + renderRows(r.resolved || [], 'Resolved findings');
+    if (!(r.added || []).length && !(r.resolved || []).length)
+      h += '<div style="color:var(--color-dim);font-size:0.85rem">No differences — the scans are equivalent.</div>';
+    box.innerHTML = h;
+    toast(`Diff: ${s.added || 0} new, ${s.resolved || 0} resolved.`);
+  } catch (e) { box.innerHTML = ''; toast('Compare failed: ' + e.message, 'err'); }
+}
+
+// ---- web search ----
+async function runWebSearch() {
+  const box = $('ws-results');
+  const q = $('ws-q').value.trim();
+  if (!q) { toast('Type something to search.', 'warn'); return; }
+  box.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await api('/api/v1/tools/search?q=' + encodeURIComponent(q));
+    const rows = r.results || [];
+    if (!rows.length) { box.innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem">No results.</div>'; return; }
+    box.innerHTML = rows.map(x => `<div style="padding:8px 0;border-bottom:1px solid rgba(148,163,184,.14)">
+      <a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" style="color:#818cf8;font-size:0.9rem">${esc(x.title || x.url)}</a>
+      <div style="color:var(--color-muted);font-size:0.78rem;word-break:break-all">${esc(x.url)}</div>
+      ${x.content ? `<div style="color:var(--color-dim);font-size:0.82rem;margin-top:3px">${esc(x.content.slice(0, 300))}</div>` : ''}
+      ${x.engine ? `<span class="mono" style="font-size:0.7rem;color:var(--color-muted)">${esc(x.engine)}</span>` : ''}
+    </div>`).join('');
+    toast(`${rows.length} result(s).`);
+  } catch (e) { box.innerHTML = ''; toast('Search failed: ' + e.message, 'err'); }
+}
 
 init();
 </script>

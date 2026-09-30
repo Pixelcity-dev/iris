@@ -553,3 +553,57 @@ func sanitizeScanInput(e *scanEntry) error {
 	}
 	return nil
 }
+
+// delete removes a scan's metadata line and its stored report.
+// Returns false when the id is unknown.
+func (s *scanStore) delete(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	lines, err := readLines(s.path)
+	if err != nil {
+		return false
+	}
+	kept := make([]string, 0, len(lines))
+	found := false
+	for _, l := range lines {
+		var e scanEntry
+		if json.Unmarshal([]byte(l), &e) == nil && e.ID == id {
+			found = true
+			continue
+		}
+		kept = append(kept, l)
+	}
+	if !found {
+		return false
+	}
+	if err := atomicWriteLines(s.path, kept); err != nil {
+		return false
+	}
+	_ = os.Remove(s.reportPath(id))
+	return true
+}
+
+// listMatching returns up to limit newest-first entries for which
+// match returns true ("" path tolerated when file missing).
+func (s *scanStore) listMatching(match func(*scanEntry) bool, limit int) []scanEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	lines, err := readLines(s.path)
+	if err != nil {
+		return nil
+	}
+	var out []scanEntry
+	for i := len(lines) - 1; i >= 0 && len(out) < limit; i-- {
+		var e scanEntry
+		if json.Unmarshal([]byte(lines[i]), &e) != nil {
+			continue
+		}
+		if match(&e) {
+			out = append(out, e)
+		}
+	}
+	return out
+}
