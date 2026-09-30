@@ -1,0 +1,46 @@
+# Iris Dashboard — docker-compose for pixelcity.top VPS
+# Place at /opt/iris-dashboard/docker-compose.yml
+#
+# Assumes:
+#  - Caddy runs in /opt/caddy on the shared "pixelcity_net" network
+#  - Keycloak (id.pixelcity.dev, realm pcid) reachable via pixelcity_net
+#  - Zoneless API reachable at PAYMENTS_BASE (container IP on pixelcity_net)
+
+services:
+  iris-dashboard:
+    build: .
+    container_name: iris-dashboard
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      LISTEN: ":8080"
+      OIDC_ISSUER: "https://id.pixelcity.dev/realms/pcid"
+      OIDC_CLIENT_ID: "iris-dashboard"
+      OIDC_REDIRECT_URL: "https://dashboard.pixelcity.dev/auth/callback"
+      COOKIE_SECURE: "true"
+    networks:
+      - pixelcity_net
+    # Hardening: dashboard needs no writes; run read-only where possible
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777,noexec,nosuid
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  pixelcity_net:
+    external: true
