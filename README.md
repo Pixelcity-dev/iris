@@ -115,7 +115,7 @@ iris db update
 | `iris webscan [url]` | Deep website audit — 20+ OWASP checks (`website`/`audit`/`wscan` aliases) |
 | `iris fmt [target]` | Check & fix formatting — 7 checks, auto-fix (`format`/`style` aliases) |
 | `iris buildtest [target]` | Automated build & test gate — detects toolchain, runs build + tests (`build`/`bt` aliases) |
-| `iris cloud login/status/usage/upgrade` | PixelCity account: Keycloak login, plan, usage history, Pro/Enterprise checkout |
+| `iris cloud login/status/usage/show/upgrade` | PixelCity account: Keycloak login, plan, scan history + drill-down, Pro/Enterprise checkout |
 | `iris init` | Scaffold `.iris.yaml` |
 | `iris db update` | Update NVD/OSV DB (air-gapped cache) |
 | `iris rule list/search` | 1000+ rules, filter by `language/category/severity` |
@@ -124,7 +124,7 @@ iris db update
 | `iris mcp start` | MCP for AI agents (`iris.scan`, `iris.explain`) |
 | `iris convert/generate` | Format convert, GitHub/GitLab/pre-commit generators |
 
-Exit codes: `0` pass, `1` gate failed, `2` error. Flags: `--severity`, `--format`, `--output`, `--profile`, `--compliance`, `--fail-on`, `--no-color`.
+Exit codes: `0` pass, `1` gate failed, `2` error. Flags: `--severity`, `--format`, `--output`, `--profile`, `--compliance`, `--fail-on`, `--no-color`, `--no-upload` (skip dashboard history).
 
 ## Formatter — `iris fmt`
 
@@ -299,17 +299,27 @@ Connect Iris to your PixelCity account (create one at **https://id.pixelcity.dev
 ```bash
 iris cloud login      # device flow — opens id.pixelcity.dev, enter the code
 iris cloud status     # plan, quotas (scans, AI pages), features
-iris cloud usage      # recent scan history
+iris cloud usage      # recent scan history (+ IDs, --json for scripting)
+iris cloud show ID    # one scan's full findings table (--fix, --json)
 iris cloud upgrade pro        # checkout via payments.pixelcity.dev
 iris cloud upgrade enterprise --interval yearly
 ```
 
-**Dashboard** — https://dashboard.pixelcity.dev — account management (Keycloak),
-usage history, Pro/Enterprise plans, and the public roadmap incl. the
-**Upcoming Features** docs (AI Agent with active usage limits and **no model
-training** — your code never trains models).
+While logged in, **every scan type uploads to your dashboard history** —
+`iris scan`, `iris webscan`, `iris fmt --check`, `iris buildtest` (full
+structured report, up to 8 MB). Opt out per run with `--no-upload` or
+`IRIS_NO_UPLOAD=1`. Plan quotas are enforced server-side (free: 100 scans).
 
-Deploy your own dashboard? See `deploy/RUNBOOK.md` (Caddy + Keycloak + docker).
+**Dashboard** — https://dashboard.pixelcity.dev — account management (Keycloak),
+scan history with severity chips and per-scan drill-down, trend charts,
+quota meters, and admin views (all users' scans, per-user filtering).
+
+Every stored scan exports as **SARIF 2.1.0, standalone HTML, raw JSON, or
+CSV** (`/api/v1/scans/{id}?format=…`, or the Export links in the UI).
+
+Deploy your own dashboard? See `deploy/RUNBOOK.md` (Caddy + Keycloak + docker,
+incl. daily scan-volume backups). History is retained for 365 days
+(`SCAN_RETENTION_DAYS`). Health: `GET /api/v1/healthz`.
 
 ## Roadmap — Upcoming Features
 
