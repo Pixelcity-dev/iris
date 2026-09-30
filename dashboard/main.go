@@ -583,7 +583,7 @@ func (s *server) authEither(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (s *server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
-	return s.auth(func(w http.ResponseWriter, r *http.Request) {
+	return s.authEither(func(w http.ResponseWriter, r *http.Request) {
 		sess := r.Context().Value(sessKey{}).(session)
 		if !isAdmin(&sess) {
 			writeErr(w, http.StatusForbidden, errors.New("admin only"))
@@ -591,6 +591,35 @@ func (s *server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	})
+}
+
+// handleTrend serves the caller's daily scan/findings activity.
+func (s *server) handleTrend(w http.ResponseWriter, r *http.Request) {
+	ident, err := s.requestIdentity(r)
+	if err != nil {
+		writeErr(w, http.StatusUnauthorized, err)
+		return
+	}
+	s.writeTrend(w, r, ident.Sub, false)
+}
+
+// handleAdminTrend serves activity across every user (admin only).
+func (s *server) handleAdminTrend(w http.ResponseWriter, r *http.Request) {
+	sess := r.Context().Value(sessKey{}).(session)
+	s.writeTrend(w, r, sess.Sub, true)
+}
+
+func (s *server) writeTrend(w http.ResponseWriter, r *http.Request, sub string, allUsers bool) {
+	days := atoiQuery(r, "days", 30)
+	if days > 365 {
+		days = 365
+	}
+	since := time.Now().UTC().AddDate(0, 0, -days)
+	points := s.scans.trend(sub, since, allUsers)
+	if points == nil {
+		points = []trendPoint{}
+	}
+	writeJSON(w, map[string]interface{}{"days": days, "points": points})
 }
 
 func (s *server) handleAdminScans(w http.ResponseWriter, r *http.Request) {
@@ -662,10 +691,12 @@ func main() {
 	mux.HandleFunc("GET /auth/logout", srv.handleLogout)
 	mux.HandleFunc("GET /api/v1/me", srv.authEither(srv.handleMe))
 	mux.HandleFunc("GET /api/v1/scans", srv.handleScansGet)
+	mux.HandleFunc("GET /api/v1/scans/trend", srv.handleTrend)
 	mux.HandleFunc("GET /api/v1/scans/{id}", srv.handleScanGet)
 	mux.HandleFunc("POST /api/v1/scans", srv.handleScansPost)
 	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
 	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))
+	mux.HandleFunc("GET /api/v1/admin/trend", srv.requireAdmin(srv.handleAdminTrend))
 	mux.HandleFunc("GET /api/v1/account", srv.auth(srv.handleAccountGet))
 	mux.HandleFunc("PATCH /api/v1/account", srv.auth(srv.handleAccountPatch))
 	mux.HandleFunc("POST /api/v1/account/password", srv.auth(srv.handlePasswordChange))

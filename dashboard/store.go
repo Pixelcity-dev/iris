@@ -289,6 +289,72 @@ func atomicWriteLines(path string, lines []string) error {
 	return os.Rename(tmp, path)
 }
 
+// trendPoint is one day of aggregated scan activity.
+type trendPoint struct {
+	Date     string         `json:"date"`
+	Scans    int            `json:"scans"`
+	Findings int            `json:"findings"`
+	Severity map[string]int `json:"severity"`
+}
+
+// trend aggregates scan activity per UTC day from `since` through now,
+// zero-filling empty days. When sub is non-empty (and allUsers is false),
+// only that user's scans are counted.
+func (s *scanStore) trend(sub string, since time.Time, allUsers bool) []trendPoint {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	type agg struct {
+		scans, findings int
+		severity        map[string]int
+	}
+	buckets := map[string]*agg{}
+	lines, err := readLines(s.path)
+	if err != nil {
+		lines = nil
+	}
+	for _, l := range lines {
+		var e scanEntry
+		if json.Unmarshal([]byte(l), &e) != nil || e.Time.IsZero() {
+			continue
+		}
+		if !allUsers && sub != "" && e.Sub != sub {
+			continue
+		}
+		if e.Time.Before(since) {
+			continue
+		}
+		day := e.Time.UTC().Format("2006-01-02")
+		a := buckets[day]
+		if a == nil {
+			a = &agg{severity: map[string]int{}}
+			buckets[day] = a
+		}
+		a.scans++
+		a.findings += e.Findings
+		for k, v := range e.SeverityCounts {
+			a.severity[k] += v
+		}
+	}
+
+	// Zero-fill from the since-day through today (UTC), inclusive.
+	now := time.Now().UTC()
+	start := time.Date(since.Year(), since.Month(), since.Day(), 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	var out []trendPoint
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		day := d.Format("2006-01-02")
+		p := trendPoint{Date: day, Severity: map[string]int{}}
+		if a := buckets[day]; a != nil {
+			p.Scans = a.scans
+			p.Findings = a.findings
+			p.Severity = a.severity
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
 // count returns the total number of stored scans for one user.
 func (s *scanStore) count(sub string) int {
 	s.mu.Lock()

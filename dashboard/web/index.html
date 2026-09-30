@@ -464,6 +464,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 
     <section class="panel" id="section-admin" style="display:none;">
       <h2>Administration</h2>
+      <div id="admin-trend" style="margin-bottom:14px"></div>
       <div class="table-shell">
         <table class="data-table">
           <thead><tr><th>User</th><th>Email</th><th>Scans</th><th>Last scan</th></tr></thead>
@@ -481,6 +482,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 
     <section class="panel">
       <h2>Scan history</h2>
+      <div id="trend-chart" style="margin-bottom:14px"></div>
       <div class="table-shell">
         <table class="data-table">
           <thead><tr><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
@@ -634,9 +636,11 @@ async function init() {
     loadAccount();
     loadSessions();
     loadScans();
+    loadTrend();
     if (me.admin) {
       $('section-admin').style.display = 'block';
       loadAdmin();
+      loadAdminTrend();
     }
   } catch (e) {
     $('view-login').style.display = 'block';
@@ -807,6 +811,62 @@ function renderScanDetail(d) {
   h += '</tbody></table></div>';
   if (findings.length > MAX) h += `<div style="color:var(--color-dim);font-size:0.78rem;margin-top:6px">Showing first ${MAX} of ${findings.length} findings — full report available via <span class="mono">iris cloud usage</span> or the JSON API.</div>`;
   return h;
+}
+
+async function loadTrend() {
+  try {
+    const t = await api('/api/v1/scans/trend?days=30');
+    renderTrend($('trend-chart'), t, 'Last 30 days');
+  } catch (e) { /* chart is non-critical */ }
+}
+
+async function loadAdminTrend() {
+  try {
+    const t = await api('/api/v1/admin/trend?days=30');
+    renderTrend($('admin-trend'), t, 'All users · last 30 days');
+  } catch (e) { /* chart is non-critical */ }
+}
+
+// renderTrend draws a stacked-severity SVG bar chart of daily findings.
+function renderTrend(el, t, label) {
+  if (!el) return;
+  const pts = (t && t.points) || [];
+  if (!pts.length) return;
+  const totalScans = pts.reduce((a, p) => a + (p.scans || 0), 0);
+  const totalFindings = pts.reduce((a, p) => a + (p.findings || 0), 0);
+  const summary = `<div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:6px">${label} · <strong style="color:var(--color-fg,#e2e8f0)">${totalScans}</strong> scans · <strong style="color:var(--color-fg,#e2e8f0)">${totalFindings}</strong> findings</div>`;
+
+  if (!totalFindings) {
+    el.innerHTML = summary + '<div style="height:6px;background:rgba(148,163,184,0.15);border-radius:4px"></div>';
+    return;
+  }
+  const W = 720, H = 96, n = pts.length, gap = n > 45 ? 1 : 2;
+  const bw = Math.max(1.5, (W - gap * (n - 1)) / n);
+  const max = Math.max(1, ...pts.map(p => p.findings));
+  const order = ['critical', 'high', 'medium', 'low', 'info', 'unknown'];
+  let bars = '';
+  pts.forEach((p, i) => {
+    const x = i * (bw + gap);
+    const buckets = Object.assign({}, p.severity || {});
+    const known = Object.keys(buckets).reduce((a, k) => a + buckets[k], 0);
+    if (p.findings > known) buckets.unknown = p.findings - known;
+    let y = H - 14;
+    order.forEach(k => {
+      const v = buckets[k] || 0;
+      if (!v) return;
+      const h = (v / max) * (H - 22);
+      y -= h;
+      const color = k === 'unknown' ? '#64748b' : (SEV_COLORS[k.toUpperCase()] || '#64748b');
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${color}"><title>${p.date} · ${k}: ${v} (${p.scans} scans)</title></rect>`;
+    });
+    if (!p.findings && p.scans) {
+      bars += `<rect x="${x.toFixed(1)}" y="${H - 16}" width="${bw.toFixed(1)}" height="2" fill="#334155"><title>${p.date} · ${p.scans} scans · clean</title></rect>`;
+    }
+  });
+  const first = pts[0].date, mid = pts[Math.floor(n / 2)].date, last = pts[n - 1].date;
+  el.innerHTML = summary +
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:96px;display:block">${bars}<line x1="0" y1="${H - 13}" x2="${W}" y2="${H - 13}" stroke="rgba(148,163,184,0.25)" stroke-width="1"/></svg>` +
+    `<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--color-muted);margin-top:3px"><span>${first}</span><span>${mid}</span><span>${last}</span></div>`;
 }
 
 function money(cents, currency) {

@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -196,5 +199,92 @@ func TestCountAndRetention(t *testing.T) {
 		if e.Target == "https://old.test" {
 			t.Fatal("stale scan still listed")
 		}
+	}
+}
+
+func TestTrendAggregation(t *testing.T) {
+	s := testStore(t)
+	now := time.Now().UTC()
+	seed := func(id, sub, target string, age time.Duration, findings int, sev map[string]int) {
+		e := scanEntry{ID: id, Sub: sub, Time: now.Add(-age), Scanner: "s",
+			Target: target, Findings: findings, SeverityCounts: sev}
+		if err := sanitizeScanInput(&e); err != nil {
+			t.Fatal(err)
+		}
+		e.ID = id
+		if err := s.append(e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	seed("t1", "u1", "https://a.test", 0, 5, map[string]int{"high": 2, "low": 3})
+	seed("t2", "u1", "https://b.test", 24*time.Hour, 4, map[string]int{"medium": 4})
+	seed("t3", "u2", "https://c.test", 0, 10, map[string]int{"critical": 10})
+	seed("t4", "u1", "https://d.test", 40*24*time.Hour, 7, map[string]int{"high": 7})
+
+	since := now.AddDate(0, 0, -30)
+	own := s.trend("u1", since, false)
+	if len(own) < 31 || len(own) > 32 {
+		t.Fatalf("zero-fill points: %d", len(own))
+	}
+	last := own[len(own)-1]
+	if last.Date != now.Format("2006-01-02") {
+		t.Fatalf("last date: %s", last.Date)
+	}
+	if last.Scans != 1 || last.Findings != 5 || last.Severity["high"] != 2 {
+		t.Fatalf("today bucket: %+v", last)
+	}
+	yday := now.AddDate(0, 0, -1).Format("2006-01-02")
+	var foundYesterday bool
+	sum := 0
+	for _, p := range own {
+		sum += p.Findings
+		if p.Date == yday {
+			foundYesterday = true
+			if p.Scans != 1 || p.Findings != 4 || p.Severity["medium"] != 4 {
+				t.Fatalf("yesterday bucket: %+v", p)
+			}
+		}
+	}
+	if !foundYesterday {
+		t.Fatal("yesterday missing from zero-fill")
+	}
+	if sum != 9 { // 40-day-old scan excluded
+		t.Fatalf("findings sum: %d", sum)
+	}
+
+	// All users: u2 counted today as well.
+	all := s.trend("", since, true)
+	allLast := all[len(all)-1]
+	if allLast.Scans != 2 || allLast.Findings != 15 || allLast.Severity["critical"] != 10 {
+		t.Fatalf("admin today bucket: %+v", allLast)
+	}
+}
+
+func TestTrendRouteBeatsIDWildcard(t *testing.T) {
+	secret := []byte("test-secret-0123456789abcdef-test")
+	srv := &server{
+		cfg:   config{SessionSecret: secret},
+		scans: newScanStore(filepath.Join(t.TempDir(), "scans.jsonl")),
+	}
+	seedScan(t, srv, "tr-1", "u-owner", "alice", true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v1/scans/trend", srv.handleTrend)
+	mux.HandleFunc("GET /api/v1/scans/{id}", srv.handleScanGet)
+
+	req := httptest.NewRequest("GET", "/api/v1/scans/trend?days=7", nil)
+	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookieFor(t, srv, "u-owner", "alice", nil)})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("trend: %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"points"`) {
+		t.Fatalf("not a trend response: %s", rec.Body.String())
+	}
+	// Anonymous rejected.
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/scans/trend", nil))
+	if rec.Code != 401 {
+		t.Fatalf("anon trend: %d", rec.Code)
 	}
 }
