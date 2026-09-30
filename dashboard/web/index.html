@@ -840,28 +840,43 @@ function renderScanDetail(d) {
   return h;
 }
 
+let trendDays = 30;
+let adminTrendDays = 30;
+
+function trendSelector(which) {
+  const cur = which === 'admin' ? adminTrendDays : trendDays;
+  const btn = d => `<a href="#" onclick="setTrendDays('${which}',${d});return false" style="margin-left:7px;${d === cur ? 'color:#818cf8;font-weight:600' : 'color:var(--color-muted)'}">${d}d</a>`;
+  return `<span style="float:right">${btn(7)}${btn(30)}${btn(90)}</span>`;
+}
+
+function setTrendDays(which, d) {
+  if (which === 'admin') { adminTrendDays = d; loadAdminTrend(); }
+  else { trendDays = d; loadTrend(); }
+}
+
 async function loadTrend() {
   try {
-    const t = await api('/api/v1/scans/trend?days=30');
-    renderTrend($('trend-chart'), t, 'Last 30 days');
+    const t = await api('/api/v1/scans/trend?days=' + trendDays);
+    renderTrend($('trend-chart'), t, 'Last ' + trendDays + ' days', 'own');
   } catch (e) { /* chart is non-critical */ }
 }
 
 async function loadAdminTrend() {
   try {
-    const t = await api('/api/v1/admin/trend?days=30');
-    renderTrend($('admin-trend'), t, 'All users · last 30 days');
+    const t = await api('/api/v1/admin/trend?days=' + adminTrendDays);
+    renderTrend($('admin-trend'), t, 'All users · last ' + adminTrendDays + ' days', 'admin');
   } catch (e) { /* chart is non-critical */ }
 }
 
 // renderTrend draws a stacked-severity SVG bar chart of daily findings.
-function renderTrend(el, t, label) {
+function renderTrend(el, t, label, which) {
   if (!el) return;
   const pts = (t && t.points) || [];
   if (!pts.length) return;
+  const sel = which ? trendSelector(which) : '';
   const totalScans = pts.reduce((a, p) => a + (p.scans || 0), 0);
   const totalFindings = pts.reduce((a, p) => a + (p.findings || 0), 0);
-  const summary = `<div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:6px">${label} · <strong style="color:var(--color-fg,#e2e8f0)">${totalScans}</strong> scans · <strong style="color:var(--color-fg,#e2e8f0)">${totalFindings}</strong> findings</div>`;
+  const summary = `<div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:6px">${sel}${label} · <strong style="color:var(--color-fg,#e2e8f0)">${totalScans}</strong> scans · <strong style="color:var(--color-fg,#e2e8f0)">${totalFindings}</strong> findings</div>`;
 
   if (!totalFindings) {
     el.innerHTML = summary + '<div style="height:6px;background:rgba(148,163,184,0.15);border-radius:4px"></div>';
