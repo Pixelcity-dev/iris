@@ -42,11 +42,11 @@ func runMCPStart(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Starting MCP server on %s:%d\n", mcpHost, mcpPort)
 	fmt.Println("MCP server started successfully")
 	fmt.Println("Tools available:")
-	fmt.Println("  - deepsec.scan: Trigger a security scan")
-	fmt.Println("  - deepsec.findings: Read scan findings")
-	fmt.Println("  - deepsec.explain: Get explanation of a finding")
-	fmt.Println("  - deepsec.suggest-fix: Get remediation suggestions")
-	fmt.Println("  - deepsec.baseline: Manage baselines")
+	fmt.Println("  - iris.scan: Trigger a security scan")
+	fmt.Println("  - iris.findings: Read scan findings")
+	fmt.Println("  - iris.explain: Get explanation of a finding")
+	fmt.Println("  - iris.suggest-fix: Get remediation suggestions")
+	fmt.Println("  - iris.baseline: Manage baselines")
 
 	select {}
 }

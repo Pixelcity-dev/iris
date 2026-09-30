@@ -20,6 +20,7 @@ const (
 	ScanTypeLicense   ScanType = "license"
 	ScanTypeWebScan   ScanType = "webscan"
 	ScanTypeFormat    ScanType = "format"
+	ScanTypeBuildTest ScanType = "buildtest"
 )
 
 type TargetKind string

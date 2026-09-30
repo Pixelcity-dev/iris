@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type CycloneDXReporter struct{}
@@ -64,8 +64,8 @@ func (r *CycloneDXReporter) Generate(results []core.ScanResult, opts ReportOptio
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 			Tools: []CycloneDXTool{
 				{
-					Vendor:  "DeepSec",
-					Name:    "deepsec",
+					Vendor:  "Iris",
+					Name:    "iris",
 					Version: "1.1.0",
 				},
 			},

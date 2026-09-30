@@ -51,7 +51,7 @@ func runDBStatus(cmd *cobra.Command, args []string) error {
 	dbPath := cfg.DB.CacheDir
 	info, err := os.Stat(dbPath)
 	if err != nil {
-		fmt.Println("Database not found. Run 'deepsec db update' to download.")
+		fmt.Println("Database not found. Run 'iris db update' to download.")
 		return nil
 	}
 

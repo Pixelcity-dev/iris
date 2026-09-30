@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type GitLabReporter struct{}
@@ -68,8 +68,8 @@ func (r *GitLabReporter) Generate(results []core.ScanResult, opts ReportOptions)
 		ScanInfo: GitLabScanInfo{
 			ScanType: "sast",
 			Scanner: GitLabScanner{
-				ID:      "deepsec",
-				Name:    "DeepSec",
+				ID:      "iris",
+				Name:    "Iris",
 				Version: "1.1.0",
 			},
 			Timestamp: time.Now().UTC().Format(time.RFC3339),

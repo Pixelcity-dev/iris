@@ -462,6 +462,33 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
       </div>
     </div>
 
+    <section class="panel" id="section-admin" style="display:none;">
+      <h2>Administration</h2>
+      <div class="table-shell">
+        <table class="data-table">
+          <thead><tr><th>User</th><th>Email</th><th>Scans</th><th>Last scan</th></tr></thead>
+          <tbody id="admin-users-body"><tr><td colspan="4"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+      <h3 style="margin-top:22px;">All scans</h3>
+      <div class="table-shell">
+        <table class="data-table">
+          <thead><tr><th>Time</th><th>User</th><th>Scanner</th><th>Target</th><th>Findings</th></tr></thead>
+          <tbody id="admin-scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Scan history</h2>
+      <div class="table-shell">
+        <table class="data-table">
+          <thead><tr><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
+          <tbody id="scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>Billing history</h2>
       <div class="table-shell">
@@ -606,6 +633,11 @@ async function init() {
     loadUsage();
     loadAccount();
     loadSessions();
+    loadScans();
+    if (me.admin) {
+      $('section-admin').style.display = 'block';
+      loadAdmin();
+    }
   } catch (e) {
     $('view-login').style.display = 'block';
     $('view-app').style.display = 'none';
@@ -646,6 +678,52 @@ function setBar(id, frac) {
   const el = $(id); if (!el) return;
   el.style.width = Math.min(100, frac * 100) + '%';
   el.className = 'bar-fill' + (frac >= 1 ? ' full' : frac > .8 ? ' warn' : '');
+}
+
+async function loadScans() {
+  try {
+    const s = await api('/api/v1/scans?limit=25');
+    const body = $('scans-body');
+    if (!s.entries || !s.entries.length) {
+      body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
+      return;
+    }
+    body.innerHTML = s.entries.map(e => `<tr>
+      <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
+      <td><span class="mono">${esc(e.scanner)}</span></td>
+      <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
+      <td>${e.findings ?? 0}</td>
+      <td class="mono">${(e.duration_seconds ?? 0).toFixed(2)}s</td>
+    </tr>`).join('');
+  } catch (e) {
+    $('scans-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Scan history unavailable.</td></tr>';
+  }
+}
+
+async function loadAdmin() {
+  try {
+    const u = await api('/api/v1/admin/users');
+    $('admin-users-body').innerHTML = (u.users || []).map(x => `<tr>
+      <td class="mono">${esc(x.username || '—')}</td>
+      <td class="mono" style="font-size:0.78rem">${esc(x.email || '—')}</td>
+      <td>${x.scans ?? 0}</td>
+      <td class="mono" style="font-size:0.78rem">${x.last_scan ? new Date(x.last_scan).toLocaleString() : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--color-dim)">No users yet.</td></tr>';
+  } catch (e) {
+    $('admin-users-body').innerHTML = '<tr><td colspan="4" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
+  }
+  try {
+    const s = await api('/api/v1/admin/scans?limit=50');
+    $('admin-scans-body').innerHTML = (s.entries || []).map(e => `<tr>
+      <td class="mono" style="font-size:0.78rem">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
+      <td class="mono">${esc(e.username || e.email || '—')}</td>
+      <td><span class="mono">${esc(e.scanner)}</span></td>
+      <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
+      <td>${e.findings ?? 0}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet.</td></tr>';
+  } catch (e) {
+    $('admin-scans-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
+  }
 }
 
 function money(cents, currency) {

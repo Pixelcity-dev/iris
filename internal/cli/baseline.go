@@ -29,8 +29,8 @@ var baselineDiffCmd = &cobra.Command{
 }
 
 func init() {
-	baselineCreateCmd.Flags().StringVarP(&baselineFile, "output", "o", ".deepsec-baseline.json", "baseline file path")
-	baselineDiffCmd.Flags().StringVarP(&baselineFile, "baseline", "b", ".deepsec-baseline.json", "baseline file path")
+	baselineCreateCmd.Flags().StringVarP(&baselineFile, "output", "o", ".iris-baseline.json", "baseline file path")
+	baselineDiffCmd.Flags().StringVarP(&baselineFile, "baseline", "b", ".iris-baseline.json", "baseline file path")
 
 	baselineCmd.AddCommand(baselineCreateCmd)
 	baselineCmd.AddCommand(baselineDiffCmd)

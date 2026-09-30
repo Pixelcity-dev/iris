@@ -90,9 +90,12 @@ type idTokenClaims struct {
 	Email             string   `json:"email"`
 	Name              string   `json:"name"`
 	Groups            []string `json:"groups"`
-	Aud               any      `json:"aud"`
-	Iss               string   `json:"iss"`
-	Exp               int64    `json:"exp"`
+	RealmAccess       struct {
+		Roles []string `json:"roles"`
+	} `json:"realm_access"`
+	Aud any    `json:"aud"`
+	Iss string `json:"iss"`
+	Exp int64  `json:"exp"`
 }
 
 type discovery struct {
@@ -212,7 +215,9 @@ func (c *jwksCache) refreshLocked(ctx context.Context) error {
 }
 
 // verifyIDToken checks RS256 signature, issuer, audience, and expiry.
-func verifyIDToken(ctx context.Context, jwks *jwksCache, raw, issuer, clientID string) (idTokenClaims, error) {
+// Any of the accepted audiences passes (login needs the dashboard client;
+// CLI bearer tokens may carry iris-cli or account).
+func verifyIDToken(ctx context.Context, jwks *jwksCache, raw, issuer string, audiences []string) (idTokenClaims, error) {
 	var zero idTokenClaims
 	parts := strings.Split(raw, ".")
 	if len(parts) != 3 {
@@ -255,13 +260,17 @@ func verifyIDToken(ctx context.Context, jwks *jwksCache, raw, issuer, clientID s
 	if c.Iss != issuer {
 		return zero, errors.New("unexpected token issuer")
 	}
+	want := map[string]bool{}
+	for _, a := range audiences {
+		want[a] = true
+	}
 	audOK := false
 	switch a := c.Aud.(type) {
 	case string:
-		audOK = a == clientID
+		audOK = want[a]
 	case []interface{}:
 		for _, v := range a {
-			if s, ok := v.(string); ok && s == clientID {
+			if s, ok := v.(string); ok && want[s] {
 				audOK = true
 				break
 			}
@@ -282,12 +291,38 @@ func verifyIDToken(ctx context.Context, jwks *jwksCache, raw, issuer, clientID s
 // ---------- session cookie (HMAC-signed, minimal) ----------
 
 type session struct {
-	Sub          string `json:"sub"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	Exp          int64  `json:"exp"`
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
+	Sub          string   `json:"sub"`
+	Username     string   `json:"username"`
+	Email        string   `json:"email"`
+	Groups       []string `json:"groups,omitempty"`
+	Roles        []string `json:"roles,omitempty"`
+	Exp          int64    `json:"exp"`
+	AccessToken  string   `json:"access_token,omitempty"`
+	RefreshToken string   `json:"refresh_token,omitempty"`
+}
+
+// isAdmin reports dashboard-admin membership (Keycloak group or realm role).
+func isAdmin(sess *session) bool {
+	want := map[string]bool{}
+	for _, g := range strings.Split(os.Getenv("ADMIN_GROUPS"), ",") {
+		if g = strings.TrimSpace(g); g != "" {
+			want[g] = true
+		}
+	}
+	if len(want) == 0 {
+		want["iris-admins"] = true
+	}
+	for _, g := range sess.Groups {
+		if want[g] {
+			return true
+		}
+	}
+	for _, r := range sess.Roles {
+		if want[r] {
+			return true
+		}
+	}
+	return false
 }
 
 func signSession(s *session, secret []byte) (string, error) {
@@ -328,9 +363,162 @@ func subtle(a, b string) bool { return a == b } // constant-time enough for cook
 // ---------- handlers ----------
 
 type server struct {
-	cfg  config
-	dsc  *discovery
-	jwks *jwksCache
+	cfg   config
+	dsc   *discovery
+	jwks  *jwksCache
+	scans *scanStore
+}
+
+// bearerIdentity validates a CLI Keycloak access token (aud: iris-cli,
+// iris-dashboard, or account) and returns the caller's identity.
+func (s *server) bearerIdentity(r *http.Request) (*session, error) {
+	h := r.Header.Get("Authorization")
+	if h == "" || !strings.HasPrefix(strings.ToLower(h), "bearer ") {
+		return nil, errors.New("missing bearer token")
+	}
+	token := strings.TrimSpace(h[len("Bearer "):])
+	if token == "" {
+		return nil, errors.New("missing bearer token")
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	claims, err := verifyIDToken(ctx, s.jwks, token, s.cfg.Issuer,
+		[]string{"iris-cli", s.cfg.ClientID, "account"})
+	if err != nil {
+		return nil, err
+	}
+	return &session{
+		Sub:      claims.Sub,
+		Username: orDefault(claims.PreferredUsername, claims.Email),
+		Email:    claims.Email,
+		Groups:   claims.Groups,
+		Roles:    claims.RealmAccess.Roles,
+		Exp:      time.Now().Add(5 * time.Minute).Unix(),
+	}, nil
+}
+
+func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
+	ident, err := s.bearerIdentity(r)
+	if err != nil {
+		writeErr(w, http.StatusUnauthorized, err)
+		return
+	}
+	var e scanEntry
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, errors.New("unreadable body"))
+		return
+	}
+	if err := json.Unmarshal(body, &e); err != nil {
+		writeErr(w, http.StatusBadRequest, errors.New("invalid JSON"))
+		return
+	}
+	e.Sub = ident.Sub
+	e.Username = ident.Username
+	e.Email = ident.Email
+	if err := sanitizeScanInput(&e); err != nil {
+		writeErr(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	e.ID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), randHex(4))
+	if err := s.scans.append(e); err != nil {
+		writeErr(w, http.StatusInternalServerError, errors.New("could not store scan"))
+		return
+	}
+	writeJSON(w, map[string]interface{}{"ok": true, "id": e.ID})
+}
+
+func (s *server) handleScansGet(w http.ResponseWriter, r *http.Request) {
+	ident, err := s.requestIdentity(r)
+	if err != nil {
+		writeErr(w, http.StatusUnauthorized, err)
+		return
+	}
+	limit := atoiQuery(r, "limit", 50)
+	entries := s.scans.list(ident.Sub, limit)
+	if entries == nil {
+		entries = []scanEntry{}
+	}
+	writeJSON(w, map[string]interface{}{"entries": entries, "total": len(entries)})
+}
+
+// requestIdentity resolves the caller from a bearer token (CLI) or the
+// ds_session cookie (browser). Used by read APIs shared by both.
+func (s *server) requestIdentity(r *http.Request) (*session, error) {
+	if strings.TrimSpace(r.Header.Get("Authorization")) != "" {
+		return s.bearerIdentity(r)
+	}
+	c, err := r.Cookie("ds_session")
+	if err != nil {
+		return nil, errors.New("not logged in")
+	}
+	sess, err := verifySession([]byte(c.Value), s.cfg.SessionSecret)
+	if err != nil {
+		return nil, err
+	}
+	return sess, nil
+}
+
+// authEither accepts a session cookie (browser) or a bearer token (CLI).
+func (s *server) authEither(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sess, err := s.requestIdentity(r)
+		if err != nil {
+			writeErr(w, http.StatusUnauthorized, err)
+			return
+		}
+		next(w, r.WithContext(context.WithValue(r.Context(), sessKey{}, *sess)))
+	}
+}
+
+func (s *server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return s.auth(func(w http.ResponseWriter, r *http.Request) {
+		sess := r.Context().Value(sessKey{}).(session)
+		if !isAdmin(&sess) {
+			writeErr(w, http.StatusForbidden, errors.New("admin only"))
+			return
+		}
+		next(w, r)
+	})
+}
+
+func (s *server) handleAdminScans(w http.ResponseWriter, r *http.Request) {
+	limit := atoiQuery(r, "limit", 100)
+	user := r.URL.Query().Get("user")
+	entries := s.scans.listAll(limit, user)
+	if entries == nil {
+		entries = []scanEntry{}
+	}
+	writeJSON(w, map[string]interface{}{"entries": entries, "total": len(entries)})
+}
+
+func (s *server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
+	users := s.scans.userStats()
+	if users == nil {
+		users = []map[string]interface{}{}
+	}
+	writeJSON(w, map[string]interface{}{"users": users, "total": len(users)})
+}
+
+func atoiQuery(r *http.Request, key string, def int) int {
+	var n int
+	if _, err := fmt.Sscanf(r.URL.Query().Get(key), "%d", &n); err != nil || n <= 0 {
+		return def
+	}
+	return n
+}
+
+func randHex(n int) string {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "0000"
+	}
+	const hexd = "0123456789abcdef"
+	out := make([]byte, 0, n*2)
+	for _, v := range b {
+		out = append(out, hexd[v>>4], hexd[v&15])
+	}
+	return string(out)
 }
 
 func main() {
@@ -350,19 +538,28 @@ func main() {
 		log.Fatalf("OIDC discovery failed for %s: %v (is Keycloak up?)", cfg.Issuer, err)
 	}
 
-	srv := &server{cfg: cfg, dsc: dsc, jwks: &jwksCache{uri: dsc.JWKSURI}}
+	srv := &server{
+		cfg:   cfg,
+		dsc:   dsc,
+		jwks:  &jwksCache{uri: dsc.JWKSURI},
+		scans: newScanStore(os.Getenv("SCANS_FILE")),
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/login", srv.handleLogin)
 	mux.HandleFunc("GET /auth/callback", srv.handleCallback)
 	mux.HandleFunc("GET /auth/logout", srv.handleLogout)
-	mux.HandleFunc("GET /api/v1/me", srv.auth(srv.handleMe))
+	mux.HandleFunc("GET /api/v1/me", srv.authEither(srv.handleMe))
+	mux.HandleFunc("GET /api/v1/scans", srv.handleScansGet)
+	mux.HandleFunc("POST /api/v1/scans", srv.handleScansPost)
+	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
+	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))
 	mux.HandleFunc("GET /api/v1/account", srv.auth(srv.handleAccountGet))
 	mux.HandleFunc("PATCH /api/v1/account", srv.auth(srv.handleAccountPatch))
 	mux.HandleFunc("POST /api/v1/account/password", srv.auth(srv.handlePasswordChange))
 	mux.HandleFunc("GET /api/v1/account/sessions", srv.auth(srv.handleSessionsList))
 	mux.HandleFunc("DELETE /api/v1/account/sessions/{id}", srv.auth(srv.handleSessionRevoke))
-	mux.HandleFunc("GET /api/v1/plan", srv.auth(srv.handlePlan))
+	mux.HandleFunc("GET /api/v1/plan", srv.authEither(srv.handlePlan))
 	mux.HandleFunc("GET /api/v1/usage", srv.auth(srv.handleUsage))
 	mux.HandleFunc("POST /api/v1/billing/checkout", srv.auth(srv.handleCheckout))
 	mux.HandleFunc("GET /", srv.handleIndex)
@@ -444,7 +641,7 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify the ID token signature — never trust unverified claims.
-	claims, err := verifyIDToken(ctx, s.jwks, tr.IDToken, s.cfg.Issuer, s.cfg.ClientID)
+	claims, err := verifyIDToken(ctx, s.jwks, tr.IDToken, s.cfg.Issuer, []string{s.cfg.ClientID})
 	if err != nil {
 		http.Error(w, "identity verification failed", http.StatusBadGateway)
 		return
@@ -454,6 +651,8 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		Sub:          claims.Sub,
 		Username:     orDefault(claims.PreferredUsername, claims.Email),
 		Email:        claims.Email,
+		Groups:       claims.Groups,
+		Roles:        claims.RealmAccess.Roles,
 		Exp:          time.Now().Add(12 * time.Hour).Unix(),
 		AccessToken:  tr.AccessToken,
 		RefreshToken: tr.RefreshToken,
@@ -483,6 +682,7 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]interface{}{
 		"username": sess.Username,
 		"email":    sess.Email,
+		"admin":    isAdmin(&sess),
 	})
 }
 

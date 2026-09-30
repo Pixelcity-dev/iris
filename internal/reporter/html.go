@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/config"
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/config"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type HTMLReporter struct{}
@@ -52,7 +52,7 @@ func (r *HTMLReporter) Generate(results []core.ScanResult, opts ReportOptions) (
 	sb.WriteString(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepSec Report — ` + targetStr + `</title>
+<title>Iris Report — ` + targetStr + `</title>
 <style>
 :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#1f6feb;--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -95,7 +95,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 </style>
 </head>
 <body>
-<div class="topbar"><div class="brand">⬢ DEEPSEC</div><div><a href="https://pixelcity.top/docs/deepsec">Docs</a><a href="https://github.com/Pixelcity-dev/Deepsec">GitHub</a></div></div>
+<div class="topbar"><div class="brand">⬢ DEEPSEC</div><div><a href="https://pixelcity.top/docs/iris">Docs</a><a href="https://github.com/Pixelcity-dev/Iris">GitHub</a></div></div>
 <div class="container">
 <div class="hero">
 <div><h1>Security Report</h1><p>Target: ` + templateEscape(targetStr) + ` • ` + time.Now().Format("Jan 2, 2006 15:04 MST") + ` • Duration: ` + fmt.Sprintf("%.2fs", duration) + `</p><p style="margin-top:10px;font-size:12px;opacity:.9">Coverage: SAST 11+ langs • SCA 11+ ecosystems • Secrets 200+ patterns • IaC/K8s/Docker • DAST/WebScan OWASP Top 10 • Network • License • SBOM</p></div>
@@ -157,7 +157,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 <div class="kv"><span>1. Immediate (Critical/High)</span><span>24h</span></div>
 <div class="kv"><span>2. Scheduled (Medium)</span><span>7 days</span></div>
 <div class="kv"><span>3. Hardening (Low/Info)</span><span>30 days</span></div>
-<div style="font-size:12px;color:#8b949e;margin-top:8px">Export: <code>--format sarif</code> → Code Scanning • <code>--format cyclonedx</code> → SBOM • <code>deepsec mcp start</code> → AI agents</div>
+<div style="font-size:12px;color:#8b949e;margin-top:8px">Export: <code>--format sarif</code> → Code Scanning • <code>--format cyclonedx</code> → SBOM • <code>iris mcp start</code> → AI agents</div>
 </div></div>`)
 
 	// Findings
@@ -175,7 +175,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 		}
 	}
 	if len(sorted) == 0 {
-		sb.WriteString(`<div class="finding" style="border-left:4px solid #3fb950"><div class="title">✅ No actionable findings — Excellent posture</div><div class="meta">Target clean. Keep scanning in CI: <code>deepsec scan --fail-on high</code></div></div>`)
+		sb.WriteString(`<div class="finding" style="border-left:4px solid #3fb950"><div class="title">✅ No actionable findings — Excellent posture</div><div class="meta">Target clean. Keep scanning in CI: <code>iris scan --fail-on high</code></div></div>`)
 	}
 	for _, f := range sorted {
 		cls := strings.ToLower(f.Severity.String())
@@ -203,8 +203,8 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 	}
 
 	sb.WriteString(`<div class="footer">
-<p><strong>DeepSec</strong> v1.1.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
-<p><a href="https://pixelcity.top/docs/deepsec" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/Deepsec" style="color:#58a6ff">GitHub</a></p>
+<p><strong>Iris</strong> v1.1.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
+<p><a href="https://pixelcity.top/docs/iris" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/Iris" style="color:#58a6ff">GitHub</a></p>
 </div></div></body></html>`)
 	return []byte(sb.String()), nil
 }

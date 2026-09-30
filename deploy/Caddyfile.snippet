@@ -1,0 +1,17 @@
+# dashboard.pixelcity.dev — Caddy reverse proxy snippet
+# Add this site block to the Caddyfile inside your /opt/caddy container
+# (or its mounted Caddyfile) and reload Caddy:
+#   docker exec -w /etc/caddy caddy caddy reload --config /etc/caddy/Caddyfile
+
+dashboard.pixelcity.dev {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+	reverse_proxy iris-dashboard:8080
+}

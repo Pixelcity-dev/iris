@@ -6,8 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
-	"github.com/Pixelcity-dev/Deepsec/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/cloud"
+	"github.com/Pixelcity-dev/Iris/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -40,10 +42,13 @@ Performs comprehensive OWASP-based audit:
   - HTTPS redirect & HSTS preload
 
 Examples:
-  deepsec webscan https://example.com
-  deepsec webscan https://example.com --format json --output report.json
-  deepsec webscan https://example.com --severity high
-  deepsec scan https://example.com --scanner webscan,dast
+  iris webscan https://example.com
+  iris webscan https://example.com --format json --output report.json
+  iris webscan https://example.com --severity high
+  iris scan https://example.com --scanner webscan,dast
+
+Requires login: results are saved to your dashboard scan history.
+Run "iris cloud login" once, then scan freely.
 
 Aliases: scan URL, website, audit`,
 	Aliases: []string{"website", "audit", "wscan"},
@@ -60,6 +65,15 @@ func init() {
 }
 
 func runWebscan(cmd *cobra.Command, args []string) error {
+	// WebScan requires a PixelCity account: results are saved to the
+	// dashboard scan history. Authenticate once via device flow.
+	ctx := context.Background()
+	cloudCfg := cloud.DefaultConfig()
+	accessToken, err := cloud.EnsureValidToken(ctx, cloudCfg)
+	if err != nil {
+		return fmt.Errorf("webscan requires login: %w\n\nRun: iris cloud login", err)
+	}
+
 	targetURL := args[0]
 	if !isURL(targetURL) {
 		// allow without scheme
@@ -69,7 +83,7 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 		targetURL = "https://" + targetURL
 	}
 
-	fmt.Fprintf(os.Stderr, "DeepSec WebScan v%s - Deep website audit on %s\n", version, targetURL)
+	fmt.Fprintf(os.Stderr, "Iris WebScan v%s - Deep website audit on %s\n", version, targetURL)
 	if webscanDeep {
 		fmt.Fprintf(os.Stderr, "Mode: very deep (headers + TLS + CORS + exposed files + open redirect + XSS + SQLi + ...)\n")
 	}
@@ -85,6 +99,11 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 	filter.MinSeverity = core.ParseSeverity(webscanSeverity)
 	pipeline.SetFilter(filter)
 
+	// Live spinner while deep checks run (TTY only).
+	sp := ui.NewSpinner(!rootCmd.PersistentFlags().Changed("no-color"))
+	sp.Start()
+	pipeline.SetProgress(sp)
+
 	targetObj := core.Target{
 		Kind: core.TargetURL,
 		URI:  targetURL,
@@ -94,6 +113,7 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 	}
 
 	results, err := pipeline.Scan(context.Background(), targetObj, []core.ScanType{core.ScanTypeWebScan})
+	sp.Stop()
 	if err != nil {
 		return fmt.Errorf("webscan failed: %w", err)
 	}
@@ -163,7 +183,20 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 	// Hint
 	if total > 0 {
 		fmt.Fprintf(os.Stderr, "\nHint: run with --format sarif --output results.sarif for GitHub Code Scanning\n")
-		fmt.Fprintf(os.Stderr, "      deepsec scan https://example.com --scanner webscan --severity high\n")
+		fmt.Fprintf(os.Stderr, "      iris scan https://example.com --scanner webscan --severity high\n")
+	}
+
+	// Save to dashboard scan history (best-effort; never fails the scan).
+	if rerr := cloud.ReportUsage(ctx, cloudCfg, accessToken, cloud.UsageEntry{
+		Time:      time.Now().UTC(),
+		Scanner:   "webscan",
+		Target:    targetURL,
+		Findings:  total,
+		DurationS: duration,
+	}); rerr != nil {
+		fmt.Fprintf(os.Stderr, "Note: could not save scan to dashboard history: %v\n", rerr)
+	} else {
+		fmt.Fprintf(os.Stderr, "Saved to dashboard scan history.\n")
 	}
 
 	return nil

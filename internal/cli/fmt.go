@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
-	"github.com/Pixelcity-dev/Deepsec/internal/reporter"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/format"
+	"github.com/Pixelcity-dev/Iris/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/format"
+	"github.com/Pixelcity-dev/Iris/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -38,12 +39,12 @@ Zero-dependency, fast (<50ms), 6 checks:
   - consecutive blank lines
 
 Examples:
-  deepsec fmt .                 # check current directory
-  deepsec fmt . --check         # check only (exit 1 if issues, CI gate)
-  deepsec fmt . --fix           # auto-fix in place
-  deepsec fmt ./src --fix       # fix specific path
-  deepsec fmt . --diff          # show diff without writing
-  deepsec scan . --scanner format  # as scanner via pipeline`,
+  iris fmt .                 # check current directory
+  iris fmt . --check         # check only (exit 1 if issues, CI gate)
+  iris fmt . --fix           # auto-fix in place
+  iris fmt ./src --fix       # fix specific path
+  iris fmt . --diff          # show diff without writing
+  iris scan . --scanner format  # as scanner via pipeline`,
 	Aliases: []string{"format", "lint:fmt", "style"},
 	Args:    cobra.MaximumNArgs(1),
 	RunE:    runFmt,
@@ -110,7 +111,7 @@ func runFmt(cmd *cobra.Command, args []string) error {
 			}
 			if info.IsDir() {
 				name := info.Name()
-				if name == ".git" || name == "node_modules" || name == "vendor" || name == "dist" || name == "bin" || name == ".next" || name == ".deepsec" {
+				if name == ".git" || name == "node_modules" || name == "vendor" || name == "dist" || name == "bin" || name == ".next" || name == ".iris" {
 					return filepath.SkipDir
 				}
 				return nil
@@ -138,17 +139,17 @@ func runFmt(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		dur := time.Since(start).Seconds()
-		fmt.Fprintf(os.Stderr, "\nDeepSec fmt --fix completed in %.2fs\nChecked %d files, fixed %d\n", dur, checkedCount, fixedCount)
+		fmt.Fprintf(os.Stderr, "\nIris fmt --fix completed in %.2fs\nChecked %d files, fixed %d\n", dur, checkedCount, fixedCount)
 		return nil
 	}
 
 	if isDiff {
 		// Diff mode: show what would change without writing (use scanner to generate findings)
-		fmt.Fprintf(os.Stderr, "DeepSec fmt --diff on %s (showing formatting issues)\n", target)
+		fmt.Fprintf(os.Stderr, "Iris fmt --diff on %s (showing formatting issues)\n", target)
 	}
 
 	// Check mode: use pipeline with format scanner
-	fmt.Fprintf(os.Stderr, "DeepSec fmt --check on %s\n", target)
+	fmt.Fprintf(os.Stderr, "Iris fmt --check on %s\n", target)
 	ruleEngine := core.NewRuleEngine()
 	_ = ruleEngine.LoadRulesFromDir("rules")
 
@@ -157,8 +158,14 @@ func runFmt(cmd *cobra.Command, args []string) error {
 	filter.MinSeverity = core.ParseSeverity(fmtSeverity)
 	pipeline.SetFilter(filter)
 
+	// Live spinner for the format scanner (TTY only).
+	sp := ui.NewSpinner(!rootCmd.PersistentFlags().Changed("no-color"))
+	sp.Start()
+	pipeline.SetProgress(sp)
+
 	targetObj := core.Target{Kind: core.TargetFS, URI: target}
 	results, err := pipeline.Scan(context.Background(), targetObj, []core.ScanType{core.ScanTypeFormat})
+	sp.Stop()
 	if err != nil {
 		return fmt.Errorf("fmt scan failed: %w", err)
 	}
@@ -196,7 +203,7 @@ func runFmt(cmd *cobra.Command, args []string) error {
 			} else {
 				fmt.Print(string(output))
 			}
-			fmt.Fprintf(os.Stderr, "\nRun `deepsec fmt %s --fix` to auto-fix\n", target)
+			fmt.Fprintf(os.Stderr, "\nRun `iris fmt %s --fix` to auto-fix\n", target)
 		}
 		// For --check in CI, exit 1 if issues found
 		if fmtCheck && total > 0 {

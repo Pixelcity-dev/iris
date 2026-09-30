@@ -1,7 +1,7 @@
 package reporter
 
 import (
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type ReportOptions struct {

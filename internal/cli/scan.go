@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
-	"github.com/Pixelcity-dev/Deepsec/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -28,10 +29,10 @@ var scanCmd = &cobra.Command{
 Supports multiple scan types: SAST, SCA, secrets, IaC, container, DAST, webscan, network, and license.
 
 Examples:
-  deepsec scan ./myapp
-  deepsec scan https://example.com --scanner webscan
-  deepsec scan https://example.com --scanner dast,webscan
-  deepsec webscan https://example.com   # deep website audit (recommended for URLs)`,
+  iris scan ./myapp
+  iris scan https://example.com --scanner webscan
+  iris scan https://example.com --scanner dast,webscan
+  iris webscan https://example.com   # deep website audit (recommended for URLs)`,
 	Args: cobra.ExactArgs(1),
 	RunE: runScan,
 }
@@ -54,7 +55,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 	target := args[0]
 	start := time.Now()
 
-	fmt.Fprintf(os.Stderr, "DeepSec v%s - Scanning %s\n", version, target)
+	fmt.Fprintf(os.Stderr, "Iris v%s - Scanning %s\n", version, target)
 
 	ruleEngine := core.NewRuleEngine()
 	ruleEngine.LoadRulesFromDir("rules")
@@ -64,6 +65,13 @@ func runScan(cmd *cobra.Command, args []string) error {
 	filter := core.NewFindingFilter()
 	filter.MinSeverity = core.ParseSeverity(scanSeverity)
 	pipeline.SetFilter(filter)
+
+	// Live spinner: one spinning icon per running scanner (TTY only;
+	// degrades to plain lines when output is piped/CI).
+	sp := ui.NewSpinner(!rootCmd.PersistentFlags().Changed("no-color"))
+	sp.Start()
+	pipeline.SetProgress(sp)
+	defer sp.Stop()
 
 	var scanTypes []core.ScanType
 	if len(scanScanners) > 0 {
@@ -112,6 +120,12 @@ func runScan(cmd *cobra.Command, args []string) error {
 	results, err := pipeline.Scan(context.Background(), targetObj, scanTypes)
 	if err != nil {
 		return fmt.Errorf("scan failed: %w", err)
+	}
+	sp.Stop()
+
+	// Enrich generic fix hints with specific, language-aware remediation steps.
+	for i := range results {
+		core.EnrichFixes(results[i].Findings)
 	}
 
 	duration := time.Since(start).Seconds()

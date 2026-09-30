@@ -4,18 +4,19 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/config"
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/container"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/dast"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/format"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/iac"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/license"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/network"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/sast"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/sca"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/secrets"
-	"github.com/Pixelcity-dev/Deepsec/internal/scanners/webscan"
+	"github.com/Pixelcity-dev/Iris/internal/config"
+	"github.com/Pixelcity-dev/Iris/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/buildtest"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/container"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/dast"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/format"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/iac"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/license"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/network"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/sast"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/sca"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/secrets"
+	"github.com/Pixelcity-dev/Iris/internal/scanners/webscan"
 	"github.com/spf13/cobra"
 )
 
@@ -26,15 +27,15 @@ var (
 )
 
 var (
-	version   = "1.1.0"
+	version   = "1.2.0"
 	buildTime = "unknown"
 	commit    = "dev"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "deepsec",
-	Short: "DeepSec — Cyber Security Enterprise Tool",
-	Long: `DeepSec — Cyber Security Enterprise Tool
+	Use:   "iris",
+	Short: "Iris — Cyber Security Enterprise Tool",
+	Long: `Iris — Cyber Security Enterprise Tool
 
 All-in-one security platform. One binary, zero dependencies, covers code + supply chain + cloud + web + formatting.
 
@@ -44,19 +45,19 @@ CAPABILITIES
                       Secrets (200+ patterns, entropy + verified), License (SPDX/CycloneDX)
   Cloud & Containers   IaC (Terraform, CloudFormation, K8s, Dockerfile), Container (image & Dockerfile), Network
   Web & API            DAST + WebScan (OWASP Top 10, 20+ deep checks: headers, TLS, CORS, CSP, auth, etc.)
-  Quality              Format (7 checks: trailing ws, EOF newline, CRLF, mixed indent, long lines, gofmt, blanks) • deepsec fmt
+  Quality              Format (7 checks: trailing ws, EOF newline, CRLF, mixed indent, long lines, gofmt, blanks) • iris fmt
 
 EXAMPLES
-  deepsec scan .                                      # scan current repo
-  deepsec scan . --severity high --exit-code           # gate on high/critical
-  deepsec fmt . --check                               # formatting gate (CI)
-  deepsec fmt . --fix                                 # auto-fix formatting
-  deepsec webscan https://example.com --format sarif --output ws.sarif
-  deepsec scan https://example.com --scanner webscan,dast --compliance soc2
-  deepsec scan ./app --format html --output report.html
+  iris scan .                                      # scan current repo
+  iris scan . --severity high --exit-code           # gate on high/critical
+  iris fmt . --check                               # formatting gate (CI)
+  iris fmt . --fix                                 # auto-fix formatting
+  iris webscan https://example.com --format sarif --output ws.sarif
+  iris scan https://example.com --scanner webscan,dast --compliance soc2
+  iris scan ./app --format html --output report.html
 
-Learn more: https://pixelcity.top/deepsec  •  Docs: https://pixelcity.top/docs/deepsec
-Support: service@pixelcity.dev  •  MCP: deepsec mcp start for AI agents`,
+Learn more: https://pixelcity.top/iris  •  Docs: https://pixelcity.top/docs/iris
+Support: service@pixelcity.dev  •  MCP: iris mcp start for AI agents`,
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		initConfig()
@@ -72,16 +73,16 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: .deepsec.yaml, $HOME/.config/deepsec/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: .iris.yaml, $HOME/.config/iris/config.yaml)")
 	rootCmd.PersistentFlags().Bool("no-color", false, "disable ANSI colors (CI)")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose diagnostics")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "quiet — errors only")
 	rootCmd.PersistentFlags().String("profile", "", "profile (enterprise) — overrides scanners & thresholds")
 	rootCmd.PersistentFlags().String("compliance", "", "compliance mapping: soc2, iso27001, gdpr, hipaa, owasp")
-	rootCmd.SetVersionTemplate(`DeepSec {{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
+	rootCmd.SetVersionTemplate(`Iris {{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
   commit: ` + commit + `
   built:  ` + buildTime + `
-  scanners: 9  •  langs: 11+  •  https://pixelcity.top/docs/deepsec
+  scanners: 10  •  langs: 11+  •  https://pixelcity.top/docs/iris
 `)
 }
 
@@ -143,6 +144,12 @@ func initScanners() {
 	} else {
 		// always register webscan even if disabled in config, so --scanner webscan works
 		registry.Register(webscan.NewWebScanScanner())
+	}
+	// Build tests: analyze project language/structure and run build + tests
+	// (registered always; only runs when explicitly requested via --scanner buildtest
+	// or enabled in .iris.yaml, since executing builds is opt-in)
+	if _, ok := registry.Get(core.ScanTypeBuildTest); !ok {
+		registry.Register(buildtest.NewBuildTestScanner())
 	}
 	// Ensure format is always available for --scanner format even if disabled
 	if _, ok := registry.Get(core.ScanTypeFormat); !ok {

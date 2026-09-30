@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type FormatScanner struct {
@@ -45,7 +45,7 @@ func (s *FormatScanner) Scan(ctx context.Context, target core.Target, rules []co
 		}
 		if info.IsDir() {
 			name := info.Name()
-			if name == ".git" || name == "node_modules" || name == "vendor" || name == "dist" || name == "bin" || name == ".next" || name == ".deepsec" {
+			if name == ".git" || name == "node_modules" || name == "vendor" || name == "dist" || name == "bin" || name == ".next" || name == ".iris" {
 				return filepath.SkipDir
 			}
 			return nil
@@ -296,7 +296,7 @@ func checkGoFmt(path, content string) []core.Finding {
 			File:        path,
 			Line:        diffLine,
 			Code:        truncate(fmtLines[diffLine-1], 120),
-			Fix:         "Run gofmt -w or deepsec fmt --fix",
+			Fix:         "Run gofmt -w or iris fmt --fix",
 			Confidence:  1.0,
 		}}
 	}

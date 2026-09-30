@@ -14,19 +14,19 @@ var (
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
-	Short: "Run DeepSec as a server",
-	Long:  `Start DeepSec as a scanning server for centralized security scanning.`,
+	Short: "Run Iris as a server",
+	Long:  `Start Iris as a scanning server for centralized security scanning.`,
 }
 
 var serverStartCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start the DeepSec server",
+	Short: "Start the Iris server",
 	RunE:  runServerStart,
 }
 
 var serverStopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop the DeepSec server",
+	Short: "Stop the Iris server",
 	RunE:  runServerStop,
 }
 
@@ -51,7 +51,7 @@ func runServerStart(cmd *cobra.Command, args []string) error {
 	host := serverHost
 	port := serverPort
 
-	fmt.Printf("Starting DeepSec server on %s:%d\n", host, port)
+	fmt.Printf("Starting Iris server on %s:%d\n", host, port)
 
 	fmt.Println("Server started successfully")
 	fmt.Printf("API endpoint: http://%s:%d/api/v1\n", host, port)
@@ -61,13 +61,13 @@ func runServerStart(cmd *cobra.Command, args []string) error {
 }
 
 func runServerStop(cmd *cobra.Command, args []string) error {
-	fmt.Println("Stopping DeepSec server...")
+	fmt.Println("Stopping Iris server...")
 	fmt.Println("Server stopped.")
 	return nil
 }
 
 func runServerStatus(cmd *cobra.Command, args []string) error {
-	fmt.Println("DeepSec Server Status:")
+	fmt.Println("Iris Server Status:")
 	fmt.Println("======================")
 	fmt.Println("Status: Not running")
 	fmt.Println("PID: -")

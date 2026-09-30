@@ -1,33 +1,41 @@
 .PHONY: build test lint clean install
 
-APP_NAME := deepsec
-VERSION := 1.1.0
+APP_NAME := iris
+VERSION := 1.2.0
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
-LDFLAGS := -ldflags "-X github.com/Pixelcity-dev/Deepsec/internal/cli.version=$(VERSION) -X github.com/Pixelcity-dev/Deepsec/internal/cli.buildTime=$(BUILD_TIME) -X github.com/Pixelcity-dev/Deepsec/internal/cli.commit=$(COMMIT)"
+LDFLAGS := -ldflags "-X github.com/Pixelcity-dev/Iris/internal/cli.version=$(VERSION) -X github.com/Pixelcity-dev/Iris/internal/cli.buildTime=$(BUILD_TIME) -X github.com/Pixelcity-dev/Iris/internal/cli.commit=$(COMMIT)"
 
 .PHONY: all
 all: build
 
 .PHONY: build
 build:
-	go build $(LDFLAGS) -o bin/$(APP_NAME) ./cmd/deepsec
+	go build $(LDFLAGS) -o bin/$(APP_NAME) ./cmd/iris
+
+.PHONY: build-dashboard
+build-dashboard:
+	cd dashboard && go build -ldflags="-s -w" -o ../bin/iris-dashboard .
 
 .PHONY: build-all
 build-all:
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-linux-amd64 ./cmd/deepsec
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(APP_NAME)-linux-arm64 ./cmd/deepsec
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-darwin-amd64 ./cmd/deepsec
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(APP_NAME)-darwin-arm64 ./cmd/deepsec
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-windows-amd64.exe ./cmd/deepsec
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-linux-amd64 ./cmd/iris
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(APP_NAME)-linux-arm64 ./cmd/iris
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-darwin-amd64 ./cmd/iris
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(APP_NAME)-darwin-arm64 ./cmd/iris
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP_NAME)-windows-amd64.exe ./cmd/iris
 
 .PHONY: install
 install:
-	go install $(LDFLAGS) ./cmd/deepsec
+	go install $(LDFLAGS) ./cmd/iris
 
 .PHONY: test
 test:
 	go test -v ./...
+
+.PHONY: test-dashboard
+test-dashboard:
+	cd dashboard && go test ./...
 
 .PHONY: test-cover
 test-cover:

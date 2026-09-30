@@ -1,4 +1,4 @@
-module github.com/Pixelcity-dev/Deepsec
+module github.com/Pixelcity-dev/Iris
 
 go 1.27.0
 

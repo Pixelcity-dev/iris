@@ -19,9 +19,10 @@ services:
       OIDC_CLIENT_ID: "iris-dashboard"
       OIDC_REDIRECT_URL: "https://dashboard.pixelcity.dev/auth/callback"
       COOKIE_SECURE: "true"
+      SCANS_FILE: "/data/scans.jsonl"
     networks:
       - pixelcity_net
-    # Hardening: dashboard needs no writes; run read-only where possible
+    # Hardening: root FS read-only; only the scan store volume is writable.
     cap_drop:
       - ALL
     security_opt:
@@ -29,6 +30,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777,noexec,nosuid
+    volumes:
+      - iris_scans:/data
     logging:
       driver: json-file
       options:
@@ -44,3 +47,6 @@ services:
 networks:
   pixelcity_net:
     external: true
+
+volumes:
+  iris_scans:

@@ -1,28 +1,28 @@
 #!/bin/bash
 set -e
 
-# DeepSec Installer v2 - Ultra Easy Install
+# Iris Installer v2 - Ultra Easy Install
 # All-in-one Cybersecurity CLI Tool
 #
 # Quick Install (pick one):
-#   curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh
-#   curl -fsSL https://cdn.pixelcity.top/deepsec/install.sh | sh
-#   wget -qO- https://cdn.pixelcity.dev/deepsec/install.sh | sh
-#   sh -c "$(curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh)"
+#   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+#   curl -fsSL https://cdn.pixelcity.top/iris/install.sh | sh
+#   wget -qO- https://cdn.pixelcity.dev/iris/install.sh | sh
+#   sh -c "$(curl -fsSL https://cdn.pixelcity.dev/iris/install.sh)"
 #
 # Custom version / dir:
-#   curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | DEEPSEC_VERSION=v1.1.0 sh
-#   curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | INSTALL_DIR=/usr/local/bin sh
+#   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | DEEPSEC_VERSION=v1.2.0 sh
+#   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | INSTALL_DIR=/usr/local/bin sh
 #
 # Other methods:
-#   go install github.com/Pixelcity-dev/Deepsec/cmd/deepsec@latest
-#   docker pull pixelcity/deepsec:latest && docker run --rm pixelcity/deepsec --help
-#   brew install pixelcity/tap/deepsec  (coming soon)
+#   go install github.com/Pixelcity-dev/Deepsec/cmd/iris@latest
+#   docker pull pixelcity/iris:latest && docker run --rm pixelcity/iris --help
+#   brew install pixelcity/tap/iris  (coming soon)
 
-DEEPSEC_VERSION="${DEEPSEC_VERSION:-v1.1.0}"
+DEEPSEC_VERSION="${DEEPSEC_VERSION:-v1.2.0}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
-BASE_URL="${BASE_URL:-https://cdn.pixelcity.dev/deepsec/releases}"
-FALLBACK_URL="https://cdn.pixelcity.top/deepsec/releases"
+BASE_URL="${BASE_URL:-https://cdn.pixelcity.dev/iris/releases}"
+FALLBACK_URL="https://cdn.pixelcity.top/iris/releases"
 GITHUB_RELEASES="https://github.com/Pixelcity-dev/Deepsec/releases/download"
 
 # colors (auto-disable if not tty)
@@ -41,23 +41,23 @@ error()   { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
-      echo "DeepSec Installer"
-      echo "Usage: curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh"
+      echo "Iris Installer"
+      echo "Usage: curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh"
       echo ""
       echo "Env:"
-      echo "  DEEPSEC_VERSION=v1.1.0   version to install (or 'latest')"
+      echo "  DEEPSEC_VERSION=v1.2.0   version to install (or 'latest')"
       echo "  INSTALL_DIR=\$HOME/.local/bin   install directory"
-      echo "  BASE_URL=https://cdn.pixelcity.dev/deepsec/releases override"
+      echo "  BASE_URL=https://cdn.pixelcity.dev/iris/releases override"
       echo "Args:"
       echo "  --help        show this"
-      echo "  --uninstall   remove deepsec from INSTALL_DIR"
+      echo "  --uninstall   remove iris from INSTALL_DIR"
       echo "  --version     print latest version and exit"
       echo "  --dry-run     show what would be installed"
       exit 0
       ;;
     --uninstall)
-      echo -e "${YELLOW}Uninstalling deepsec from $INSTALL_DIR ...${NC}"
-      rm -f "$INSTALL_DIR/deepsec" "$INSTALL_DIR/deepsec.exe"
+      echo -e "${YELLOW}Uninstalling iris from $INSTALL_DIR ...${NC}"
+      rm -f "$INSTALL_DIR/iris" "$INSTALL_DIR/iris.exe"
       echo -e "${GREEN}Done${NC}"
       exit 0
       ;;
@@ -95,7 +95,7 @@ check_deps() {
 resolve_latest() {
   if [ "$DEEPSEC_VERSION" = "latest" ] || [ "$DEEPSEC_VERSION" = "stable" ]; then
     info "Resolving latest version..."
-    # try CDN VERSION file, then fallback to v1.1.0
+    # try CDN VERSION file, then fallback to v1.2.0
     LATEST_URL="$BASE_URL/../VERSION"
     # Try to fetch latest version string; ignore errors
     RESOLVED=""
@@ -108,7 +108,7 @@ resolve_latest() {
       DEEPSEC_VERSION="$RESOLVED"
       info "Latest is $DEEPSEC_VERSION"
     else
-      DEEPSEC_VERSION="v1.1.0"
+      DEEPSEC_VERSION="v1.2.0"
       warn "Could not resolve latest, using $DEEPSEC_VERSION"
     fi
   fi
@@ -128,10 +128,10 @@ detect_platform() {
     linux) PLATFORM="linux" ;;
     darwin) PLATFORM="darwin" ;;
     mingw*|msys*|cygwin*|windows*) PLATFORM="windows" ;;
-    *) error "Unsupported OS: $OS (supported: linux, darwin, windows). Try Docker: docker run pixelcity/deepsec" ;;
+    *) error "Unsupported OS: $OS (supported: linux, darwin, windows). Try Docker: docker run pixelcity/iris" ;;
   esac
-  BINARY_NAME="deepsec"
-  [ "$PLATFORM" = "windows" ] && BINARY_NAME="deepsec.exe"
+  BINARY_NAME="iris"
+  [ "$PLATFORM" = "windows" ] && BINARY_NAME="iris.exe"
   DETECTED="${PLATFORM}-${ARCH}"
   info "Detected platform: ${DETECTED}"
   # windows warning about INSTALL_DIR
@@ -165,18 +165,18 @@ download_file() {
 }
 
 install_binary() {
-  info "Downloading DeepSec ${DEEPSEC_VERSION} for ${DETECTED}..."
+  info "Downloading Iris ${DEEPSEC_VERSION} for ${DETECTED}..."
 
   # primary and fallback URLs
-  PRIMARY_URL="${BASE_URL}/${DEEPSEC_VERSION}/deepsec-${DETECTED}"
-  FALLBACK_PRIMARY="${FALLBACK_URL}/${DEEPSEC_VERSION}/deepsec-${DETECTED}"
-  GITHUB_URL="${GITHUB_RELEASES}/${DEEPSEC_VERSION}/deepsec-${DETECTED}"
+  PRIMARY_URL="${BASE_URL}/${DEEPSEC_VERSION}/iris-${DETECTED}"
+  FALLBACK_PRIMARY="${FALLBACK_URL}/${DEEPSEC_VERSION}/iris-${DETECTED}"
+  GITHUB_URL="${GITHUB_RELEASES}/${DEEPSEC_VERSION}/iris-${DETECTED}"
   [ "$PLATFORM" = "windows" ] && PRIMARY_URL="${PRIMARY_URL}.exe" && FALLBACK_PRIMARY="${FALLBACK_PRIMARY}.exe" && GITHUB_URL="${GITHUB_URL}.exe"
 
   mkdir -p "$INSTALL_DIR"
 
-  TEMP_FILE=$(mktemp 2>/dev/null || mktemp -t deepsec)
-  TEMP_SHA=$(mktemp 2>/dev/null || mktemp -t deepsec_sha)
+  TEMP_FILE=$(mktemp 2>/dev/null || mktemp -t iris)
+  TEMP_SHA=$(mktemp 2>/dev/null || mktemp -t iris_sha)
 
   URL_TO_TRY=""
   SUCCESS=0
@@ -202,15 +202,15 @@ install_binary() {
   if [ "$SUCCESS" != "1" ]; then
     rm -f "$TEMP_FILE" "$TEMP_SHA"
     echo ""
-    error "Failed to download DeepSec for $DETECTED.
+    error "Failed to download Iris for $DETECTED.
   Tried:
     - $PRIMARY_URL
     - $FALLBACK_PRIMARY
     - $GITHUB_URL
   Check your network or try manual download:
-    curl -fsSL $PRIMARY_URL -o deepsec && chmod +x deepsec && sudo mv deepsec /usr/local/bin/
-  Or via go: go install github.com/Pixelcity-dev/Deepsec/cmd/deepsec@latest
-  Or docker: docker run --rm pixelcity/deepsec --help
+    curl -fsSL $PRIMARY_URL -o iris && chmod +x iris && sudo mv iris /usr/local/bin/
+  Or via go: go install github.com/Pixelcity-dev/Deepsec/cmd/iris@latest
+  Or docker: docker run --rm pixelcity/iris --help
   Issues: https://github.com/Pixelcity-dev/Deepsec/issues"
   fi
 
@@ -219,7 +219,7 @@ install_binary() {
     exit 0
   fi
 
-  # Optional sha256 check if available on CDN (deepsec-XXX.sha256)
+  # Optional sha256 check if available on CDN (iris-XXX.sha256)
   SHA_URL="${URL_TO_TRY}.sha256"
   if download_file "$SHA_URL" "$TEMP_SHA" 2>/dev/null; then
     if command -v sha256sum >/dev/null 2>&1; then
@@ -246,7 +246,7 @@ install_binary() {
   if head -c 200 "$TEMP_FILE" | grep -qi "<!DOCTYPE\|<html"; then
     rm -f "$TEMP_FILE"
     error "Downloaded file is HTML (likely 404). Release $DEEPSEC_VERSION may not exist for $DETECTED.
-  Available: https://cdn.pixelcity.dev/deepsec/releases/
+  Available: https://cdn.pixelcity.dev/iris/releases/
   GitHub: https://github.com/Pixelcity-dev/Deepsec/releases"
   fi
 
@@ -314,7 +314,7 @@ update_path() {
   if [ -n "$TARGET_RC" ]; then
     if ! grep -q "$INSTALL_DIR" "$TARGET_RC" 2>/dev/null; then
       echo "" >> "$TARGET_RC"
-      echo "# DeepSec" >> "$TARGET_RC"
+      echo "# Iris" >> "$TARGET_RC"
       echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$TARGET_RC"
       warn "Added $INSTALL_DIR to PATH in $TARGET_RC"
       warn "Run: source $TARGET_RC  or restart your terminal"
@@ -331,7 +331,7 @@ update_path() {
 verify_install() {
   echo ""
   if [ -x "${INSTALL_DIR}/${BINARY_NAME}" ]; then
-    success "DeepSec installed successfully!"
+    success "Iris installed successfully!"
     echo ""
     echo -e "  ${GREEN}Location:${NC} ${INSTALL_DIR}/${BINARY_NAME}"
     if command -v "${INSTALL_DIR}/${BINARY_NAME}" >/dev/null 2>&1; then
@@ -340,28 +340,28 @@ verify_install() {
     fi
     echo ""
     echo -e "  ${CYAN}Quick Start:${NC}"
-    echo -e "    deepsec scan .                          ${DIM}# Scan current dir${NC}"
-    echo -e "    deepsec scan https://example.com --scanner dast,webscan  ${DIM}# Deep website scan${NC}"
-    echo -e "    deepsec scan . --scanner sast,sca,secrets  ${DIM}# Specific scanners${NC}"
-    echo -e "    deepsec webscan https://example.com     ${DIM}# Full website audit (new!)${NC}"
-    echo -e "    deepsec init                            ${DIM}# Create .deepsec.yaml${NC}"
-    echo -e "    deepsec --help                          ${DIM}# All commands${NC}"
+    echo -e "    iris scan .                          ${DIM}# Scan current dir${NC}"
+    echo -e "    iris scan https://example.com --scanner dast,webscan  ${DIM}# Deep website scan${NC}"
+    echo -e "    iris scan . --scanner sast,sca,secrets  ${DIM}# Specific scanners${NC}"
+    echo -e "    iris webscan https://example.com     ${DIM}# Full website audit (new!)${NC}"
+    echo -e "    iris init                            ${DIM}# Create .iris.yaml${NC}"
+    echo -e "    iris --help                          ${DIM}# All commands${NC}"
     echo ""
     echo -e "  ${DIM}Docs:     https://github.com/Pixelcity-dev/Deepsec${NC}"
-    echo -e "  ${DIM}Releases: https://cdn.pixelcity.dev/deepsec/releases/${NC}"
-    echo -e "  ${DIM}CDN:      https://cdn.pixelcity.dev/deepsec/install.sh${NC}"
-    echo -e "  ${DIM}Alt CDN:  https://cdn.pixelcity.top/deepsec/install.sh${NC}"
+    echo -e "  ${DIM}Releases: https://cdn.pixelcity.dev/iris/releases/${NC}"
+    echo -e "  ${DIM}CDN:      https://cdn.pixelcity.dev/iris/install.sh${NC}"
+    echo -e "  ${DIM}Alt CDN:  https://cdn.pixelcity.top/iris/install.sh${NC}"
     echo ""
     # if not in PATH, hint
-    if ! command -v deepsec >/dev/null 2>&1; then
+    if ! command -v iris >/dev/null 2>&1; then
       warn "Not in current PATH. Try:"
-      warn "  ${INSTALL_DIR}/deepsec --help"
+      warn "  ${INSTALL_DIR}/iris --help"
       warn "  export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
   else
     warn "Binary installed but not executable. Check ${INSTALL_DIR}/${BINARY_NAME}"
   fi
-  echo -e "${DIM}Tip: DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh  # always latest${NC}"
+  echo -e "${DIM}Tip: DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh  # always latest${NC}"
   echo ""
 }
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/reporter"
+	"github.com/Pixelcity-dev/Iris/internal/reporter"
 	"github.com/spf13/cobra"
 )
 

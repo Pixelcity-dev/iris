@@ -7,11 +7,22 @@ import (
 	"time"
 )
 
+// Progress receives lifecycle events while the pipeline runs scanners.
+type Progress interface {
+	// OnScannerStart is called when a scanner begins.
+	OnScannerStart(scanType ScanType, name string)
+	// OnScannerDone is called when a scanner finished with findings count and duration.
+	OnScannerDone(scanType ScanType, name string, findings int, duration time.Duration)
+	// OnScannerError is called when a scanner returned an error.
+	OnScannerError(scanType ScanType, name string, err error, duration time.Duration)
+}
+
 type Pipeline struct {
 	registry *ScannerRegistry
 	rules    *RuleEngine
 	filter   *FindingFilter
 	dedup    *Deduplicator
+	progress Progress
 }
 
 func NewPipeline(registry *ScannerRegistry, rules *RuleEngine) *Pipeline {
@@ -23,9 +34,11 @@ func NewPipeline(registry *ScannerRegistry, rules *RuleEngine) *Pipeline {
 	}
 }
 
-func (p *Pipeline) SetFilter(f *FindingFilter) {
-	p.filter = f
-}
+// SetProgress attaches a progress listener (e.g. the CLI spinner).
+func (p *Pipeline) SetProgress(pv Progress) { p.progress = pv }
+
+// SetFilter sets the finding filter applied after each scanner runs.
+func (p *Pipeline) SetFilter(f *FindingFilter) { p.filter = f }
 
 func (p *Pipeline) Scan(ctx context.Context, target Target, scanTypes []ScanType) ([]ScanResult, error) {
 	scanners := p.registry.GetByTypes(scanTypes)
@@ -45,21 +58,29 @@ func (p *Pipeline) Scan(ctx context.Context, target Target, scanTypes []ScanType
 			defer wg.Done()
 
 			start := time.Now()
+			if p.progress != nil {
+				p.progress.OnScannerStart(s.Type(), s.Name())
+			}
 			rules := p.rules.GetRulesForScanner(s.Type())
 
 			findings, err := s.Scan(ctx, target, rules)
-			duration := time.Since(start).Seconds()
+			duration := time.Since(start)
 
 			result := ScanResult{
 				Target:    target,
 				Scanner:   s.Name(),
 				StartTime: start,
 				EndTime:   time.Now(),
-				Duration:  duration,
+				Duration:  duration.Seconds(),
 			}
 
 			if err != nil {
 				result.Error = err.Error()
+				if p.progress != nil {
+					p.progress.OnScannerError(s.Type(), s.Name(), err, duration)
+				}
+			} else if p.progress != nil {
+				p.progress.OnScannerDone(s.Type(), s.Name(), len(findings), duration)
 			}
 
 			for _, f := range findings {

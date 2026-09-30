@@ -41,15 +41,15 @@ func init() {
 
 func runGeneratePreCommit(cmd *cobra.Command, args []string) error {
 	content := `repos:
-  - repo: https://github.com/deepsec/deepsec
+  - repo: https://github.com/irissec/iris
     rev: v1.1.0
     hooks:
-      - id: deepsec-secrets
-        name: DeepSec Secrets Scan
-      - id: deepsec-sast
-        name: DeepSec SAST Scan
-      - id: deepsec-iac
-        name: DeepSec IaC Scan
+      - id: iris-secrets
+        name: Iris Secrets Scan
+      - id: iris-sast
+        name: Iris SAST Scan
+      - id: iris-iac
+        name: Iris IaC Scan
 `
 
 	if err := os.WriteFile(".pre-commit-config.yaml", []byte(content), 0644); err != nil {
@@ -66,7 +66,7 @@ func runGenerateGitHub(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	content := `name: DeepSec Security Scan
+	content := `name: Iris Security Scan
 
 on:
   push:
@@ -87,8 +87,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run DeepSec SAST
-        uses: deepsec/deepsec-action@v1
+      - name: Run Iris SAST
+        uses: irissec/iris-action@v1
         with:
           scan-type: 'sast'
           format: 'sarif'
@@ -100,8 +100,8 @@ jobs:
           sarif_file: 'sast-results.sarif'
         if: always()
 
-      - name: Run DeepSec SCA
-        uses: deepsec/deepsec-action@v1
+      - name: Run Iris SCA
+        uses: irissec/iris-action@v1
         with:
           scan-type: 'sca'
           format: 'sarif'
@@ -113,8 +113,8 @@ jobs:
           sarif_file: 'sca-results.sarif'
         if: always()
 
-      - name: Run DeepSec Secrets
-        uses: deepsec/deepsec-action@v1
+      - name: Run Iris Secrets
+        uses: irissec/iris-action@v1
         with:
           scan-type: 'secrets'
           format: 'sarif'
@@ -127,7 +127,7 @@ jobs:
         if: always()
 `
 
-	path := filepath.Join(dir, "deepsec.yml")
+	path := filepath.Join(dir, "iris.yml")
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write GitHub Actions config: %w", err)
 	}
@@ -140,33 +140,33 @@ func runGenerateGitLabCI(cmd *cobra.Command, args []string) error {
 	content := `stages:
   - security
 
-deepsec-sast:
+iris-sast:
   stage: security
-  image: deepsec/deepsec:latest
+  image: irissec/iris:latest
   script:
-    - deepsec scan fs --format sarif --output gl-sast-report.json --scanner sast
+    - iris scan fs --format sarif --output gl-sast-report.json --scanner sast
   artifacts:
     reports:
       sast: gl-sast-report.json
   only:
     - branches
 
-deepsec-sca:
+iris-sca:
   stage: security
-  image: deepsec/deepsec:latest
+  image: irissec/iris:latest
   script:
-    - deepsec scan fs --format cyclonedx --output gl-dependency-report.json --scanner sca
+    - iris scan fs --format cyclonedx --output gl-dependency-report.json --scanner sca
   artifacts:
     reports:
       dependency_scanning: gl-dependency-report.json
   only:
     - branches
 
-deepsec-secrets:
+iris-secrets:
   stage: security
-  image: deepsec/deepsec:latest
+  image: irissec/iris:latest
   script:
-    - deepsec scan fs --format json --output gl-secret-detection-report.json --scanner secrets
+    - iris scan fs --format json --output gl-secret-detection-report.json --scanner secrets
   artifacts:
     reports:
       secret_detection: gl-secret-detection-report.json

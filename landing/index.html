@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepSec — All-in-one Cybersecurity CLI Tool</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+    <title>Iris — All-in-one Cybersecurity CLI Tool</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0f'/%3E%3Cpath d='M32 7 13 15.5v14.7c0 11.4 8 22.3 19 27.3 11-5 19-15.9 19-27.3V15.5L32 7z' fill='none' stroke='url(%23g)' stroke-width='3.4' stroke-linejoin='round'/%3E%3Cpath d='M32 20a12.5 12.5 0 0 1 12.5 12.5H32V20z' fill='%2310b981' opacity='.85'/%3E%3Cpath d='M22.5 39.5 32 32l12-12' fill='none' stroke='%2310b981' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -540,7 +540,7 @@
         <div class="container">
             <div class="header-content">
                 <a href="/" class="logo">
-                    <div class="logo-icon">🔒</div>
+                    <div class="logo-icon"><svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7 13 15.5v14.7c0 11.4 8 22.3 19 27.3 11-5 19-15.9 19-27.3V15.5L32 7z" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/><path d="M32 20a12.5 12.5 0 0 1 12.5 12.5H32V20z" fill="#10b981" opacity='.85'/><path d="M22.5 39.5 32 32l12-12" fill="none" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                     <div class="logo-text">Deep<span>Sec</span></div>
                 </a>
                 <nav>
@@ -582,7 +582,7 @@
             <div class="install-section">
                 <div class="install-box">
                     <span class="prompt">$</span>
-                    <span class="command" id="install-cmd">curl -sSL https://pixelcity.dev/deepsec/install.sh | sh</span>
+                    <span class="command" id="install-cmd">curl -sSL https://pixelcity.dev/iris/install.sh | sh</span>
                     <button class="copy-btn" onclick="copyInstall()">Copy</button>
                 </div>
             </div>
@@ -643,14 +643,14 @@
                     <div class="code-dot green"></div>
                 </div>
                 <div class="code-content">
-                    <span class="comment"># Install DeepSec</span><br>
-                    <span class="command">$</span> curl -sSL https://pixelcity.dev/deepsec/install.sh | sh<br><br>
+                    <span class="comment"># Install Iris</span><br>
+                    <span class="command">$</span> curl -sSL https://pixelcity.dev/iris/install.sh | sh<br><br>
                     <span class="comment"># Scan your project</span><br>
-                    <span class="command">$</span> deepsec scan . <span class="flag">--scanner</span> sast,sca,secrets<br><br>
+                    <span class="command">$</span> iris scan . <span class="flag">--scanner</span> sast,sca,secrets<br><br>
                     <span class="comment"># Output to SARIF for GitHub</span><br>
-                    <span class="command">$</span> deepsec scan . <span class="flag">--format</span> sarif <span class="flag">--output</span> results.sarif<br><br>
+                    <span class="command">$</span> iris scan . <span class="flag">--format</span> sarif <span class="flag">--output</span> results.sarif<br><br>
                     <span class="comment"># Filter by severity</span><br>
-                    <span class="command">$</span> deepsec scan . <span class="flag">--severity</span> critical,high
+                    <span class="command">$</span> iris scan . <span class="flag">--severity</span> critical,high
                 </div>
             </div>
         </div>
@@ -736,7 +736,7 @@
 
     <footer>
         <div class="container">
-            <p>DeepSec by <a href="https://pixelcity.dev">PixelCity</a> — Apache 2.0 License — <a href="https://github.com/Pixelcity-dev/Deepsec">GitHub</a></p>
+            <p>Iris by <a href="https://pixelcity.dev">PixelCity</a> — Apache 2.0 License — <a href="https://github.com/Pixelcity-dev/Deepsec">GitHub</a></p>
         </div>
     </footer>
 

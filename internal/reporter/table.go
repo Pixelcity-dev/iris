@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/config"
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/config"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type TableReporter struct{}
@@ -34,12 +34,12 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 	sb.WriteString("\n")
 	if opts.Color {
 		sb.WriteString("\033[1;34m╔════════════════════════════════════════════════════════════════╗\033[0m\n")
-		sb.WriteString("\033[1;34m║\033[0m \033[1;37mDeepSec — Cyber Security Enterprise Tool                    \033[0m\033[1;34m║\033[0m\n")
-		sb.WriteString("\033[1;34m║\033[0m  \033[2mSAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format\033[0m  \033[1;34m║\033[0m\n")
+		sb.WriteString("\033[1;34m║\033[0m \033[1;37m⬡ Iris — Cyber Security Enterprise Tool                 \033[0m\033[1;34m║\033[0m\n")
+		sb.WriteString("\033[1;34m║\033[0m  \033[2mSAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format • BuildTest\033[0m  \033[1;34m║\033[0m\n")
 		sb.WriteString("\033[1;34m╚════════════════════════════════════════════════════════════════╝\033[0m\n")
 	} else {
-		sb.WriteString("DeepSec — Cyber Security Enterprise Tool\n")
-		sb.WriteString("SAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format\n")
+		sb.WriteString("Iris — Cyber Security Enterprise Tool\n")
+		sb.WriteString("SAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format • BuildTest\n")
 	}
 	sb.WriteString(fmt.Sprintf("  Target: %s  •  %s  •  %.2fs\n", strings.Join(targets, ", "), time.Now().Format("2006-01-02 15:04 MST"), duration))
 	// Risk rating
@@ -179,8 +179,8 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 		}
 	}
 	sb.WriteString("────────────────────────────────────────────────────────────────\n")
-	sb.WriteString("  Next: deepsec scan --format sarif --output results.sarif  → GitHub Code Scanning\n")
-	sb.WriteString("        deepsec scan --format html --output report.html   → Report\n")
-	sb.WriteString("  Docs: https://pixelcity.top/docs/deepsec  •  https://github.com/Pixelcity-dev/Deepsec\n")
+	sb.WriteString("  Next: iris scan --format sarif --output results.sarif  → GitHub Code Scanning\n")
+	sb.WriteString("        iris scan --format html --output report.html   → Report\n")
+	sb.WriteString("  Docs: https://pixelcity.top/docs/iris  •  https://github.com/Pixelcity-dev/Iris\n")
 	return []byte(sb.String()), nil
 }

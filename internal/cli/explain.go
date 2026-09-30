@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 	"github.com/spf13/cobra"
 )
 

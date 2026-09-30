@@ -29,3 +29,6 @@ vendor/
 # DeepSec
 .deepsec/
 .deepsec.yaml
+
+# Local build artifacts
+dashboard/dashboard

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 // WebScanScanner performs deep website security audit
@@ -144,7 +144,7 @@ func isURL(s string) bool {
 
 func fetchURL(raw string, client *http.Client) (*http.Response, string) {
 	req, _ := http.NewRequest("GET", raw, nil)
-	req.Header.Set("User-Agent", "DeepSec-WebScan/1.0 (+https://github.com/Pixelcity-dev/Deepsec)")
+	req.Header.Set("User-Agent", "Iris-WebScan/1.0 (+https://github.com/Pixelcity-dev/Iris)")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -163,7 +163,7 @@ func fetchWithHeader(raw string, client *http.Client, headers map[string]string)
 		req.Header.Set(k, v)
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", "DeepSec-WebScan/1.0")
+		req.Header.Set("User-Agent", "Iris-WebScan/1.0")
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -657,7 +657,7 @@ func checkInformationDisclosure(resp *http.Response) []core.Finding {
 func checkHTTPMethods(target *url.URL, client *http.Client) []core.Finding {
 	var findings []core.Finding
 	req, _ := http.NewRequest("OPTIONS", target.String(), nil)
-	req.Header.Set("User-Agent", "DeepSec-WebScan/1.0")
+	req.Header.Set("User-Agent", "Iris-WebScan/1.0")
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
 		return findings
@@ -887,7 +887,7 @@ func checkOpenRedirect(target *url.URL, client *http.Client) []core.Finding {
 // 10. XSS Reflection (safe)
 func checkXSSReflection(target *url.URL, client *http.Client) []core.Finding {
 	var findings []core.Finding
-	marker := "deepsecXSS1337"
+	marker := "irisXSS1337"
 	payload := "<s>" + marker + "</s>"
 	u2 := *target
 	q := u2.Query()

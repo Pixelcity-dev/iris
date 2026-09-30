@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type DASTScanner struct {
@@ -280,7 +280,7 @@ func checkCORS(target *url.URL, client *http.Client) []core.Finding {
 	origin := "https://evil.com"
 	req, _ := http.NewRequest("GET", target.String(), nil)
 	req.Header.Set("Origin", origin)
-	req.Header.Set("User-Agent", "DeepSec-DAST/1.0")
+	req.Header.Set("User-Agent", "Iris-DAST/1.0")
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
 		return findings

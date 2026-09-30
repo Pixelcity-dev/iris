@@ -17,7 +17,7 @@ var (
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
 	Short: "Manage plugins",
-	Long:  `Search, install, enable, disable, and manage DeepSec plugins.`,
+	Long:  `Search, install, enable, disable, and manage Iris plugins.`,
 }
 
 var pluginListCmd = &cobra.Command{

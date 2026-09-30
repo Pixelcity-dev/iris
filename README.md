@@ -1,14 +1,14 @@
-# DeepSec — Cyber Security Enterprise Tool
+# Iris — Cyber Security Enterprise Tool
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Pixelcity-dev/Deepsec)](https://goreportcard.com/report/github.com/Pixelcity-dev/Deepsec)
-[![Release](https://img.shields.io/github/v/release/Pixelcity-dev/Deepsec)](https://github.com/Pixelcity-dev/Deepsec/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Pixelcity-dev/Iris)](https://goreportcard.com/report/github.com/Pixelcity-dev/Iris)
+[![Release](https://img.shields.io/github/v/release/Pixelcity-dev/Iris)](https://github.com/Pixelcity-dev/Iris/releases)
 [![PixelCity](https://img.shields.io/badge/by-PixelCity-%23d4a853?labelColor=%23080707)](https://pixelcity.top)
-[![Formatter](https://img.shields.io/badge/formatter-deepsec%20fmt-blue)](https://pixelcity.top/docs/deepsec#formatter)
+[![Formatter](https://img.shields.io/badge/formatter-iris%20fmt-blue)](https://pixelcity.top/docs/iris#formatter)
 
 **Cyber Security Enterprise Tool — code, supply chain, cloud, web and formatting in one binary.**
 
-DeepSec unifies **SAST, SCA, Secrets, IaC, Containers, DAST, WebScan, Network, License & SBOM** for **any language** and **any webpage** — plus a zero-dependency **Formatter** (`deepsec fmt`). Zero dependencies, <50ms startup, compliance-ready (SOC 2, ISO 27001, GDPR, OWASP, CWE).
+Iris unifies **SAST, SCA, Secrets, IaC, Containers, DAST, WebScan, Network, License & SBOM** for **any language** and **any webpage** — plus a zero-dependency **Formatter** (`iris fmt`). Zero dependencies, <50ms startup, compliance-ready (SOC 2, ISO 27001, GDPR, OWASP, CWE).
 
 > **Made by [PixelCity](https://pixelcity.top) — Your Cloud, Your Rules.**
 > Open source under **Apache 2.0**. Public since **v1.1.0**. Contributions welcome.
@@ -24,39 +24,43 @@ DeepSec unifies **SAST, SCA, Secrets, IaC, Containers, DAST, WebScan, Network, L
 - **WebScan** — 20+ deep checks (HSTS/CSP deep, TLS cert/cipher/version, CORS wildcard, exposed `/.env/.git`, open redirect, XSS reflection, SQLi error, directory listing, `security.txt`, mixed content, SRI, HTTPS redirect) • OWASP Top 10
 - **Network** — Port/service, TLS, header audit
 - **License & SBOM** — SPDX/CycloneDX, license compliance
-- **Any Webpage** — `deepsec webscan https://example.com` audits marketing sites, SaaS apps, APIs, SPAs
-- **Formatter** — 7 checks, auto-fix, zero-config • `deepsec fmt` (`format` alias) — trailing whitespace, missing EOF newline, CRLF, mixed indentation, long lines (>120), Go `gofmt`, consecutive blanks • `<10ms` for 1000 files, no `prettier`/`black` required
+- **Any Webpage** — `iris webscan https://example.com` audits marketing sites, SaaS apps, APIs, SPAs
+- **Automated Build Tests** — `iris buildtest` detects your project's language & structure (go.mod, package.json, Cargo.toml, Maven/Gradle, Python) incl. monorepos, runs the standard build + test commands, and reports compiler/test errors as findings with `file:line` and fix steps
+- **Specific Fix Suggestions** — every finding gets actionable, language-aware remediation: exact commands (`sed -n` line fixes, `gofmt -w`, `npm ci`), header values (CSP/HSTS snippets incl. Caddy syntax), rotation steps for leaked secrets
+- **Live Scan UI** — per-scanner spinning indicators with findings counts and durations (TTY-aware, clean output in CI)
+- **PixelCity Cloud** — `iris cloud login` (Keycloak device flow via id.pixelcity.dev), plan & usage history, Pro/Enterprise checkout via payments.pixelcity.dev, dashboard at dashboard.pixelcity.dev
+- **Formatter** — 7 checks, auto-fix, zero-config • `iris fmt` (`format` alias) — trailing whitespace, missing EOF newline, CRLF, mixed indentation, long lines (>120), Go `gofmt`, consecutive blanks • `<10ms` for 1000 files, no `prettier`/`black` required
 
 ## Installation
 
 ### One-Liner — CDN via Caddy
 
 ```bash
-curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh
+curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
 # fallbacks
-curl -fsSL https://cdn.pixelcity.top/deepsec/install.sh | sh
-curl -fsSL https://pixelcity.top/deepsec/install.sh | sh
-wget -qO- https://cdn.pixelcity.dev/deepsec/install.sh | sh
+curl -fsSL https://cdn.pixelcity.top/iris/install.sh | sh
+curl -fsSL https://pixelcity.top/iris/install.sh | sh
+wget -qO- https://cdn.pixelcity.dev/iris/install.sh | sh
 ```
 
 ```bash
-DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh
-INSTALL_DIR=/usr/local/bin curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh
-curl -fsSL https://cdn.pixelcity.dev/deepsec/install.sh | sh -s -- --help
+DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+INSTALL_DIR=/usr/local/bin curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help
 ```
 
 ### Go Install
 
 ```bash
-go install github.com/Pixelcity-dev/Deepsec/cmd/deepsec@latest
+go install github.com/Pixelcity-dev/Iris/cmd/iris@latest
 ```
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/Pixelcity-dev/Deepsec.git
-git clone git@github.com:Pixelcity-dev/Deepsec.git
-cd Deepsec
+git clone https://github.com/Pixelcity-dev/Iris.git
+git clone git@github.com:Pixelcity-dev/Iris.git
+cd Iris
 make build
 sudo make install
 ```
@@ -64,73 +68,75 @@ sudo make install
 ### Manual Download
 
 ```bash
-# https://cdn.pixelcity.dev/deepsec/releases/v1.1.0/
-curl -fsSL https://cdn.pixelcity.dev/deepsec/releases/v1.1.0/deepsec-linux-amd64 -o deepsec
-chmod +x deepsec && sudo mv deepsec /usr/local/bin/
+# https://cdn.pixelcity.dev/iris/releases/v1.1.0/
+curl -fsSL https://cdn.pixelcity.dev/iris/releases/v1.1.0/iris-linux-amd64 -o iris
+chmod +x iris && sudo mv iris /usr/local/bin/
 ```
 
-Releases served via `Caddy (443) → Nginx CDN (pixelcity-cdn)` from `/opt/pixelcity/cdn/assets/deepsec/` with `Cache-Control` & CORS.
+Releases served via `Caddy (443) → Nginx CDN (pixelcity-cdn)` from `/opt/pixelcity/cdn/assets/iris/` with `Cache-Control` & CORS.
 
 ## Quick Start
 
 ```bash
 # Scan current directory
-deepsec scan .
+iris scan .
 
 # Specific scanners
-deepsec scan . --scanner sast,sca,secrets
+iris scan . --scanner sast,sca,secrets
 
 # Formatting — check & fix
-deepsec fmt . --check          # CI gate, exit 1 if unformatted
-deepsec fmt . --fix            # auto-fix in place
-deepsec scan . --scanner format --format table  # as scanner
+iris fmt . --check          # CI gate, exit 1 if unformatted
+iris fmt . --fix            # auto-fix in place
+iris scan . --scanner format --format table  # as scanner
 
 # Deep Website Scan — 20+ checks
-deepsec webscan https://example.com
-deepsec webscan https://example.com --format json --output report.json
-deepsec webscan https://example.com --severity high --format sarif --output webscan.sarif
-deepsec scan https://example.com --scanner webscan,dast
+iris webscan https://example.com
+iris webscan https://example.com --format json --output report.json
+iris webscan https://example.com --severity high --format sarif --output webscan.sarif
+iris scan https://example.com --scanner webscan,dast
 
 # Severity filter
-deepsec scan . --severity high,critical
+iris scan . --severity high,critical
 
 # JSON / SARIF
-deepsec scan . --format json --output results.json
-deepsec scan . --format sarif --output results.sarif
+iris scan . --format json --output results.json
+iris scan . --format sarif --output results.sarif
 
 # Config & DB
-deepsec init
-deepsec db update
+iris init
+iris db update
 ```
 
 ## CLI
 
 | Command | Description |
 |---------|-------------|
-| `deepsec scan [target]` | Scan `fs`/`url`/`image`/`repo` — auto-detects target |
-| `deepsec webscan [url]` | Deep website audit — 20+ OWASP checks (`website`/`audit`/`wscan` aliases) |
-| `deepsec fmt [target]` | Check & fix formatting — 7 checks, auto-fix (`format`/`style` aliases) |
-| `deepsec init` | Scaffold `.deepsec.yaml` |
-| `deepsec db update` | Update NVD/OSV DB (air-gapped cache) |
-| `deepsec rule list/search` | 1000+ rules, filter by `language/category/severity` |
-| `deepsec plugin list/install` | Custom scanners, private registry |
-| `deepsec server start` | HTTP service (`:8443`, TLS, audit log) |
-| `deepsec mcp start` | MCP for AI agents (`deepsec.scan`, `deepsec.explain`) |
-| `deepsec convert/generate` | Format convert, GitHub/GitLab/pre-commit generators |
+| `iris scan [target]` | Scan `fs`/`url`/`image`/`repo` — auto-detects target |
+| `iris webscan [url]` | Deep website audit — 20+ OWASP checks (`website`/`audit`/`wscan` aliases) |
+| `iris fmt [target]` | Check & fix formatting — 7 checks, auto-fix (`format`/`style` aliases) |
+| `iris buildtest [target]` | Automated build & test gate — detects toolchain, runs build + tests (`build`/`bt` aliases) |
+| `iris cloud login/status/usage/upgrade` | PixelCity account: Keycloak login, plan, usage history, Pro/Enterprise checkout |
+| `iris init` | Scaffold `.iris.yaml` |
+| `iris db update` | Update NVD/OSV DB (air-gapped cache) |
+| `iris rule list/search` | 1000+ rules, filter by `language/category/severity` |
+| `iris plugin list/install` | Custom scanners, private registry |
+| `iris server start` | HTTP service (`:8443`, TLS, audit log) |
+| `iris mcp start` | MCP for AI agents (`iris.scan`, `iris.explain`) |
+| `iris convert/generate` | Format convert, GitHub/GitLab/pre-commit generators |
 
 Exit codes: `0` pass, `1` gate failed, `2` error. Flags: `--severity`, `--format`, `--output`, `--profile`, `--compliance`, `--fail-on`, `--no-color`.
 
-## Formatter — `deepsec fmt`
+## Formatter — `iris fmt`
 
 Zero-dependency formatter for any language, zero config. Ideal for `pixelcity.top` style fixes and CI gates.
 
 ```bash
-deepsec fmt . --check                # check, exit 1 if issues
-deepsec fmt . --fix                  # fix: trailing ws, EOF newline, CRLF→LF, blank lines, gofmt
-deepsec fmt ./web --fix              # fix specific directory
-deepsec fmt . --diff                 # show findings without writing
-deepsec scan . --scanner format      # use as scanner (table/json/sarif)
-deepsec scan . --scanner format,sast # combine with security
+iris fmt . --check                # check, exit 1 if issues
+iris fmt . --fix                  # fix: trailing ws, EOF newline, CRLF→LF, blank lines, gofmt
+iris fmt ./web --fix              # fix specific directory
+iris fmt . --diff                 # show findings without writing
+iris scan . --scanner format      # use as scanner (table/json/sarif)
+iris scan . --scanner format,sast # combine with security
 ```
 
 **7 checks** (all `INFO`/`LOW`, category `formatting`/`style`, CWE-710):
@@ -150,20 +156,20 @@ deepsec scan . --scanner format,sast # combine with security
 **CI gate:**
 
 ```yaml
-- run: deepsec fmt . --check   # fails if unformatted
-- run: deepsec scan . --scanner format,sast --fail-on LOW
+- run: iris fmt . --check   # fails if unformatted
+- run: iris scan . --scanner format,sast --fail-on LOW
 ```
 
 **Fix example (pixelcity-web):**
 
 ```bash
-deepsec fmt . --fix
+iris fmt . --fix
 # Fixed src/components/sections/HeroSection.tsx
 # Fixed src/app/globals.css
 # Checked 127 files, fixed 3 — 0.03s
 ```
 
-Alternatives: `make fmt` (`gofmt -s -w .`) remains available; `deepsec fmt` covers all languages in one binary.
+Alternatives: `make fmt` (`gofmt -s -w .`) remains available; `iris fmt` covers all languages in one binary.
 
 ## Configuration
 
@@ -185,10 +191,10 @@ Profiles: `enterprise` preset via `--profile` or `filter.profile`.
 ## Website Scanner — Deep Security Check
 
 ```bash
-deepsec webscan https://example.com
-deepsec webscan https://example.com --format json --output webscan.json
-deepsec webscan https://pixelcity.top --severity medium
-deepsec scan https://example.com --scanner webscan --format sarif
+iris webscan https://example.com
+iris webscan https://example.com --format json --output webscan.json
+iris webscan https://pixelcity.top --severity medium
+iris scan https://example.com --scanner webscan --format sarif
 ```
 
 **20+ Checks:**
@@ -210,7 +216,7 @@ deepsec scan https://example.com --scanner webscan --format sarif
 
 Example output (pixelcity.top):
 ```
-DeepSec WebScan v1.1.0 - Deep website audit on https://pixelcity.top
+Iris WebScan v1.1.0 - Deep website audit on https://pixelcity.top
 WebScan completed in 0.27 seconds
 Found 2 issues  MEDIUM:1 LOW:1
 ```
@@ -220,11 +226,11 @@ Found 2 issues  MEDIUM:1 LOW:1
 Every finding mapped to **OWASP Top 10, CWE, SOC 2, ISO 27001, GDPR** (`internal/config/config.go:14`). Table shows `Risk Score` (Critical 40, High 10, Medium 3, Low 1) + `Risk Level` (Excellent/Low/Medium/High/Critical). HTML is executive report: risk meter, exposure bar, compliance grid, prioritized fix plan.
 
 ```bash
-deepsec scan . --format html --output report.html
-deepsec scan . --format sarif --output results.sarif
-deepsec scan . --format cyclonedx --output sbom.json
-deepsec webscan https://example.com --compliance soc2 --format html --output ws.html
-deepsec fmt . --check --format sarif --output fmt.sarif
+iris scan . --format html --output report.html
+iris scan . --format sarif --output results.sarif
+iris scan . --format cyclonedx --output sbom.json
+iris webscan https://example.com --compliance soc2 --format html --output ws.html
+iris fmt . --check --format sarif --output fmt.sarif
 ```
 
 ## CI/CD
@@ -232,7 +238,7 @@ deepsec fmt . --check --format sarif --output fmt.sarif
 ### GitHub Actions
 
 ```yaml
-- uses: deepsec/deepsec-action@v1
+- uses: iris/iris-action@v1
   with:
     scan-type: 'sast,sca,secrets,webscan,format'
     severity: 'high,critical'
@@ -245,12 +251,12 @@ deepsec fmt . --check --format sarif --output fmt.sarif
 ### GitLab CI
 
 ```yaml
-deepsec:
-  image: deepsec/deepsec:latest
+iris:
+  image: iris/iris:latest
   script:
-    - deepsec fmt . --check            # formatting gate
-    - deepsec scan . --profile enterprise --format sarif --output gl-sast.json
-    - deepsec scan . --format cyclonedx --output sbom.json
+    - iris fmt . --check            # formatting gate
+    - iris scan . --profile enterprise --format sarif --output gl-sast.json
+    - iris scan . --format cyclonedx --output sbom.json
   artifacts: { reports: { sast: gl-sast.json }, paths: [sbom.json] }
 ```
 
@@ -258,19 +264,19 @@ deepsec:
 
 ```yaml
 repos:
-  - repo: https://github.com/Pixelcity-dev/Deepsec
+  - repo: https://github.com/Pixelcity-dev/Iris
     rev: v1.1.0
     hooks:
-      - {id: deepsec-secrets}
-      - {id: deepsec-sast}
-      - {id: deepsec-format}   # fmt --check
+      - {id: iris-secrets}
+      - {id: iris-sast}
+      - {id: iris-format}   # fmt --check
 ```
 
 ### Policy Gate
 
 ```bash
-deepsec scan . --fail-on HIGH
-deepsec fmt . --check          # or --fail-on LOW for style
+iris scan . --fail-on HIGH
+iris fmt . --check          # or --fail-on LOW for style
 ```
 
 ## Output Formats
@@ -286,43 +292,68 @@ deepsec fmt . --check          # or --fail-on LOW for style
 
 `--format html|table|json|sarif|cyclonedx|spdx|junit|csv` + `--output`
 
+## PixelCity Cloud & Dashboard
+
+Connect Iris to your PixelCity account (create one at **https://id.pixelcity.dev**):
+
+```bash
+iris cloud login      # device flow — opens id.pixelcity.dev, enter the code
+iris cloud status     # plan, quotas (scans, AI pages), features
+iris cloud usage      # recent scan history
+iris cloud upgrade pro        # checkout via payments.pixelcity.dev
+iris cloud upgrade enterprise --interval yearly
+```
+
+**Dashboard** — https://dashboard.pixelcity.dev — account management (Keycloak),
+usage history, Pro/Enterprise plans, and the public roadmap incl. the
+**Upcoming Features** docs (AI Agent with active usage limits and **no model
+training** — your code never trains models).
+
+Deploy your own dashboard? See `deploy/RUNBOOK.md` (Caddy + Keycloak + docker).
+
+## Roadmap — Upcoming Features
+
+See [docs/upcoming-features.md](docs/upcoming-features.md) for the announced,
+docs-only roadmap: **AI Agent** (fair-use limits, zero-retention, no training),
+Teams & Organizations, Scheduled Cloud Scans, IDE extensions.
+
 ## Plugin System
 
 ```bash
-deepsec plugin search sast
-deepsec plugin install custom-scanner --registry https://plugins.yourco.dev
-deepsec plugin list
+iris plugin search sast
+iris plugin install custom-scanner --registry https://plugins.yourco.dev
+iris plugin list
 ```
 
 ## MCP Server — AI-Native
 
 ```bash
-deepsec mcp start   # stdio/SSE
+iris mcp start   # stdio/SSE
 ```
 
-Tools: `deepsec.scan`, `deepsec.findings`, `deepsec.explain`, `deepsec.suggest-fix`, `deepsec.fmt`
+Tools: `iris.scan`, `iris.findings`, `iris.explain`, `iris.suggest-fix`, `iris.fmt`
 
 ## Deployment
 
 ```bash
 # Air-gapped
-deepsec db update --cache-dir /mnt/cache && tar czf deepsec-db.tar.gz ~/.deepsec/cache
+iris db update --cache-dir /mnt/cache && tar czf iris-db.tar.gz ~/.iris/cache
 # Server
-deepsec server start --host 0.0.0.0 --port 8443 --tls
+iris server start --host 0.0.0.0 --port 8443 --tls
 # Formatter only (zero db)
-deepsec fmt . --fix
+iris fmt . --fix
 ```
 
 ## Documentation
 
 - [User Guide](docs/user-guide.md) • [Rule Authoring](docs/rules.md) • [Plugin Dev](docs/plugins.md) • [API](docs/api.md)
-- Full Docs: **https://pixelcity.top/docs/deepsec** • **https://pixelcity.dev/docs/deepsec** • **https://cdn.pixelcity.dev/docs/deepsec**
+- Full Docs: **https://pixelcity.top/docs/iris** • **https://pixelcity.dev/docs/iris** • **https://cdn.pixelcity.dev/docs/iris**
 
 ## About PixelCity
 
 **PixelCity — Your Cloud, Your Rules** — https://pixelcity.top — `service@pixelcity.dev`
 
-DeepSec is developed and operated by **PixelCity** as a public open-source project for the community. Infrastructure served via `Caddy → pixelcity-cdn` (`cdn.pixelcity.dev`, `cdn.pixelcity.top`). Status at https://status.pixelcity.top.
+Iris is developed and operated by **PixelCity** as a public open-source project for the community. Infrastructure served via `Caddy → pixelcity-cdn` (`cdn.pixelcity.dev`, `cdn.pixelcity.top`). Status at https://status.pixelcity.top.
 
 ## Contributing & License
 

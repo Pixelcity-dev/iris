@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type SPDXReporter struct{}
@@ -63,10 +63,10 @@ func (r *SPDXReporter) Generate(results []core.ScanResult, opts ReportOptions) (
 		SPDXVersion:       "SPDX-2.3",
 		DataLicense:       "CC0-1.0",
 		SPDXID:            "SPDXRef-DOCUMENT",
-		DocumentName:      "DeepSec Scan Results",
-		DocumentNamespace: "https://deepsec.dev/scan/" + time.Now().Format("20060102"),
+		DocumentName:      "Iris Scan Results",
+		DocumentNamespace: "https://iris.pixelcity.dev/scan/" + time.Now().Format("20060102"),
 		Created:           time.Now().UTC().Format(time.RFC3339),
-		Creator:           "Tool: deepsec-1.1.0",
+		Creator:           "Tool: iris-1.1.0",
 	}
 
 	return json.MarshalIndent(output, "", "  ")

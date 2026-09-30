@@ -1,5 +1,5 @@
-name: 'DeepSec Security Scan'
-description: 'Run DeepSec security scanner on your codebase'
+name: 'Iris Security Scan'
+description: 'Run Iris security scanner on your codebase'
 author: 'Pixelcity'
 
 branding:
@@ -22,7 +22,7 @@ inputs:
   output:
     description: 'Output file path'
     required: false
-    default: 'deepsec-results.sarif'
+    default: 'iris-results.sarif'
   upload-code-scanning:
     description: 'Upload results to GitHub Code Scanning'
     required: false
@@ -31,15 +31,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install DeepSec
+    - name: Install Iris
       shell: bash
       run: |
-        curl -sSL https://deepsec.dev/install.sh | sh
+        curl -sSL https://iris.dev/install.sh | sh
 
-    - name: Run DeepSec Scan
+    - name: Run Iris Scan
       shell: bash
       run: |
-        deepsec scan . \
+        iris scan . \
           --scanner ${{ inputs.scan-type }} \
           --severity ${{ inputs.severity }} \
           --format ${{ inputs.format }} \

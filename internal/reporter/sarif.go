@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Pixelcity-dev/Deepsec/internal/core"
+	"github.com/Pixelcity-dev/Iris/internal/core"
 )
 
 type SARIFReporter struct{}
@@ -99,9 +99,9 @@ func (r *SARIFReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 		run := SARIFRun{
 			Tool: SARIFTool{
 				Driver: SARIFDriver{
-					Name:           "deepsec",
+					Name:           "iris",
 					Version:        "1.1.0",
-					InformationURI: "https://deepsec.dev",
+					InformationURI: "https://iris.pixelcity.dev",
 				},
 			},
 		}

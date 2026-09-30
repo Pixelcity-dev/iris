@@ -29,6 +29,7 @@ type ScannerConfig struct {
 	License   bool `yaml:"license" json:"license"`
 	WebScan   bool `yaml:"webscan" json:"webscan"`
 	Format    bool `yaml:"format" json:"format"`
+	BuildTest bool `yaml:"buildtest" json:"buildtest"`
 }
 
 type ReportConfig struct {
@@ -129,11 +130,11 @@ func ProfileConfig(profile string) *Config {
 
 func DefaultConfig() *Config {
 	homeDir, _ := os.UserHomeDir()
-	cacheDir := filepath.Join(homeDir, ".deepsec", "cache")
-	pluginDir := filepath.Join(homeDir, ".deepsec", "plugins")
+	cacheDir := filepath.Join(homeDir, ".iris", "cache")
+	pluginDir := filepath.Join(homeDir, ".iris", "plugins")
 
 	return &Config{
-		Version: "1.1.0",
+		Version: "1.2.0",
 		Scanners: ScannerConfig{
 			SAST:      true,
 			SCA:       true,
@@ -160,7 +161,7 @@ func DefaultConfig() *Config {
 		},
 		Plugin: PluginConfig{
 			Dir:      pluginDir,
-			Registry: "https://plugins.deepsec.dev",
+			Registry: "https://plugins.iris.dev",
 			Enabled:  make(map[string]bool),
 		},
 		Server: ServerConfig{
@@ -207,10 +208,10 @@ func (c *Config) Save(path string) error {
 
 func FindConfigFile() string {
 	candidates := []string{
-		".deepsec.yaml",
-		"deepsec.yaml",
-		".deepsec.yml",
-		"deepsec.yml",
+		".iris.yaml",
+		"iris.yaml",
+		".iris.yml",
+		"iris.yml",
 	}
 
 	for _, c := range candidates {
@@ -221,7 +222,7 @@ func FindConfigFile() string {
 
 	homeDir, _ := os.UserHomeDir()
 	if homeDir != "" {
-		homeConfig := filepath.Join(homeDir, ".config", "deepsec", "config.yaml")
+		homeConfig := filepath.Join(homeDir, ".config", "iris", "config.yaml")
 		if _, err := os.Stat(homeConfig); err == nil {
 			return homeConfig
 		}
