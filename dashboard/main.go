@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -464,6 +465,11 @@ func (s *server) handleScanGet(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusForbidden, errors.New("not your scan"))
 		return
 	}
+	// Export modes: ?format=sarif|html|json downloads/renders the report.
+	if format := strings.TrimSpace(r.URL.Query().Get("format")); format != "" {
+		s.exportScan(w, &e, format)
+		return
+	}
 	resp := map[string]interface{}{"entry": e, "report": nil}
 	if e.ReportBytes > 0 {
 		data, err := s.scans.loadReport(e.ID)
@@ -472,6 +478,55 @@ func (s *server) handleScanGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, resp)
+}
+
+// exportScan serves the stored report as SARIF, HTML, or raw JSON.
+func (s *server) exportScan(w http.ResponseWriter, e *scanEntry, format string) {
+	if e.ReportBytes <= 0 {
+		writeErr(w, http.StatusNotFound, errors.New("no stored report for this scan"))
+		return
+	}
+	data, err := s.scans.loadReport(e.ID)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	switch format {
+	case "json":
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Content-Disposition",
+			fmt.Sprintf("attachment; filename=%q", "iris-scan-"+e.ID+".json"))
+		w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+		_, _ = w.Write(data)
+	case "sarif":
+		doc, err := parseReport(data)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, errors.New("stored report is corrupt"))
+			return
+		}
+		out, err := sarifFromReport(e, doc)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, errors.New("could not render SARIF"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Content-Disposition",
+			fmt.Sprintf("attachment; filename=%q", "iris-scan-"+e.ID+".sarif"))
+		w.Header().Set("Content-Length", strconv.Itoa(len(out)))
+		_, _ = w.Write(out)
+	case "html":
+		doc, err := parseReport(data)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, errors.New("stored report is corrupt"))
+			return
+		}
+		out := htmlFromReport(e, doc)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Length", strconv.Itoa(len(out)))
+		_, _ = w.Write(out)
+	default:
+		writeErr(w, http.StatusBadRequest, errors.New("unknown format (use sarif, html, or json)"))
+	}
 }
 
 func (s *server) handleScansGet(w http.ResponseWriter, r *http.Request) {
