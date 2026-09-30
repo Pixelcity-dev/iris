@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -209,5 +210,219 @@ func TestListMatchingIgnoresCorruptLines(t *testing.T) {
 	entries := srv.scans.listMatching(func(e *scanEntry) bool { return e.Sub == "u-owner" }, 10)
 	if len(entries) != 1 || entries[0].ID != "lm-1" {
 		t.Fatalf("listMatching got %d", len(entries))
+	}
+}
+
+func powerMux(t *testing.T, srv *server) *http.ServeMux {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v1/stats", srv.handleStats)
+	mux.HandleFunc("POST /api/v1/scans/bulk-delete", srv.handleBulkDelete)
+	mux.HandleFunc("POST /api/v1/scans/{id}/share", srv.handleShareCreate)
+	mux.HandleFunc("DELETE /api/v1/scans/{id}/share", srv.handleShareRevoke)
+	mux.HandleFunc("GET /api/v1/scans/findings", srv.handleFindings)
+	mux.HandleFunc("GET /api/v1/admin/system", srv.requireAdmin(srv.handleAdminSystem))
+	mux.HandleFunc("GET /s/{token}", srv.handleShareView)
+	return mux
+}
+
+func powerServer(t *testing.T) (*server, *http.ServeMux) {
+	t.Helper()
+	srv := &server{
+		cfg:    config{SessionSecret: []byte("test-secret-0123456789abcdef-test")},
+		scans:  newScanStore(filepath.Join(t.TempDir(), "scans.jsonl")),
+		tokens: newTokenStore(""),
+		shares: newShareStore(""),
+	}
+	return srv, powerMux(t, srv)
+}
+
+const statsReport = `{"iris_version":"1.2.0","results":[{"scanner":"sast","findings":[
+	{"rule_id":"sql-injection","severity":"high","title":"SQLi","file":"a.go"},
+	{"rule_id":"sql-injection","severity":"high","title":"SQLi","file":"b.go"},
+	{"rule_id":"weak-hash","severity":"low","title":"MD5","file":"c.go"}]}]}`
+
+func TestStatsAggregate(t *testing.T) {
+	srv, mux := powerServer(t)
+	seedReportScan(t, srv, "st-1", "u-owner", "alice", statsReport)
+	seedReportScan(t, srv, "st-2", "u-other", "bob", statsReport)
+
+	cookie := cookieFor(t, srv, "u-owner", "alice", nil)
+	rec := doReq(t, mux, "GET", "/api/v1/stats", cookie)
+	if rec.Code != 200 {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Scans    int            `json:"scans"`
+		Findings int            `json:"findings"`
+		Severity map[string]int `json:"severity"`
+		TopRules []statsRule    `json:"top_rules"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Scans != 1 || resp.Findings != 3 {
+		t.Fatalf("want 1 scan/3 findings, got %d/%d", resp.Scans, resp.Findings)
+	}
+	if resp.Severity["high"] != 2 || resp.Severity["low"] != 1 {
+		t.Fatalf("severity %+v", resp.Severity)
+	}
+	if len(resp.TopRules) == 0 || resp.TopRules[0].RuleID != "sql-injection" || resp.TopRules[0].Count != 2 {
+		t.Fatalf("top rules %+v", resp.TopRules)
+	}
+
+	// Admin "*" sees everyone's scans.
+	admin := cookieFor(t, srv, "u-admin", "dave", []string{"iris-admins"})
+	rec = doReq(t, mux, "GET", "/api/v1/stats?user=*", admin)
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+	if resp.Scans != 2 {
+		t.Fatalf("admin all users scans=%d", resp.Scans)
+	}
+	// Non-admin cannot use ?user=.
+	rec = doReq(t, mux, "GET", "/api/v1/stats?user=*", cookie)
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+	if resp.Scans != 1 {
+		t.Fatalf("non-admin ?user=* should stay scoped, got %d", resp.Scans)
+	}
+}
+
+func TestFindingsCSVExport(t *testing.T) {
+	srv, mux := powerServer(t)
+	seedReportScan(t, srv, "csv-1", "u-owner", "alice", statsReport)
+	cookie := cookieFor(t, srv, "u-owner", "alice", nil)
+	rec := doReq(t, mux, "GET", "/api/v1/scans/findings?format=csv", cookie)
+	if rec.Code != 200 {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/csv") {
+		t.Fatalf("content-type %q", ct)
+	}
+	body := rec.Body.String()
+	if !strings.HasPrefix(body, "severity,rule_id,") || !strings.Contains(body, "sql-injection") {
+		t.Fatalf("csv body %q", body)
+	}
+	if n := strings.Count(body, "\n"); n != 4 { // header + 3 findings
+		t.Fatalf("csv lines %d", n)
+	}
+}
+
+func TestBulkDeleteOwnership(t *testing.T) {
+	srv, mux := powerServer(t)
+	seedReportScan(t, srv, "bd-mine", "u-owner", "alice", statsReport)
+	seedReportScan(t, srv, "bd-yours", "u-other", "bob", statsReport)
+
+	cookie := cookieFor(t, srv, "u-owner", "alice", nil)
+	body := `{"ids":["bd-mine","bd-yours","missing"]}`
+	req := httptest.NewRequest("POST", "/api/v1/scans/bulk-delete", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		DeletedCount int      `json:"deleted_count"`
+		Failed       []string `json:"failed"`
+	}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+	if resp.DeletedCount != 1 || len(resp.Failed) != 2 {
+		t.Fatalf("resp %+v", resp)
+	}
+	if _, ok := srv.scans.get("bd-mine"); ok {
+		t.Fatal("own scan should be deleted")
+	}
+	if _, ok := srv.scans.get("bd-yours"); !ok {
+		t.Fatal("other user's scan must survive")
+	}
+	// Bad body.
+	req = httptest.NewRequest("POST", "/api/v1/scans/bulk-delete", strings.NewReader(`{}`))
+	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("empty ids status %d", rec.Code)
+	}
+}
+
+func TestShareLifecycle(t *testing.T) {
+	srv, mux := powerServer(t)
+	seedReportScan(t, srv, "sh-1", "u-owner", "alice", statsReport)
+	owner := cookieFor(t, srv, "u-owner", "alice", nil)
+	other := cookieFor(t, srv, "u-other", "bob", nil)
+
+	// Create.
+	rec := doReq(t, mux, "POST", "/api/v1/scans/sh-1/share", owner)
+	if rec.Code != 200 {
+		t.Fatalf("create status %d: %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		Token string `json:"token"`
+		URL   string `json:"url"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil || created.Token == "" {
+		t.Fatalf("create resp %s", rec.Body.String())
+	}
+
+	// Public view works without auth.
+	rec = doReq(t, mux, "GET", "/s/"+created.Token, "")
+	if rec.Code != 200 {
+		t.Fatalf("public view status %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "sql-injection") {
+		t.Fatal("public view missing findings")
+	}
+	if !strings.Contains(rec.Body.String(), "noindex") {
+		t.Fatal("public view should be noindex")
+	}
+
+	// Forged token rejected.
+	rec = doReq(t, mux, "GET", "/s/"+created.Token+"x", "")
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("forged token status %d", rec.Code)
+	}
+
+	// Non-owner cannot create/revoke.
+	rec = doReq(t, mux, "POST", "/api/v1/scans/sh-1/share", other)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("non-owner create status %d", rec.Code)
+	}
+
+	// Revoke kills the public view.
+	rec = doReq(t, mux, "DELETE", "/api/v1/scans/sh-1/share", owner)
+	if rec.Code != 200 {
+		t.Fatalf("revoke status %d", rec.Code)
+	}
+	rec = doReq(t, mux, "GET", "/s/"+created.Token, "")
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("revoked view status %d", rec.Code)
+	}
+}
+
+func TestAdminSystem(t *testing.T) {
+	srv, mux := powerServer(t)
+	admin := cookieFor(t, srv, "u-admin", "dave", []string{"iris-admins"})
+	plain := cookieFor(t, srv, "u-a", "alice", nil)
+
+	rec := doReq(t, mux, "GET", "/api/v1/admin/system", "")
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("anon %d", rec.Code)
+	}
+	rec = doReq(t, mux, "GET", "/api/v1/admin/system", plain)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("non-admin %d", rec.Code)
+	}
+	rec = doReq(t, mux, "GET", "/api/v1/admin/system", admin)
+	if rec.Code != 200 {
+		t.Fatalf("admin %d", rec.Code)
+	}
+	var d map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &d); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"version", "uptime_seconds", "storage", "scans_total", "searxng_configured"} {
+		if _, ok := d[k]; !ok {
+			t.Fatalf("missing %s in %+v", k, d)
+		}
 	}
 }

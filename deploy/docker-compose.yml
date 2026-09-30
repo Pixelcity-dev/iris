@@ -23,6 +23,7 @@ services:
       SCAN_RETENTION_DAYS: "365"
       TOKENS_FILE: "/data/tokens.json"
       SEARXNG_BASE: "http://searxng:8080"
+      SHARES_FILE: "/data/shares.json"
     networks:
       - pixelcity_net
     # Hardening: root FS read-only; only the scan store volume is writable.

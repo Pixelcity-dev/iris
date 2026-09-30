@@ -372,6 +372,7 @@ type server struct {
 	jwks   *jwksCache
 	scans  *scanStore
 	tokens *tokenStore
+	shares *shareStore
 }
 
 // bearerIdentity validates a CLI Keycloak access token (aud: iris-cli,
@@ -705,6 +706,9 @@ func (w *statusWriter) WriteHeader(code int) {
 
 const appVersion = "1.0.0"
 
+// startedAt records process start for uptime reporting.
+var startedAt = time.Now()
+
 func main() {
 	ver := flag.Bool("version", false, "print version")
 	flag.Parse()
@@ -728,6 +732,7 @@ func main() {
 		jwks:   &jwksCache{uri: dsc.JWKSURI},
 		scans:  newScanStore(os.Getenv("SCANS_FILE")),
 		tokens: newTokenStore(os.Getenv("TOKENS_FILE")),
+		shares: newShareStore(os.Getenv("SHARES_FILE")),
 	}
 
 	mux := http.NewServeMux()
@@ -746,6 +751,13 @@ func main() {
 	mux.HandleFunc("POST /api/v1/scans", srv.handleScansPost)
 	mux.HandleFunc("DELETE /api/v1/scans/{id}", srv.handleScanDelete)
 	mux.HandleFunc("GET /api/v1/tools/search", srv.authEither(srv.handleSearch))
+	mux.HandleFunc("GET /api/v1/stats", srv.handleStats)
+	mux.HandleFunc("POST /api/v1/scans/bulk-delete", srv.handleBulkDelete)
+	mux.HandleFunc("POST /api/v1/scans/{id}/share", srv.handleShareCreate)
+	mux.HandleFunc("GET /api/v1/scans/{id}/share", srv.handleShareList)
+	mux.HandleFunc("DELETE /api/v1/scans/{id}/share", srv.handleShareRevoke)
+	mux.HandleFunc("GET /s/{token}", srv.handleShareView)
+	mux.HandleFunc("GET /api/v1/admin/system", srv.requireAdmin(srv.handleAdminSystem))
 	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
 	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))
 	mux.HandleFunc("GET /api/v1/admin/trend", srv.requireAdmin(srv.handleAdminTrend))

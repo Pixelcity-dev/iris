@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,10 +39,12 @@ func (s *server) handleFindings(w http.ResponseWriter, r *http.Request) {
 	rule := strings.TrimSpace(r.URL.Query().Get("rule"))
 	limit := atoiQuery(r, "limit", 100)
 
-	targetSub := ident.Sub
 	if u := strings.TrimSpace(r.URL.Query().Get("user")); u != "" && isAdmin(ident) {
-		// Resolve user filter to subs by scanning entries' identity fields.
-		targetSub = "" // "" = match any sub, filtered below
+		if u == "*" {
+			// Admin: every user's scans.
+			s.findingsFor(w, r, func(*scanEntry) bool { return true }, q, severity, rule, limit)
+			return
+		}
 		userFilter := strings.ToLower(u)
 		s.findingsFor(w, r, func(e *scanEntry) bool {
 			return strings.Contains(strings.ToLower(e.Username), userFilter) ||
@@ -48,8 +52,9 @@ func (s *server) handleFindings(w http.ResponseWriter, r *http.Request) {
 		}, q, severity, rule, limit)
 		return
 	}
+	mySub := ident.Sub
 	s.findingsFor(w, r, func(e *scanEntry) bool {
-		return e.Sub == targetSub
+		return e.Sub == mySub
 	}, q, severity, rule, limit)
 }
 
@@ -115,16 +120,26 @@ func (s *server) findingsFor(w http.ResponseWriter, r *http.Request,
 				Category: f.f.Category, Fingerprint: f.f.Fingerprint,
 			})
 			if len(rows) >= limit {
-				writeJSON(w, map[string]interface{}{
-					"findings": rows, "truncated": true,
-					"scans_searched": matchedScans,
-				})
+				s.finishFindings(w, r, rows, true, matchedScans)
 				return
 			}
 		}
 	}
+	s.finishFindings(w, r, rows, false, matchedScans)
+}
+
+// finishFindings renders the findings response as JSON or CSV
+// depending on ?format=.
+func (s *server) finishFindings(w http.ResponseWriter, r *http.Request, rows []findingsRow, truncated bool, scanned int) {
+	if strings.EqualFold(r.URL.Query().Get("format"), "csv") {
+		writeFindingsCSV(w, rows)
+		return
+	}
+	if rows == nil {
+		rows = []findingsRow{}
+	}
 	writeJSON(w, map[string]interface{}{
-		"findings": rows, "truncated": false, "scans_searched": matchedScans,
+		"findings": rows, "truncated": truncated, "scans_searched": scanned,
 	})
 }
 
@@ -312,4 +327,19 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		results = append(results, searxResult{Title: x.Title, URL: x.URL, Content: x.Content, Engine: x.Engine})
 	}
 	writeJSON(w, map[string]interface{}{"query": q, "results": results, "total": len(payload.Results)})
+}
+
+// writeFindingsCSV streams findings rows as RFC 4180 CSV.
+func writeFindingsCSV(w http.ResponseWriter, rows []findingsRow) {
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="iris-findings.csv"`)
+	cw := csv.NewWriter(w)
+	_ = cw.Write([]string{"severity", "rule_id", "title", "category", "file", "line", "scan_id", "scanner", "target", "time", "fingerprint"})
+	for _, f := range rows {
+		_ = cw.Write([]string{
+			f.Severity, f.RuleID, f.Title, f.Category, f.File, strconv.Itoa(f.Line),
+			f.ScanID, f.Scanner, f.Target, f.Time.Format(time.RFC3339), f.Fingerprint,
+		})
+	}
+	cw.Flush()
 }

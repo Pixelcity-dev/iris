@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iris Dashboard · PixelCity</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230a0a0a'/%3E%3Cpath d='M32 7 13 15.5v14.7c0 11.4 8 22.3 19 27.3 11-5 19-15.9 19-27.3V15.5L32 7z' fill='none' stroke='%23fafafa' stroke-width='3.4' stroke-linejoin='round'/%3E%3Cpath d='M32 20a12.5 12.5 0 0 1 12.5 12.5H32V20z' fill='%23ff7a1a'/%3E%3Cpath d='M22.5 39.5 32 32l12-12' fill='none' stroke='%23ff7a1a' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c0b'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23d4a853' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4'/%3E%3Cpath d='M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z'/%3E%3Cpath d='M9 12v5'/%3E%3Cpath d='M15 12v5'/%3E%3Cpath d='M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -78,12 +78,45 @@ h1, h2, h3 { font-family: var(--font-display); }
   letter-spacing: 0.01em;
 }
 
-.brand-orange {
-  background-image: linear-gradient(100deg, var(--pc-orange-soft), var(--pc-orange) 55%, #e05f00);
+/* White-yellow marketplace wordmark: white "Pixel" + animated gold "City". */
+.brand-gold {
+  color: transparent;
+  background-image: linear-gradient(115deg, #b08d45, #f0c878 35%, #ffe9b8 50%, #d4a853 65%, #8b6a2a);
+  background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
-  color: transparent;
+  animation: 8s ease-in-out infinite gold-shift;
 }
+@keyframes gold-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@media (prefers-reduced-motion: reduce) {
+  .brand-gold { animation: none; }
+  .anvil-tile.big { animation: none; }
+}
+
+/* Anvil mark: dark rounded tile, gold stroke, draw-in animation. */
+.anvil-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0c0c0b;
+  border: 1px solid rgba(212, 168, 83, 0.4);
+  border-radius: 7px;
+  color: #d4a853;
+  flex: 0 0 auto;
+}
+.anvil-tile svg { display: block; }
+.anvil-tile.big {
+  width: 84px; height: 84px; border-radius: 14px;
+  border-color: rgba(212, 168, 83, 0.55);
+  animation: anvil-glow 3.2s ease-in-out infinite;
+}
+@keyframes anvil-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(212,168,83,0.12), 0 12px 40px rgba(212,168,83,0.10); }
+  50% { box-shadow: 0 0 0 1px rgba(212,168,83,0.35), 0 14px 52px rgba(212,168,83,0.26); }
+}
+.anvil-tile.small { width: 30px; height: 30px; }
+
+.brand-lockup { display: flex; align-items: center; gap: 10px; }
 
 .brand-mark { flex: 0 0 auto; display: flex; }
 
@@ -100,7 +133,7 @@ header {
 
 .header-shell { display: flex; height: 64px; align-items: center; gap: 16px; }
 
-.header-title { display: flex; flex-direction: column; line-height: 1.15; }
+.header-title { display: flex; align-items: center; line-height: 1.15; }
 
 .header-title .brand { font-size: 1.05rem; }
 
@@ -168,6 +201,40 @@ header {
 .interval-btn.active { border-color: var(--pc-orange); color: var(--pc-orange-soft); }
 
 .btn:focus-visible, a:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 3px; }
+
+/* ---------------- overview / palette ---------------- */
+.ov-grid { display: grid; grid-template-columns: 240px 1fr 240px; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .ov-grid { grid-template-columns: 1fr; } }
+.donut-legend { display: grid; gap: 6px; margin-top: 10px; font-size: 0.78rem; }
+.donut-legend .row { display: flex; justify-content: space-between; color: var(--color-muted); }
+.donut-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.top-rule { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(148,163,184,0.12); font-size: 0.83rem; }
+.top-rule .cnt { margin-left: auto; color: var(--color-bright); font-weight: 600; font-family: var(--font-mono); font-size: 0.78rem; }
+.scanner-chip { display: inline-block; border: 1px solid var(--color-line); background: var(--color-panel-2); border-radius: 999px; padding: 3px 11px; font-size: 0.74rem; margin: 0 6px 6px 0; color: var(--color-muted); }
+.scanner-chip b { color: var(--color-bright); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.toolbar .spacer { flex: 1; }
+.sel-col { width: 30px; }
+#sel-all, .scan-sel { accent-color: var(--pc-orange); cursor: pointer; }
+.danger-zone { color: var(--color-bad); border-color: rgba(252,165,165,0.4); }
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.sys-cell { background: var(--color-panel-2); border: 1px solid var(--color-line-soft); border-radius: 6px; padding: 10px 12px; }
+.sys-cell .k { font: 600 0.62rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-dim); }
+.sys-cell .v { margin-top: 5px; font-size: 0.95rem; color: var(--color-bright); word-break: break-all; }
+
+/* command palette */
+#palette { position: fixed; inset: 0; z-index: 200; background: rgba(5,5,7,0.7); backdrop-filter: blur(3px); display: none; align-items: flex-start; justify-content: center; padding-top: 12vh; }
+#palette.open { display: flex; }
+.pal-box { width: min(560px, calc(100vw - 2rem)); background: #141418; border: 1px solid var(--color-line); border-radius: 10px; box-shadow: 0 24px 80px rgba(0,0,0,0.6); overflow: hidden; }
+#pal-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--color-line-soft); color: var(--color-bright); padding: 15px 16px; font: inherit; font-size: 0.95rem; outline: none; }
+#pal-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
+.pal-item { display: flex; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 6px; font-size: 0.86rem; color: var(--color-muted); cursor: pointer; }
+.pal-item .pal-key { margin-left: auto; font: 600 0.62rem var(--font-mono); letter-spacing: 0.1em; color: var(--color-dim); border: 1px solid var(--color-line); border-radius: 4px; padding: 2px 6px; }
+.pal-item.active { background: rgba(212,168,83,0.12); color: var(--color-bright); }
+.pal-hint { padding: 8px 14px; font-size: 0.7rem; color: var(--color-dim); border-top: 1px solid var(--color-line-soft); }
+
+.share-box { margin-top: 8px; font-size: 0.78rem; }
+.share-box input { width: 100%; background: var(--color-panel-2); border: 1px solid var(--color-line); color: var(--color-bright); border-radius: 4px; padding: 7px 10px; font-family: var(--font-mono); font-size: 0.74rem; }
 
 /* ---------------- layout ---------------- */
 
@@ -402,9 +469,14 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 
 <header>
   <div class="container-shell header-shell">
-    <a href="/" class="header-title" style="display:flex;flex-direction:column;">
-      <span class="brand"><span style="color:var(--color-bright)">Pixel</span><span class="brand-orange">City</span></span>
-      <span class="sub">Iris Dashboard</span>
+    <a href="/" class="header-title">
+      <span class="brand-lockup">
+        <span class="anvil-tile small"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/><path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/><path d="M9 12v5"/><path d="M15 12v5"/><path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/></svg></span>
+        <span style="display:flex;flex-direction:column;line-height:1.1">
+          <span class="brand"><span style="color:var(--color-bright)">Pixel</span><span class="brand-gold">City</span></span>
+          <span class="sub">Iris Dashboard</span>
+        </span>
+      </span>
     </a>
     <div class="user-chip" id="user-chip" style="display:none;">
       <span class="username" id="username"></span>
@@ -418,16 +490,11 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
   <div id="view-login" class="view">
     <div class="login-wrap">
       <div>
-        <svg class="brand-mark" viewBox="0 0 64 64" width="76" height="76" aria-hidden="true">
-          <rect width="64" height="64" rx="10" fill="#111113"/>
-          <path d="M32 7 13 15.5v14.7c0 11.4 8 22.3 19 27.3 11-5 19-15.9 19-27.3V15.5L32 7z" fill="none" stroke="#fafafa" stroke-width="3"/>
-          <path d="M32 20a12.5 12.5 0 0 1 12.5 12.5H32V20z" fill="#ff7a1a"/>
-          <path d="M22.5 39.5 32 32l12-12" fill="none" stroke="#ff7a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <div class="anvil-tile big"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/><path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/><path d="M9 12v5"/><path d="M15 12v5"/><path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/></svg></div>
         <div class="rule-label" style="justify-content:center;margin-top:22px;">
           <span class="eyebrow">Iris · Cyber Security Enterprise Tool</span>
         </div>
-        <h1 class="section-title" style="margin-top:14px;">Security, <span class="brand-orange">managed</span>.</h1>
+        <h1 class="section-title" style="margin-top:14px;">Security, <span class="brand-gold">managed</span>.</h1>
         <p class="sub" style="max-width:460px;margin:12px auto 28px;">
           Your PixelCity account for Iris — plan, usage history and upgrades.
           Scanners for code, supply chain, cloud, web and formatting in one binary.
@@ -477,6 +544,8 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <tbody id="admin-users-body"><tr><td colspan="4"><span class="spinner"></span></td></tr></tbody>
         </table>
       </div>
+      <h3 style="margin-top:22px;">System</h3>
+      <div class="sys-grid" id="admin-system"><div class="sys-cell"><div class="k">status</div><div class="v">loading…</div></div></div>
       <h3 style="margin-top:22px;">All scans</h3>
       <div id="admin-scans-filter" style="display:none;margin-bottom:8px;font-size:0.8rem;color:var(--color-muted)"></div>
       <div class="table-shell">
@@ -487,13 +556,38 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
       </div>
     </section>
 
+    <section class="panel" id="section-overview">
+      <h2 style="display:flex;align-items:center;gap:12px;">Security overview <span class="badge" id="ov-badge">loading</span></h2>
+      <div class="ov-grid">
+        <div>
+          <div id="ov-donut" style="display:flex;justify-content:center"></div>
+          <div class="donut-legend" id="ov-legend"></div>
+        </div>
+        <div>
+          <h3>Top rules</h3>
+          <div id="ov-top-rules"><span class="spinner"></span></div>
+        </div>
+        <div>
+          <h3>Scanners</h3>
+          <div id="ov-scanners"></div>
+          <div style="margin-top:14px;color:var(--color-dim);font-size:0.78rem" id="ov-note"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>Scan history</h2>
+      <div class="toolbar">
+        <button class="btn btn-ghost" onclick="loadScans();loadTrend();toast('Refreshed.')">Refresh</button>
+        <button class="btn btn-ghost" id="auto-btn" onclick="toggleAutoRefresh()">Auto-refresh: off</button>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost danger-zone" id="bulk-btn" onclick="bulkDeleteSelected()" disabled>Delete selected</button>
+      </div>
       <div id="trend-chart" style="margin-bottom:14px"></div>
       <div class="table-shell">
         <table class="data-table">
-          <thead><tr><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
-          <tbody id="scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+          <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all" onclick="toggleSelectAll(this)"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
+          <tbody id="scans-body"><tr><td colspan="6"><span class="spinner"></span></td></tr></tbody>
         </table>
       </div>
     </section>
@@ -510,7 +604,11 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
               <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>INFO</option>
             </select>
             <button class="btn btn-secondary" onclick="runFindings()">Search</button>
+            <button class="btn btn-ghost" onclick="exportFindingsCSV()">CSV</button>
           </div>
+          <label id="fx-allwrap" style="display:none;margin-top:8px;font-size:0.78rem;color:var(--color-muted);cursor:pointer">
+            <input type="checkbox" id="fx-all" style="vertical-align:-2px"> Search all users (admin)
+          </label>
         </div>
         <div>
           <h3>Compare scans</h3>
@@ -652,9 +750,20 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
   </div>
 </main>
 
+<div id="palette" onclick="if(event.target===this)closePalette()">
+  <div class="pal-box">
+    <input id="pal-input" placeholder="Type a command or jump to…" autocomplete="off" spellcheck="false" oninput="renderPalette()" onkeydown="paletteKey(event)">
+    <div id="pal-list"></div>
+    <div class="pal-hint">↑↓ navigate · Enter run · Esc close · Ctrl+K anywhere</div>
+  </div>
+</div>
+
 <footer>
   <div class="container-shell">
-    <span class="brand"><span style="color:var(--color-bright)">Pixel</span><span class="brand-orange">City</span></span>
+    <span class="brand-lockup">
+      <span class="anvil-tile small"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/><path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/><path d="M9 12v5"/><path d="M15 12v5"/><path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/></svg></span>
+      <span class="brand"><span style="color:var(--color-bright)">Pixel</span><span class="brand-gold">City</span></span>
+    </span>
     — Your Cloud, Your Rules &nbsp;·&nbsp;
     <a href="https://pixelcity.top/docs/iris">Docs</a> &nbsp;·&nbsp;
     <a href="https://marketplace.pixelcity.dev">Marketplace</a> &nbsp;·&nbsp;
@@ -680,12 +789,18 @@ async function init() {
     loadSessions();
     loadScans();
     loadTrend();
+    loadOverview();
     if (me.admin) {
       me_admin = true;
       $('section-admin').style.display = 'block';
+      $('fx-allwrap').style.display = 'block';
       loadAdmin();
       loadAdminTrend();
+      loadSystem();
     }
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
+    });
   } catch (e) {
     $('view-login').style.display = 'block';
     $('view-app').style.display = 'none';
@@ -734,19 +849,22 @@ async function loadScans() {
     const s = await api('/api/v1/scans?limit=25');
     const body = $('scans-body');
     if (!s.entries || !s.entries.length) {
-      body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
+      body.innerHTML = '<tr><td colspan="6" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
+      updateBulkBtn();
       return;
     }
     fillCompareSelects(s.entries || []);
-    body.innerHTML = s.entries.map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
+    body.innerHTML = s.entries.map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',6)">
+      <td class="sel-col"><input type="checkbox" class="scan-sel" data-id="${esc(e.id)}" onclick="event.stopPropagation()" onchange="updateBulkBtn()"></td>
       <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
       <td><span class="mono">${esc(e.scanner)}</span></td>
       <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
       <td style="white-space:nowrap">${sevChips(e)}</td>
       <td class="mono">${(e.duration_seconds ?? 0).toFixed(2)}s</td>
     </tr>`).join('');
+    updateBulkBtn();
   } catch (e) {
-    $('scans-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Scan history unavailable.</td></tr>';
+    $('scans-body').innerHTML = '<tr><td colspan="6" style="color:var(--color-dim)">Scan history unavailable.</td></tr>';
   }
 }
 
@@ -846,12 +964,17 @@ function renderScanDetail(d) {
   h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">${esc(e.scanner || '')} · ${e.time ? new Date(e.time).toLocaleString() : ''} · ${(e.duration_seconds ?? 0).toFixed(2)}s</span>`;
   if (e.iris_version) h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">iris ${esc(e.iris_version)}</span>`;
   h += `<span style="font-size:0.78rem">${sevChips(e)}</span>`;
-  h += `<span style="margin-left:auto;font-size:0.75rem"><button class="btn btn-ghost" style="color:var(--color-bad);border-color:rgba(252,165,165,.35)" onclick="event.stopPropagation();deleteScan('${e.id}')">Delete</button></span>`;
+  h += `<span style="margin-left:auto;font-size:0.75rem;display:flex;gap:8px;align-items:center">
+    <button class="btn btn-ghost" style="border-color:rgba(212,168,83,.45);color:#d4a853" onclick="event.stopPropagation();createShare('${e.id}')">Share</button>
+    <button class="btn btn-ghost" style="color:var(--color-dim);border-color:var(--color-line)" onclick="event.stopPropagation();revokeShares('${e.id}')">Revoke</button>
+    <button class="btn btn-ghost" style="color:var(--color-bad);border-color:rgba(252,165,165,.35)" onclick="event.stopPropagation();deleteScan('${e.id}')">Delete</button>
+  </span>`;
   if (e.report_bytes > 0) {
     const id = encodeURIComponent(e.id);
     const link = f => `<a href="/api/v1/scans/${id}?format=${f}" style="color:#818cf8" onclick="event.stopPropagation()">${f.toUpperCase()}</a>`;
     h += `<span style="font-size:0.75rem;color:var(--color-muted)">Export: ${link('sarif')} · ${link('html')} · ${link('json')} · ${link('csv')}</span>`;
   }
+  h += `<div id="share-${encodeURIComponent(e.id)}"></div>`;
   h += '</div>';
 
   const report = d.report;
@@ -1131,9 +1254,7 @@ async function runFindings() {
   box.style.display = 'block';
   box.innerHTML = '<span class="spinner"></span>';
   try {
-    const q = $('fx-q').value.trim(), sev = $('fx-sev').value;
-    const url = '/api/v1/scans/findings?limit=200' +
-      (q ? '&q=' + encodeURIComponent(q) : '') + (sev ? '&severity=' + encodeURIComponent(sev) : '');
+    const url = findingsURL(false);
     const r = await api(url);
     const rows = r.findings || [];
     if (!rows.length) {
@@ -1155,6 +1276,24 @@ async function runFindings() {
     box.innerHTML = h + '</tbody></table></div>';
     toast(`${rows.length} finding(s) found.`);
   } catch (e) { box.innerHTML = ''; toast('Findings search failed: ' + e.message, 'err'); }
+}
+
+function findingsURL(csv) {
+  const q = $('fx-q').value.trim(), sev = $('fx-sev').value;
+  const all = me_admin && $('fx-all') && $('fx-all').checked;
+  let url = '/api/v1/scans/findings?limit=' + (csv ? 500 : 200) +
+    (q ? '&q=' + encodeURIComponent(q) : '') + (sev ? '&severity=' + encodeURIComponent(sev) : '');
+  if (all) url += '&user=*';
+  if (csv) url += '&format=csv';
+  return url;
+}
+
+function exportFindingsCSV() {
+  const a = document.createElement('a');
+  a.href = findingsURL(true);
+  a.download = 'iris-findings.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Findings CSV download started.');
 }
 
 function toggleScanDetailByRow(id) {
@@ -1225,6 +1364,236 @@ async function runWebSearch() {
     </div>`).join('');
     toast(`${rows.length} result(s).`);
   } catch (e) { box.innerHTML = ''; toast('Search failed: ' + e.message, 'err'); }
+}
+
+// ---- security overview ----
+const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info'];
+
+async function loadOverview() {
+  try {
+    const st = await api('/api/v1/stats');
+    const sev = st.severity || {};
+    const total = SEV_ORDER.reduce((n, k) => n + (sev[k] || 0), 0);
+    $('ov-badge').textContent = total ? `${total} findings` : 'clean';
+    $('ov-badge').className = 'badge' + (total ? (sev.critical ? ' badge-bad' : sev.high ? ' badge-warn' : ' badge-good') : ' badge-good');
+    renderDonut(sev, total);
+    // top rules
+    const rules = st.top_rules || [];
+    $('ov-top-rules').innerHTML = rules.length ? rules.map(r => {
+      const k = String(r.severity || 'INFO').toUpperCase();
+      return `<div class="top-rule">
+        <span style="color:${SEV_COLORS[k] || SEV_COLORS.INFO};font-weight:700;font-size:0.72rem;width:66px">${esc(k)}</span>
+        <span class="mono" style="font-size:0.74rem;color:var(--color-muted)">${esc(r.rule_id || r.title || '')}</span>
+        <span class="cnt">×${r.count}</span>
+      </div>`;
+    }).join('') : '<div style="color:var(--color-dim);font-size:0.85rem">No findings recorded.</div>';
+    // scanners
+    $('ov-scanners').innerHTML = (st.scanners || []).sort((a, b) => b.count - a.count)
+      .map(x => `<span class="scanner-chip">${esc(x.scanner)} <b>${x.count}</b></span>`).join('')
+      || '<span style="color:var(--color-dim);font-size:0.85rem">No scans yet.</span>';
+    $('ov-note').textContent = `${st.scans || 0} scan(s) · ${st.scans_with_reports || 0} with stored reports`;
+  } catch (e) {
+    $('ov-badge').textContent = 'unavailable';
+    $('ov-top-rules').innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem">Stats unavailable.</div>';
+  }
+}
+
+function renderDonut(sev, total) {
+  const R = 54, C = 2 * Math.PI * R;
+  let off = 0, segs = '', legend = '';
+  const shown = SEV_ORDER.filter(k => sev[k] > 0);
+  shown.forEach(k => {
+    const frac = sev[k] / (total || 1);
+    const len = frac * C;
+    segs += `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${SEV_COLORS[k.toUpperCase()]}" stroke-width="16"
+      stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"
+      transform="rotate(-90 70 70)"><title>${k}: ${sev[k]}</title></circle>`;
+    off += len;
+    legend += `<div class="row"><span><span class="dot" style="background:${SEV_COLORS[k.toUpperCase()]}"></span>${k}</span><span class="mono">${sev[k]}</span></div>`;
+  });
+  if (!shown.length) {
+    segs = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="#233" stroke-width="16"/>`;
+    legend = '<div class="row"><span>No findings</span></div>';
+  }
+  $('ov-donut').innerHTML = `<svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Findings by severity">
+    <circle cx="70" cy="70" r="${R}" fill="none" stroke="rgba(148,163,184,0.10)" stroke-width="16"/>
+    ${segs}
+    <text x="70" y="66" text-anchor="middle" fill="#fafafa" font-size="26" font-weight="700" font-family="ui-monospace,monospace">${total}</text>
+    <text x="70" y="86" text-anchor="middle" fill="#8a8a94" font-size="9" letter-spacing="2" font-family="ui-monospace,monospace">FINDINGS</text>
+  </svg>`;
+  $('ov-legend').innerHTML = legend;
+}
+
+// ---- bulk selection / delete ----
+function toggleSelectAll(box) {
+  document.querySelectorAll('.scan-sel').forEach(c => { c.checked = box.checked; });
+  updateBulkBtn();
+}
+
+function updateBulkBtn() {
+  const n = document.querySelectorAll('.scan-sel:checked').length;
+  const b = $('bulk-btn');
+  b.disabled = n === 0;
+  b.textContent = n ? `Delete selected (${n})` : 'Delete selected';
+}
+
+async function bulkDeleteSelected() {
+  const ids = [...document.querySelectorAll('.scan-sel:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} scan(s) and their stored reports? This cannot be undone.`)) return;
+  try {
+    const r = await api('/api/v1/scans/bulk-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    toast(`Deleted ${r.deleted_count} scan(s)${r.failed_count ? `, ${r.failed_count} failed` : ''}.`, r.failed_count ? 'warn' : 'ok');
+    loadScans(); loadOverview(); loadPlan(); loadTrend();
+    if (me_admin) loadAdminScans(adminUserFilter);
+  } catch (e) { toast('Bulk delete failed: ' + e.message, 'err'); }
+}
+
+// ---- auto refresh ----
+let autoTimer = null;
+function toggleAutoRefresh() {
+  const b = $('auto-btn');
+  if (autoTimer) {
+    clearInterval(autoTimer); autoTimer = null;
+    b.textContent = 'Auto-refresh: off';
+    b.style.color = '';
+    toast('Auto-refresh off.');
+  } else {
+    autoTimer = setInterval(() => {
+      loadScans(); loadOverview(); loadTrend();
+      if (me_admin) { loadAdminScans(adminUserFilter); loadSystem(); }
+    }, 20000);
+    b.textContent = 'Auto-refresh: 20s';
+    b.style.color = 'var(--color-good)';
+    toast('Auto-refresh on (20s).');
+  }
+}
+
+// ---- share links ----
+async function createShare(id) {
+  try {
+    const r = await api(`/api/v1/scans/${encodeURIComponent(id)}/share`, { method: 'POST' });
+    try { await navigator.clipboard.writeText(r.url); toast('Share link copied to clipboard (expires ' + new Date(r.expires_at).toLocaleDateString() + ').'); }
+    catch (_) { toast('Share link: ' + r.url); }
+    const el = document.getElementById('share-' + encodeURIComponent(id));
+    if (el) el.innerHTML = shareBoxHTML(id, r.url);
+  } catch (e) { toast('Share failed: ' + e.message, 'err'); }
+}
+
+async function revokeShares(id) {
+  try {
+    const r = await api(`/api/v1/scans/${encodeURIComponent(id)}/share`, { method: 'DELETE' });
+    toast(`Revoked ${r.revoked} share link(s).`);
+    const el = document.getElementById('share-' + encodeURIComponent(id));
+    if (el) el.innerHTML = '';
+  } catch (e) { toast('Revoke failed: ' + e.message, 'err'); }
+}
+
+function shareBoxHTML(id, url) {
+  return `<div class="share-box"><input readonly value="${esc(url)}" onclick="this.select()"></div>`;
+}
+
+// ---- command palette ----
+const PAL_ITEMS = [
+  { t: 'Go to overview', k: 'G O', run: () => scrollToId('section-overview') },
+  { t: 'Go to scan history', k: 'G S', run: () => scrollToId('scans-body') },
+  { t: 'Go to tools (findings / compare / search)', k: 'G T', run: () => scrollToId('section-tools') },
+  { t: 'Go to billing history', k: 'G B', run: () => scrollToId('usage-body') },
+  { t: 'Go to account', k: 'G A', run: () => scrollToId('section-account') },
+  { t: 'Go to plans', k: 'G P', run: () => scrollToId('section-plans') },
+  { t: 'Findings explorer: focus search', k: 'F', run: () => { scrollToId('section-tools'); setTimeout(() => $('fx-q').focus(), 350); } },
+  { t: 'Findings explorer: export CSV', k: 'C', run: () => exportFindingsCSV() },
+  { t: 'Web search: focus', k: 'W', run: () => { scrollToId('section-tools'); setTimeout(() => $('ws-q').focus(), 350); } },
+  { t: 'Compare scans: pick A/B', k: 'D', run: () => { scrollToId('section-tools'); setTimeout(() => $('cmp-a').focus(), 350); } },
+  { t: 'Refresh all data', k: 'R', run: () => { loadScans(); loadOverview(); loadTrend(); loadPlan(); toast('Refreshed.'); } },
+  { t: 'Toggle auto-refresh (20s)', k: 'A', run: () => toggleAutoRefresh() },
+  { t: 'Sign out', k: 'Q', run: () => { location.href = '/auth/logout'; } },
+  { t: 'Admin: users', k: '', run: () => scrollToId('admin-users-body'), admin: true },
+  { t: 'Admin: all scans', k: '', run: () => scrollToId('admin-scans-body'), admin: true },
+  { t: 'Admin: system diagnostics', k: '', run: () => scrollToId('admin-system'), admin: true },
+];
+
+function scrollToId(id) {
+  const el = $(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+let palIndex = 0;
+function openPalette() {
+  $('palette').classList.add('open');
+  $('pal-input').value = '';
+  palIndex = 0;
+  renderPalette();
+  setTimeout(() => $('pal-input').focus(), 30);
+}
+function closePalette() { $('palette').classList.remove('open'); }
+
+function palFiltered() {
+  const q = $('pal-input').value.trim().toLowerCase();
+  return PAL_ITEMS.filter(it => (!it.admin || me_admin) && (!q || it.t.toLowerCase().includes(q)));
+}
+
+function renderPalette() {
+  const items = palFiltered();
+  if (palIndex >= items.length) palIndex = Math.max(0, items.length - 1);
+  $('pal-list').innerHTML = items.length ? items.map((it, i) =>
+    `<div class="pal-item${i === palIndex ? ' active' : ''}" onclick="palRun(${i})" onmouseover="palIndex=${i};renderPalette()">
+       <span>${esc(it.t)}</span>${it.k ? `<span class="pal-key">${esc(it.k)}</span>` : ''}
+     </div>`).join('')
+    : '<div class="pal-item">No matches</div>';
+}
+
+function paletteKey(e) {
+  const items = palFiltered();
+  if (e.key === 'Escape') { closePalette(); return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); palIndex = Math.min(items.length - 1, palIndex + 1); renderPalette(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); palIndex = Math.max(0, palIndex - 1); renderPalette(); }
+  else if (e.key === 'Enter') { e.preventDefault(); palRun(palIndex); }
+}
+
+function palRun(i) {
+  const items = palFiltered();
+  const it = items[i];
+  if (!it) return;
+  closePalette();
+  it.run();
+}
+
+// ---- admin system diagnostics ----
+async function loadSystem() {
+  try {
+    const d = await api('/api/v1/admin/system');
+    const fmtB = n => {
+      n = n || 0;
+      if (n >= 1 << 30) return (n / (1 << 30)).toFixed(2) + ' GB';
+      if (n >= 1 << 20) return (n / (1 << 20)).toFixed(2) + ' MB';
+      if (n >= 1 << 10) return (n / (1 << 10)).toFixed(1) + ' KB';
+      return n + ' B';
+    };
+    const up = d.uptime_seconds || 0;
+    const uptime = up >= 86400 ? Math.floor(up / 86400) + 'd ' + Math.floor(up % 86400 / 3600) + 'h'
+      : up >= 3600 ? Math.floor(up / 3600) + 'h ' + Math.floor(up % 3600 / 60) + 'm'
+      : Math.floor(up / 60) + 'm';
+    const cells = [
+      ['version', d.version], ['uptime', uptime],
+      ['scans', d.scans_total], ['users', d.users_total],
+      ['scans file', fmtB(d.storage && d.storage.scans_file_bytes)],
+      ['reports', `${d.storage ? d.storage.reports_count : 0} · ${fmtB(d.storage && d.storage.reports_bytes)}`],
+      ['tokens / shares', `${fmtB(d.storage && d.storage.tokens_bytes)} / ${fmtB(d.storage && d.storage.shares_bytes)}`],
+      ['retention', d.retention_days ? d.retention_days + ' days' : 'forever'],
+      ['report cap', fmtB(d.max_report_bytes)],
+      ['per-user cap', d.max_scans_per_user + ' scans'],
+      ['web search', d.searxng_configured ? 'configured' : 'off'],
+      ['data dir', d.data_dir],
+    ];
+    $('admin-system').innerHTML = cells.map(([k, v]) =>
+      `<div class="sys-cell"><div class="k">${esc(k)}</div><div class="v">${esc(String(v ?? '—'))}</div></div>`).join('');
+  } catch (e) {
+    $('admin-system').innerHTML = '<div class="sys-cell"><div class="k">status</div><div class="v">unavailable</div></div>';
+  }
 }
 
 init();
