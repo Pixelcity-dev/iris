@@ -20,7 +20,7 @@ TLS certificate automatically on first request.
 
 ## 1. Create the Keycloak client (id.pixelcity.dev)
 
-Admin console → realm `pixelcity` → **Clients → Create client**:
+Admin console → realm `pcid` → **Clients → Create client**:
 
 | Field | Value |
 |---|---|
@@ -81,7 +81,7 @@ curl -sI https://dashboard.pixelcity.dev | head -5
 
 ```bash
 # OIDC discovery through Keycloak
-curl -s https://id.pixelcity.dev/realms/pixelcity/.well-known/openid-configuration | head -c 200
+curl -s https://id.pixelcity.dev/realms/pcid/.well-known/openid-configuration | head -c 200
 
 # Dashboard login redirect (expect 302 → id.pixelcity.dev)
 curl -sI https://dashboard.pixelcity.dev/auth/login | head -3
@@ -121,6 +121,22 @@ cd /opt/iris-dashboard
 # replace binary sources (scp -r dashboard/ again), then:
 docker compose up -d --build
 ```
+
+## 7. Backups
+
+Scan history (metadata + report files) lives in the named volume
+`iris-dashboard_iris_scans`. Install the daily backup job:
+
+```bash
+scp deploy/iris-backup.sh root@pixelcity.top:/usr/local/bin/iris-backup.sh
+ssh root@pixelcity.top 'chmod +x /usr/local/bin/iris-backup.sh && \
+  (grep -q iris-backup /etc/crontab || \
+   echo "30 3 * * * root /usr/local/bin/iris-backup.sh >> /var/log/iris-backup.log 2>&1" >> /etc/crontab)'
+```
+
+Archives land in `/var/backups/iris/` (7-day rotation). Restore: stop the
+container, untar the archive over the volume `_data` directory, start it
+again.
 
 ## Troubleshooting
 
