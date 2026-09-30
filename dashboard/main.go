@@ -10,6 +10,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/hmac"
@@ -293,14 +294,15 @@ func verifyIDToken(ctx context.Context, jwks *jwksCache, raw, issuer string, aud
 // ---------- session cookie (HMAC-signed, minimal) ----------
 
 type session struct {
-	Sub          string   `json:"sub"`
-	Username     string   `json:"username"`
-	Email        string   `json:"email"`
-	Groups       []string `json:"groups,omitempty"`
-	Roles        []string `json:"roles,omitempty"`
-	Exp          int64    `json:"exp"`
-	AccessToken  string   `json:"access_token,omitempty"`
-	RefreshToken string   `json:"refresh_token,omitempty"`
+	Sub      string   `json:"sub"`
+	Username string   `json:"username"`
+	Email    string   `json:"email"`
+	Groups   []string `json:"groups,omitempty"`
+	Roles    []string `json:"roles,omitempty"`
+	Exp      int64    `json:"exp"`
+	// Keycloak tokens are NOT stored here — they made the cookie
+	// exceed the 4096-byte browser limit and broke login redirects.
+	// They live in the server-side tokenStore, keyed by Sub.
 }
 
 // isAdmin reports dashboard-admin membership (Keycloak group or realm role).
@@ -365,10 +367,11 @@ func subtle(a, b string) bool { return hmac.Equal([]byte(a), []byte(b)) } // con
 // ---------- handlers ----------
 
 type server struct {
-	cfg   config
-	dsc   *discovery
-	jwks  *jwksCache
-	scans *scanStore
+	cfg    config
+	dsc    *discovery
+	jwks   *jwksCache
+	scans  *scanStore
+	tokens *tokenStore
 }
 
 // bearerIdentity validates a CLI Keycloak access token (aud: iris-cli,
@@ -720,10 +723,11 @@ func main() {
 	}
 
 	srv := &server{
-		cfg:   cfg,
-		dsc:   dsc,
-		jwks:  &jwksCache{uri: dsc.JWKSURI},
-		scans: newScanStore(os.Getenv("SCANS_FILE")),
+		cfg:    cfg,
+		dsc:    dsc,
+		jwks:   &jwksCache{uri: dsc.JWKSURI},
+		scans:  newScanStore(os.Getenv("SCANS_FILE")),
+		tokens: newTokenStore(os.Getenv("TOKENS_FILE")),
 	}
 
 	mux := http.NewServeMux()
@@ -736,8 +740,12 @@ func main() {
 	mux.HandleFunc("GET /api/v1/me", srv.authEither(srv.handleMe))
 	mux.HandleFunc("GET /api/v1/scans", srv.handleScansGet)
 	mux.HandleFunc("GET /api/v1/scans/trend", srv.handleTrend)
+	mux.HandleFunc("GET /api/v1/scans/findings", srv.handleFindings)
+	mux.HandleFunc("GET /api/v1/scans/compare", srv.handleCompare)
 	mux.HandleFunc("GET /api/v1/scans/{id}", srv.handleScanGet)
 	mux.HandleFunc("POST /api/v1/scans", srv.handleScansPost)
+	mux.HandleFunc("DELETE /api/v1/scans/{id}", srv.handleScanDelete)
+	mux.HandleFunc("GET /api/v1/tools/search", srv.authEither(srv.handleSearch))
 	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
 	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))
 	mux.HandleFunc("GET /api/v1/admin/trend", srv.requireAdmin(srv.handleAdminTrend))
@@ -835,15 +843,18 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess := session{
-		Sub:          claims.Sub,
-		Username:     orDefault(claims.PreferredUsername, claims.Email),
-		Email:        claims.Email,
-		Groups:       claims.Groups,
-		Roles:        claims.RealmAccess.Roles,
-		Exp:          time.Now().Add(12 * time.Hour).Unix(),
+		Sub:      claims.Sub,
+		Username: orDefault(claims.PreferredUsername, claims.Email),
+		Email:    claims.Email,
+		Groups:   claims.Groups,
+		Roles:    claims.RealmAccess.Roles,
+		Exp:      time.Now().Add(12 * time.Hour).Unix(),
+	}
+	// Tokens go server-side (slim cookie — see tokenStore docs).
+	s.tokens.Set(sess.Sub, tokenPair{
 		AccessToken:  tr.AccessToken,
 		RefreshToken: tr.RefreshToken,
-	}
+	})
 	val, err := signSession(&sess, s.cfg.SessionSecret)
 	if err != nil {
 		http.Error(w, "session sign failed", http.StatusInternalServerError)
@@ -860,8 +871,17 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie("ds_session"); err == nil {
+		if sess, verr := verifySession([]byte(c.Value), s.cfg.SessionSecret); verr == nil {
+			s.tokens.Delete(sess.Sub)
+		}
+	}
 	http.SetCookie(w, &http.Cookie{Name: "ds_session", Value: "", MaxAge: -1, Path: "/"})
-	http.Redirect(w, r, s.dsc.LogoutEp+"?redirect_uri="+url.QueryEscape(s.cfg.RedirectURL), http.StatusFound)
+	root := strings.TrimSuffix(s.cfg.RedirectURL, "/auth/callback")
+	q := url.Values{}
+	q.Set("post_logout_redirect_uri", root+"/")
+	q.Set("client_id", s.cfg.ClientID)
+	http.Redirect(w, r, s.dsc.LogoutEp+"?"+q.Encode(), http.StatusFound)
 }
 
 func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
@@ -879,30 +899,45 @@ func (s *server) accountBase() string {
 	return strings.TrimSuffix(s.cfg.Issuer, "/") + "/account/"
 }
 
-// accountDo performs an Account API call with the user's access token,
-// refreshing once on 401.
+// accountDo performs an Account API call with the user's server-side
+// access token, refreshing once on 401. The request body is buffered
+// so the retry can replay it.
 func (s *server) accountDo(w http.ResponseWriter, r *http.Request, method, path string, body io.Reader) {
 	sess := r.Context().Value(sessKey{}).(session)
-	status, respBody := s.accountCall(r.Context(), sess.AccessToken, method, path, body)
-	if status == http.StatusUnauthorized && sess.RefreshToken != "" {
-		if fresh, err := s.refreshAccessToken(r.Context(), sess.RefreshToken); err == nil {
-			sess.AccessToken = fresh.AccessToken
-			if c, cerr := r.Cookie("ds_session"); cerr == nil {
-				_ = c
-			}
-			// Persist refreshed tokens back into the session cookie.
-			ns := sess
-			ns.AccessToken = fresh.AccessToken
+	pair, ok := s.tokens.Get(sess.Sub)
+	if !ok || (pair.AccessToken == "" && pair.RefreshToken == "") {
+		writeErr(w, http.StatusUnauthorized, errors.New("sign in again to manage your account"))
+		return
+	}
+	var buf []byte
+	if body != nil {
+		var err error
+		buf, err = io.ReadAll(io.LimitReader(body, 1<<20))
+		if err != nil {
+			writeErr(w, http.StatusBadRequest, errors.New("unreadable request body"))
+			return
+		}
+	}
+	call := func(tok string) (int, []byte) {
+		var br io.Reader
+		if body != nil {
+			br = bytes.NewReader(buf)
+		}
+		return s.accountCall(r.Context(), tok, method, path, br)
+	}
+	status, respBody := call(pair.AccessToken)
+	if status == http.StatusUnauthorized && pair.RefreshToken != "" {
+		if fresh, err := s.refreshAccessToken(r.Context(), pair.RefreshToken); err == nil {
+			pair.AccessToken = fresh.AccessToken
 			if fresh.RefreshToken != "" {
-				ns.RefreshToken = fresh.RefreshToken
+				pair.RefreshToken = fresh.RefreshToken
 			}
-			if val, serr := signSession(&ns, s.cfg.SessionSecret); serr == nil {
-				http.SetCookie(w, &http.Cookie{
-					Name: "ds_session", Value: val, Path: "/",
-					MaxAge: 12 * 3600, HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode,
-				})
-			}
-			status, respBody = s.accountCall(r.Context(), ns.AccessToken, method, path, body)
+			s.tokens.Set(sess.Sub, pair)
+			status, respBody = call(pair.AccessToken)
+		} else {
+			s.tokens.Delete(sess.Sub)
+			writeErr(w, http.StatusUnauthorized, errors.New("session expired — sign in again"))
+			return
 		}
 	}
 	if status == 0 {
@@ -1189,6 +1224,8 @@ func isYearlyPrice(s *server, priceID string) bool {
 
 func tierQuotas(tier string) (scans, aiPages int, name string) {
 	switch tier {
+	case "admin":
+		return 0, 0, "Admin" // 0 quota = unlimited everywhere
 	case "enterprise":
 		return 10000, 5000, "Enterprise"
 	case "pro":
@@ -1212,7 +1249,11 @@ func (s *server) handlePlan(w http.ResponseWriter, r *http.Request) {
 
 // planTier resolves the caller's billing tier, defaulting to free on
 // any billing error (never blocks the product on payments outages).
+// Dashboard admins are unlimited regardless of billing state.
 func (s *server) planTier(ctx context.Context, sess *session) string {
+	if isAdmin(sess) {
+		return "admin"
+	}
 	tier := "free"
 	if err := s.paymentsConfigured(); err == nil && sess.Email != "" {
 		if customerID, err := s.ensureCustomer(ctx, sess.Email, sess.Username); err == nil {
