@@ -186,18 +186,8 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "      iris scan https://example.com --scanner webscan --severity high\n")
 	}
 
-	// Save to dashboard scan history (best-effort; never fails the scan).
-	if rerr := cloud.ReportUsage(ctx, cloudCfg, accessToken, cloud.UsageEntry{
-		Time:      time.Now().UTC(),
-		Scanner:   "webscan",
-		Target:    targetURL,
-		Findings:  total,
-		DurationS: duration,
-	}); rerr != nil {
-		fmt.Fprintf(os.Stderr, "Note: could not save scan to dashboard history: %v\n", rerr)
-	} else {
-		fmt.Fprintf(os.Stderr, "Saved to dashboard scan history.\n")
-	}
+	// Save full results to dashboard scan history (best-effort).
+	uploadScan(ctx, cloudCfg, accessToken, "webscan", targetURL, total, duration, results, start)
 
 	return nil
 }

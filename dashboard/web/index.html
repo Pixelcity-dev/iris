@@ -688,11 +688,11 @@ async function loadScans() {
       body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
       return;
     }
-    body.innerHTML = s.entries.map(e => `<tr>
+    body.innerHTML = s.entries.map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
       <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
       <td><span class="mono">${esc(e.scanner)}</span></td>
       <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
-      <td>${e.findings ?? 0}</td>
+      <td style="white-space:nowrap">${sevChips(e)}</td>
       <td class="mono">${(e.duration_seconds ?? 0).toFixed(2)}s</td>
     </tr>`).join('');
   } catch (e) {
@@ -714,16 +714,93 @@ async function loadAdmin() {
   }
   try {
     const s = await api('/api/v1/admin/scans?limit=50');
-    $('admin-scans-body').innerHTML = (s.entries || []).map(e => `<tr>
+    $('admin-scans-body').innerHTML = (s.entries || []).map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
       <td class="mono" style="font-size:0.78rem">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
       <td class="mono">${esc(e.username || e.email || '—')}</td>
       <td><span class="mono">${esc(e.scanner)}</span></td>
       <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
-      <td>${e.findings ?? 0}</td>
+      <td style="white-space:nowrap">${sevChips(e)}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet.</td></tr>';
   } catch (e) {
     $('admin-scans-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
   }
+}
+
+const SEV_COLORS = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#eab308', LOW:'#38bdf8', INFO:'#94a3b8' };
+
+function sevChips(e) {
+  const total = e.findings ?? 0;
+  const c = e.severity_counts;
+  if (!c || !Object.keys(c).length) return `<span class="mono">${total}</span>`;
+  const chips = ['critical','high','medium','low','info'].filter(k => c[k]).map(k =>
+    `<span style="color:${SEV_COLORS[k.toUpperCase()]};font-weight:600;font-size:0.72rem;margin-right:6px;white-space:nowrap">${k[0].toUpperCase()}·${c[k]}</span>`).join('');
+  return `<span class="mono" style="margin-right:4px">${total}</span>${chips}`;
+}
+
+async function toggleScanDetail(row, id, colspan) {
+  const tbody = row.parentElement;
+  const open = tbody.querySelector('.scan-detail-row');
+  if (open && open.dataset.id === id) {
+    open.remove();
+    tbody.querySelectorAll('tr[onclick]').forEach(r => r.style.background = '');
+    return;
+  }
+  tbody.querySelectorAll('.scan-detail-row').forEach(n => n.remove());
+  tbody.querySelectorAll('tr[onclick]').forEach(r => r.style.background = '');
+  row.style.background = 'rgba(99,102,241,0.08)';
+  const tr = document.createElement('tr');
+  tr.className = 'scan-detail-row';
+  tr.dataset.id = id;
+  tr.innerHTML = `<td colspan="${colspan}"><span class="spinner"></span></td>`;
+  tbody.appendChild(tr);
+  try {
+    const d = await api(`/api/v1/scans/${encodeURIComponent(id)}`);
+    if (!tr.isConnected) return;
+    tr.innerHTML = `<td colspan="${colspan}" style="padding:10px 8px 14px">${renderScanDetail(d)}</td>`;
+  } catch (e) {
+    if (!tr.isConnected) return;
+    tr.innerHTML = `<td colspan="${colspan}" style="color:var(--color-dim);padding:10px">Could not load report: ${esc(String((e && e.message) || e))}</td>`;
+  }
+}
+
+function renderScanDetail(d) {
+  const e = d.entry || {};
+  let h = '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;padding:2px 0 10px;border-bottom:1px solid rgba(148,163,184,0.18);margin-bottom:8px">';
+  h += `<span class="mono" style="font-size:0.82rem">${esc(e.target || '')}</span>`;
+  h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">${esc(e.scanner || '')} · ${e.time ? new Date(e.time).toLocaleString() : ''} · ${(e.duration_seconds ?? 0).toFixed(2)}s</span>`;
+  if (e.iris_version) h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">iris ${esc(e.iris_version)}</span>`;
+  h += `<span style="font-size:0.78rem">${sevChips(e)}</span></div>`;
+
+  const report = d.report;
+  if (!report) {
+    const note = e.report_omitted
+      ? 'Full report exceeded the storage cap — metadata only.'
+      : 'No stored report (this scan predates full-output storage).';
+    return h + `<div style="color:var(--color-dim);font-size:0.85rem">${note}</div>`;
+  }
+  const findings = [];
+  (report.results || []).forEach(r => (r.findings || []).forEach(f => findings.push(f)));
+  if (!findings.length) {
+    return h + '<div style="color:var(--color-dim);font-size:0.85rem">Clean scan — no findings recorded.</div>';
+  }
+  const MAX = 300;
+  h += '<div class="table-shell"><table class="data-table"><thead><tr><th style="width:88px">Severity</th><th>Rule</th><th>Finding</th><th style="width:150px">Category</th></tr></thead><tbody>';
+  findings.slice(0, MAX).forEach(f => {
+    const sev = String(f.severity || 'INFO').toUpperCase();
+    h += `<tr>
+      <td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
+      <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
+      <td>${esc(f.title || '')}
+        ${f.description ? `<div style="color:var(--color-muted);font-size:0.78rem;margin-top:2px">${esc(f.description)}</div>` : ''}
+        ${f.fix ? `<div style="color:var(--color-dim);font-size:0.76rem;margin-top:2px">Fix: ${esc(f.fix)}</div>` : ''}
+        ${f.code ? `<pre style="margin:6px 0 0;padding:6px 8px;background:#0b1220;border:1px solid rgba(148,163,184,0.2);border-radius:6px;font-size:0.72rem;overflow-x:auto;max-height:130px">${esc(f.code)}</pre>` : ''}
+      </td>
+      <td class="mono" style="font-size:0.74rem;color:var(--color-muted)">${esc(f.category || '')}</td>
+    </tr>`;
+  });
+  h += '</tbody></table></div>';
+  if (findings.length > MAX) h += `<div style="color:var(--color-dim);font-size:0.78rem;margin-top:6px">Showing first ${MAX} of ${findings.length} findings — full report available via <span class="mono">iris cloud usage</span> or the JSON API.</div>`;
+  return h;
 }
 
 function money(cents, currency) {

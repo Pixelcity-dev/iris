@@ -403,16 +403,21 @@ func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusUnauthorized, err)
 		return
 	}
-	var e scanEntry
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	var payload struct {
+		scanEntry
+		Report json.RawMessage `json:"report,omitempty"`
+	}
+	// Metadata + up to 8MB report + JSON envelope overhead.
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxReportBytes+(1<<20)))
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, errors.New("unreadable body"))
 		return
 	}
-	if err := json.Unmarshal(body, &e); err != nil {
+	if err := json.Unmarshal(body, &payload); err != nil {
 		writeErr(w, http.StatusBadRequest, errors.New("invalid JSON"))
 		return
 	}
+	e := payload.scanEntry
 	e.Sub = ident.Sub
 	e.Username = ident.Username
 	e.Email = ident.Email
@@ -421,11 +426,52 @@ func (s *server) handleScansPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	e.ID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), randHex(4))
+
+	// Full report: stored separately; oversized reports are marked omitted.
+	if len(payload.Report) > 0 && string(payload.Report) != "null" {
+		if len(payload.Report) > maxReportBytes {
+			e.ReportOmitted = true
+		} else if err := s.scans.saveReport(e.ID, payload.Report); err == nil {
+			e.ReportBytes = len(payload.Report)
+		} else {
+			e.ReportOmitted = true
+		}
+	}
 	if err := s.scans.append(e); err != nil {
 		writeErr(w, http.StatusInternalServerError, errors.New("could not store scan"))
 		return
 	}
-	writeJSON(w, map[string]interface{}{"ok": true, "id": e.ID})
+	writeJSON(w, map[string]interface{}{
+		"ok": true, "id": e.ID,
+		"report_bytes": e.ReportBytes, "report_omitted": e.ReportOmitted,
+	})
+}
+
+// handleScanGet returns one scan with its full report. Owner or admin only.
+func (s *server) handleScanGet(w http.ResponseWriter, r *http.Request) {
+	ident, err := s.requestIdentity(r)
+	if err != nil {
+		writeErr(w, http.StatusUnauthorized, err)
+		return
+	}
+	id := r.PathValue("id")
+	e, ok := s.scans.get(id)
+	if !ok {
+		writeErr(w, http.StatusNotFound, errors.New("scan not found"))
+		return
+	}
+	if e.Sub != ident.Sub && !isAdmin(ident) {
+		writeErr(w, http.StatusForbidden, errors.New("not your scan"))
+		return
+	}
+	resp := map[string]interface{}{"entry": e, "report": nil}
+	if e.ReportBytes > 0 {
+		data, err := s.scans.loadReport(e.ID)
+		if err == nil {
+			resp["report"] = json.RawMessage(data)
+		}
+	}
+	writeJSON(w, resp)
 }
 
 func (s *server) handleScansGet(w http.ResponseWriter, r *http.Request) {
@@ -551,6 +597,7 @@ func main() {
 	mux.HandleFunc("GET /auth/logout", srv.handleLogout)
 	mux.HandleFunc("GET /api/v1/me", srv.authEither(srv.handleMe))
 	mux.HandleFunc("GET /api/v1/scans", srv.handleScansGet)
+	mux.HandleFunc("GET /api/v1/scans/{id}", srv.handleScanGet)
 	mux.HandleFunc("POST /api/v1/scans", srv.handleScansPost)
 	mux.HandleFunc("GET /api/v1/admin/scans", srv.requireAdmin(srv.handleAdminScans))
 	mux.HandleFunc("GET /api/v1/admin/users", srv.requireAdmin(srv.handleAdminUsers))

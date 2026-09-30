@@ -1,12 +1,15 @@
 package main
 
-// Scan history store: append-only JSONL file, crash-safe via tmp+rename,
-// guarded by a mutex (single process). Caps total size and per-user entries
-// with oldest-first pruning. Zero dependencies by design.
+// Scan history store: append-only JSONL metadata file, crash-safe via
+// tmp+rename, guarded by a mutex (single process). Full scan reports are
+// stored as separate JSON files under <dir>/reports/<id>.json and are
+// pruned together with their metadata entries. Caps total size and
+// per-user entries with oldest-first pruning. Zero dependencies.
 
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,6 +29,14 @@ type scanEntry struct {
 	Target    string    `json:"target"`
 	Findings  int       `json:"findings"`
 	DurationS float64   `json:"duration_seconds"`
+	// SeverityCounts breaks findings down by severity (critical..info).
+	SeverityCounts map[string]int `json:"severity_counts,omitempty"`
+	// ReportBytes is the stored report size; 0 = no report stored.
+	ReportBytes int `json:"report_bytes,omitempty"`
+	// ReportOmitted marks scans whose report exceeded the size cap.
+	ReportOmitted bool `json:"report_omitted,omitempty"`
+	// Version is the CLI version that produced the scan.
+	Version string `json:"iris_version,omitempty"`
 }
 
 type scanStore struct {
@@ -41,13 +52,73 @@ func newScanStore(path string) *scanStore {
 }
 
 const (
-	maxScanFileBytes = 50 << 20 // 50MB total store
+	maxScanFileBytes = 50 << 20 // 50MB total metadata store
+	maxReportBytes   = 8 << 20  // 8MB per stored report
 	maxScansPerUser  = 1000
 	maxTargetLen     = 500
 	maxScannerLen    = 64
 	maxUsernameLen   = 128
 	maxEmailLen      = 254
+	maxVersionLen    = 32
 )
+
+// errReportMissing means the scan exists but has no stored report
+// (older scans, or report exceeded the size cap).
+var errReportMissing = errors.New("report not stored")
+
+func (s *scanStore) reportsDir() string {
+	return filepath.Join(filepath.Dir(s.path), "reports")
+}
+
+func (s *scanStore) reportPath(id string) string {
+	return filepath.Join(s.reportsDir(), id+".json")
+}
+
+// saveReport writes a full scan report atomically (tmp+rename, 0600).
+func (s *scanStore) saveReport(id string, data []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := os.MkdirAll(s.reportsDir(), 0750); err != nil {
+		return err
+	}
+	tmp := s.reportPath(id) + ".tmp"
+	if err := os.WriteFile(tmp, data, 0600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, s.reportPath(id))
+}
+
+// loadReport reads a stored report. Returns errReportMissing when the
+// scan has no stored report.
+func (s *scanStore) loadReport(id string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, err := os.ReadFile(s.reportPath(id))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errReportMissing
+		}
+		return nil, err
+	}
+	return data, nil
+}
+
+// get returns one scan entry by id (newest match wins).
+func (s *scanStore) get(id string) (scanEntry, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	lines, err := readLines(s.path)
+	if err != nil {
+		return scanEntry{}, false
+	}
+	for i := len(lines) - 1; i >= 0; i-- {
+		var e scanEntry
+		if json.Unmarshal([]byte(lines[i]), &e) == nil && e.ID == id {
+			return e, true
+		}
+	}
+	return scanEntry{}, false
+}
 
 func (s *scanStore) append(e scanEntry) error {
 	s.mu.Lock()
@@ -56,81 +127,103 @@ func (s *scanStore) append(e scanEntry) error {
 	if err := os.MkdirAll(filepath.Dir(s.path), 0750); err != nil {
 		return err
 	}
-	// Prune before append so the file never grows past the cap.
-	s.pruneLocked()
 	f, err := os.OpenFile(s.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	line, err := json.Marshal(e)
 	if err != nil {
+		f.Close()
 		return err
 	}
 	if _, err := f.Write(append(line, '\n')); err != nil {
+		f.Close()
 		return err
 	}
-	// Newest entries for this user beyond the cap are dropped oldest-first.
-	s.pruneUserLocked(e.Sub)
+	if err := f.Close(); err != nil {
+		return err
+	}
+	s.pruneAndSweepLocked()
 	return nil
 }
 
-// pruneLocked drops oldest lines while the file exceeds the cap.
-// Caller must hold s.mu.
-func (s *scanStore) pruneLocked() {
-	fi, err := os.Stat(s.path)
-	if err != nil || fi.Size() <= maxScanFileBytes {
-		return
-	}
+// pruneAndSweepLocked applies the byte cap and per-user caps to the
+// metadata file, rewrites it when entries were dropped, and deletes
+// report files whose metadata no longer exists. Caller must hold s.mu.
+func (s *scanStore) pruneAndSweepLocked() {
 	lines, err := readLines(s.path)
 	if err != nil {
 		return
 	}
-	// Keep newest ~80% by byte size.
+	kept := pruneLines(lines)
+
+	if len(kept) != len(lines) {
+		if err := atomicWriteLines(s.path, kept); err != nil {
+			return // still sweep what we can
+		}
+	}
+	s.sweepReportsLocked(kept)
+}
+
+// pruneLines keeps the newest ~80% of entries under the byte cap, then
+// caps entries per user (newest-first), restoring chronological order.
+func pruneLines(lines []string) []string {
+	// Byte cap: keep newest ~80% by size.
 	var total int64
-	keep := len(lines)
+	keepFrom := 0
 	for i := len(lines) - 1; i >= 0; i-- {
 		total += int64(len(lines[i])) + 1
 		if total > maxScanFileBytes*8/10 {
-			keep = i + 1
+			keepFrom = i + 1
 			break
 		}
-		keep = i
 	}
-	if keep < len(lines) {
-		_ = atomicWriteLines(s.path, lines[keep:])
-	}
-}
+	candidates := lines[keepFrom:]
 
-// pruneUserLocked keeps only the newest maxScansPerUser entries for a user.
-// Caller must hold s.mu.
-func (s *scanStore) pruneUserLocked(sub string) {
-	lines, err := readLines(s.path)
-	if err != nil {
-		return
-	}
-	kept := make([]string, 0, len(lines))
+	// Per-user cap, newest-first.
+	kept := make([]string, 0, len(candidates))
 	counts := map[string]int{}
-	// Walk newest-first, keep budget per user.
-	for i := len(lines) - 1; i >= 0; i-- {
+	for i := len(candidates) - 1; i >= 0; i-- {
 		var e scanEntry
-		if json.Unmarshal([]byte(lines[i]), &e) != nil {
-			continue
-		}
-		if e.Sub == "" {
+		if json.Unmarshal([]byte(candidates[i]), &e) != nil || e.Sub == "" {
 			continue
 		}
 		if counts[e.Sub] >= maxScansPerUser {
 			continue
 		}
 		counts[e.Sub]++
-		kept = append(kept, lines[i])
+		kept = append(kept, candidates[i])
 	}
 	// Restore chronological order.
 	for i, j := 0, len(kept)-1; i < j; i, j = i+1, j-1 {
 		kept[i], kept[j] = kept[j], kept[i]
 	}
-	_ = atomicWriteLines(s.path, kept)
+	return kept
+}
+
+// sweepReportsLocked deletes report files whose id is not present in
+// the kept metadata lines. Caller must hold s.mu.
+func (s *scanStore) sweepReportsLocked(kept []string) {
+	ids := make(map[string]bool, len(kept))
+	for _, l := range kept {
+		var e scanEntry
+		if json.Unmarshal([]byte(l), &e) == nil && e.ID != "" {
+			ids[e.ID] = true
+		}
+	}
+	entries, err := os.ReadDir(s.reportsDir())
+	if err != nil {
+		return
+	}
+	for _, ent := range entries {
+		name := ent.Name()
+		if ent.IsDir() || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		if id := strings.TrimSuffix(name, ".json"); !ids[id] {
+			_ = os.Remove(filepath.Join(s.reportsDir(), name))
+		}
+	}
 }
 
 func readLines(path string) ([]string, error) {
@@ -300,6 +393,22 @@ func sanitizeScanInput(e *scanEntry) error {
 	e.Email = strings.TrimSpace(e.Email)
 	if len(e.Email) > maxEmailLen {
 		e.Email = e.Email[:maxEmailLen]
+	}
+	// Severity counts: bounded keys, non-negative bounded values.
+	if len(e.SeverityCounts) > 12 {
+		return fmt.Errorf("too many severity buckets")
+	}
+	for k, v := range e.SeverityCounts {
+		if len(k) > 16 || v < 0 || v > 1000000 {
+			return fmt.Errorf("invalid severity counts")
+		}
+	}
+	// Report metadata is server-computed; scrub client-provided values.
+	e.ReportBytes = 0
+	e.ReportOmitted = false
+	e.Version = strings.TrimSpace(e.Version)
+	if len(e.Version) > maxVersionLen {
+		e.Version = e.Version[:maxVersionLen]
 	}
 	return nil
 }

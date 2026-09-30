@@ -398,6 +398,12 @@ type UsageEntry struct {
 	Target    string    `json:"target"`
 	Findings  int       `json:"findings"`
 	DurationS float64   `json:"duration_seconds"`
+	// SeverityCounts breaks findings down by severity (critical..info).
+	SeverityCounts map[string]int `json:"severity_counts,omitempty"`
+	// Report is the full structured scan output (findings, metadata).
+	Report json.RawMessage `json:"report,omitempty"`
+	// Version is the CLI version that produced the scan.
+	Version string `json:"iris_version,omitempty"`
 }
 
 // UsageHistory is the paged usage log.
