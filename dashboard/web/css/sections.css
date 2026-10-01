@@ -1,0 +1,76 @@
+/* Iris Dashboard — per-section layouts: overview, plans, roadmap, admin, system. */
+
+/* ---------------- overview ---------------- */
+
+.ov-grid { display: grid; grid-template-columns: 240px 1fr 240px; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .ov-grid { grid-template-columns: 1fr; } }
+
+.donut-legend { display: grid; gap: 6px; margin-top: 10px; font-size: 0.78rem; }
+.donut-legend .row { display: flex; justify-content: space-between; color: var(--color-muted); }
+.donut-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+.top-rule { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(148,163,184,0.12); font-size: 0.83rem; }
+.top-rule .cnt { margin-left: auto; color: var(--color-bright); font-weight: 600; font-family: var(--font-mono); font-size: 0.78rem; }
+
+.scanner-chip { display: inline-block; border: 1px solid var(--color-line); background: var(--color-panel-2); border-radius: 999px; padding: 3px 11px; font-size: 0.74rem; margin: 0 6px 6px 0; color: var(--color-muted); }
+.scanner-chip b { color: var(--color-bright); }
+
+/* ---------------- plans ---------------- */
+
+.plan-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+.plan-card {
+  border: 1px solid var(--color-line-soft);
+  border-radius: 4px;
+  background: var(--color-panel);
+  padding: 26px;
+  position: relative;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.plan-card:hover { border-color: #333338; background: var(--color-panel-2); }
+.plan-card.featured { border-color: rgba(212, 168, 83, 0.55); }
+
+.plan-card h2 { font-size: 1.2rem; font-weight: 600; }
+.plan-card .price { font-size: 2rem; font-weight: 600; margin: 12px 0; letter-spacing: -0.02em; }
+.plan-card .price small { font-size: 0.78rem; color: var(--color-dim); font-weight: 400; }
+
+.plan-card ul { list-style: none; margin: 18px 0 22px; }
+.plan-card li { padding: 5px 0; font-size: 0.86rem; color: var(--color-muted); }
+.plan-card li::before { content: "— "; color: var(--color-dim); }
+
+.plan-card .badge { position: absolute; top: -10px; right: 16px; background: var(--color-ink); }
+.plan-card .badge.filled { background: var(--gold); border-color: var(--gold); color: #0a0a0a; }
+
+/* ---------------- roadmap ---------------- */
+
+.upcoming-item { padding: 16px 0; border-bottom: 1px solid var(--color-line-soft); }
+.upcoming-item:last-child { border-bottom: none; }
+.upcoming-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+.upcoming-item p { font-size: 0.86rem; color: var(--color-muted); }
+.upcoming-item .meta { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+
+/* ---------------- admin ---------------- */
+
+.create-box {
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.user-editor {
+  margin-top: 18px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 16px;
+}
+
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.sys-cell { background: var(--color-panel-2); border: 1px solid var(--color-line-soft); border-radius: 6px; padding: 10px 12px; }
+.sys-cell .k { font: 600 0.62rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-dim); }
+.sys-cell .v { margin-top: 5px; font-size: 0.95rem; color: var(--color-bright); word-break: break-all; }

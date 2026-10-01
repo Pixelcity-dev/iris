@@ -20,647 +20,13 @@
 <meta name="twitter:image" content="https://dashboard.pixelcity.dev/og.png" />
 <meta name="theme-color" content="#0c0c0b" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c0b'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23d4a853' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4'/%3E%3Cpath d='M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z'/%3E%3Cpath d='M9 12v5'/%3E%3Cpath d='M15 12v5'/%3E%3Cpath d='M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1'/%3E%3C/g%3E%3C/svg%3E">
-<style>
-/* Self-hosted variable fonts — no external font CDN (CSP-safe, offline-safe). */
-@font-face {
-  font-family: "Archivo";
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("fonts/Archivo.woff2") format("woff2");
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("fonts/JetBrainsMono.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Syne";
-  font-style: normal;
-  font-weight: 600 800;
-  font-display: swap;
-  src: url("fonts/Syne.woff2") format("woff2");
-}
-/*
- * Iris Dashboard — PixelCity Marketplace design system.
- * Precision monochrome: neutral grayscale ramp, white primary actions,
- * hairlines over borders, Archivo for type, JetBrains Mono for metadata,
- * PixelCity gold (#d4a853) for the wordmark + accents — one accent across
- * marketplace, dashboard and payments.
- */
-:root {
-  --color-ink: #0a0a0a;
-  --color-panel: #111113;
-  --color-panel-2: #17171a;
-  --color-line: #27272a;
-  --color-line-soft: #1e1e21;
-  --color-muted: #a1a1aa;
-  --color-dim: #71717a;
-  --color-bright: #fafafa;
-  --color-accent: #fafafa;
-  --color-accent-2: #d4d4d8;
-  --color-good: #86efac;
-  --color-warn: #fbbf24;
-  --color-bad: #fca5a5;
-  --pc-orange: #d4a853;
-  --pc-orange-soft: #f0c878;
-  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --font-brand: "Syne", "Archivo", ui-sans-serif, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root { color-scheme: dark; }
-
-html { background: var(--color-ink); scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(140% 90% at 50% 0%, rgba(255, 255, 255, 0.02), transparent 55%),
-    var(--color-ink);
-  color: var(--color-bright);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a { color: inherit; text-decoration: none; }
-button { font: inherit; cursor: pointer; }
-h1, h2, h3 { font-family: var(--font-display); }
-
-::selection { background: var(--color-accent); color: #0a0a0a; }
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--color-ink); }
-::-webkit-scrollbar-thumb { background: #27272a; }
-::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-
-.container-shell { width: min(1240px, calc(100% - 3rem)); margin: 0 auto; }
-
-/* ---------------- brand ---------------- */
-
-.brand {
-  font-family: var(--font-brand);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
-
-/* White-yellow marketplace wordmark: white "Pixel" + animated gold "City". */
-.brand-gold {
-  color: transparent;
-  background-image: linear-gradient(115deg, #b08d45, #f0c878 35%, #ffe9b8 50%, #d4a853 65%, #8b6a2a);
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: 8s ease-in-out infinite gold-shift;
-}
-@keyframes gold-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-@media (prefers-reduced-motion: reduce) {
-  .brand-gold { animation: none; }
-  .anvil-tile.big { animation: none; }
-}
-
-/* Anvil mark: dark rounded tile, gold stroke, draw-in animation. */
-.anvil-tile {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #0c0c0b;
-  border: 1px solid rgba(212, 168, 83, 0.4);
-  border-radius: 7px;
-  color: #d4a853;
-  flex: 0 0 auto;
-}
-.anvil-tile svg { display: block; }
-.anvil-tile.big {
-  width: 84px; height: 84px; border-radius: 14px;
-  border-color: rgba(212, 168, 83, 0.55);
-  animation: anvil-glow 3.2s ease-in-out infinite;
-}
-@keyframes anvil-glow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(212,168,83,0.12), 0 12px 40px rgba(212,168,83,0.10); }
-  50% { box-shadow: 0 0 0 1px rgba(212,168,83,0.35), 0 14px 52px rgba(212,168,83,0.26); }
-}
-.anvil-tile.small { width: 30px; height: 30px; }
-
-.brand-lockup { display: flex; align-items: center; gap: 10px; }
-
-.brand-mark { flex: 0 0 auto; display: flex; }
-
-/* ---------------- header ---------------- */
-
-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  border-bottom: 1px solid var(--color-line-soft);
-  background: rgba(10, 10, 10, 0.9);
-  backdrop-filter: blur(12px);
-}
-
-.header-shell { display: flex; height: 64px; align-items: center; gap: 16px; }
-
-.header-title { display: flex; align-items: center; line-height: 1.15; }
-
-.header-title .brand { font-size: 1.05rem; }
-
-.header-title .sub {
-  color: var(--color-dim);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.user-chip { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 0.84rem; color: var(--color-muted); }
-.user-chip .username { color: var(--color-bright); font-weight: 500; }
-
-/* ---------------- buttons ---------------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 2.6rem;
-  padding: 0.6rem 1.5rem;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1;
-  white-space: nowrap;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, opacity 180ms ease;
-}
-
-.btn-primary { background: var(--color-accent); color: #0a0a0a; }
-.btn-primary:hover { background: var(--color-accent-2); }
-
-.btn-secondary { background: transparent; border-color: var(--color-line); color: var(--color-bright); }
-.btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent-2); }
-
-.btn-ghost { background: transparent; border-color: transparent; color: var(--color-muted); }
-.btn-ghost:hover { color: var(--color-bright); }
-
-.btn-orange { background: var(--pc-orange); color: #0a0a0a; }
-.btn-orange:hover { background: var(--pc-orange-soft); }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
-@media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
-.form-row { display: grid; gap: 6px; margin-bottom: 12px; }
-.form-row label { font-size: 0.78rem; color: var(--color-muted); }
-.form-row input, .form-row select {
-  background: var(--color-panel-2); border: 1px solid var(--color-line);
-  border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit; width: 100%;
-}
-.form-row input:focus, .form-row select:focus { outline: none; border-color: var(--pc-orange); }
-#section-tools input, #section-tools select {
-  background: var(--color-panel-2); border: 1px solid var(--color-line);
-  border-radius: 4px; color: var(--color-bright); padding: 9px 12px; font: inherit;
-}
-#section-tools input:focus, #section-tools select:focus { outline: none; border-color: var(--pc-orange); }
-.form-note { font-size: 0.78rem; color: var(--color-dim); margin-left: 10px; }
-.form-note.ok { color: var(--color-good); }
-.form-note.err { color: var(--color-bad); }
-.billing-toggle { display: flex; gap: 8px; margin: 12px 0 14px; }
-.interval-btn.active { border-color: var(--pc-orange); color: var(--pc-orange-soft); }
-
-.btn:focus-visible, a:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 3px; }
-
-/* ---------------- overview / palette ---------------- */
-.ov-grid { display: grid; grid-template-columns: 240px 1fr 240px; gap: 22px; align-items: start; }
-@media (max-width: 900px) { .ov-grid { grid-template-columns: 1fr; } }
-.donut-legend { display: grid; gap: 6px; margin-top: 10px; font-size: 0.78rem; }
-.donut-legend .row { display: flex; justify-content: space-between; color: var(--color-muted); }
-.donut-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.top-rule { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(148,163,184,0.12); font-size: 0.83rem; }
-.top-rule .cnt { margin-left: auto; color: var(--color-bright); font-weight: 600; font-family: var(--font-mono); font-size: 0.78rem; }
-.scanner-chip { display: inline-block; border: 1px solid var(--color-line); background: var(--color-panel-2); border-radius: 999px; padding: 3px 11px; font-size: 0.74rem; margin: 0 6px 6px 0; color: var(--color-muted); }
-.scanner-chip b { color: var(--color-bright); }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-.toolbar .spacer { flex: 1; }
-.sel-col { width: 30px; }
-#sel-all, .scan-sel { accent-color: var(--pc-orange); cursor: pointer; }
-.danger-zone { color: var(--color-bad); border-color: rgba(252,165,165,0.4); }
-.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-.sys-cell { background: var(--color-panel-2); border: 1px solid var(--color-line-soft); border-radius: 6px; padding: 10px 12px; }
-.sys-cell .k { font: 600 0.62rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-dim); }
-.sys-cell .v { margin-top: 5px; font-size: 0.95rem; color: var(--color-bright); word-break: break-all; }
-
-/* command palette */
-#palette { position: fixed; inset: 0; z-index: 200; background: rgba(5,5,7,0.7); backdrop-filter: blur(3px); display: none; align-items: flex-start; justify-content: center; padding-top: 12vh; }
-#palette.open { display: flex; }
-.pal-box { width: min(560px, calc(100vw - 2rem)); background: #141418; border: 1px solid var(--color-line); border-radius: 10px; box-shadow: 0 24px 80px rgba(0,0,0,0.6); overflow: hidden; }
-#pal-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--color-line-soft); color: var(--color-bright); padding: 15px 16px; font: inherit; font-size: 0.95rem; outline: none; }
-#pal-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
-.pal-item { display: flex; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 6px; font-size: 0.86rem; color: var(--color-muted); cursor: pointer; }
-.pal-item .pal-key { margin-left: auto; font: 600 0.62rem var(--font-mono); letter-spacing: 0.1em; color: var(--color-dim); border: 1px solid var(--color-line); border-radius: 4px; padding: 2px 6px; }
-.pal-item.active { background: rgba(212,168,83,0.12); color: var(--color-bright); }
-.pal-hint { padding: 8px 14px; font-size: 0.7rem; color: var(--color-dim); border-top: 1px solid var(--color-line-soft); }
-
-.share-box { margin-top: 8px; font-size: 0.78rem; }
-.share-box input { width: 100%; background: var(--color-panel-2); border: 1px solid var(--color-line); color: var(--color-bright); border-radius: 4px; padding: 7px 10px; font-family: var(--font-mono); font-size: 0.74rem; }
-
-/* ---------------- app shell (sidebar + sections) ---------------- */
-
-.app-grid { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 30px; align-items: start; }
-
-#sidebar {
-  position: sticky;
-  top: 84px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  background: transparent;
-  border: 0;
-  border-left: 2px solid transparent;
-  border-radius: 0 4px 4px 0;
-  color: var(--color-muted);
-  font-size: 0.86rem;
-  font-weight: 500;
-  padding: 9px 12px;
-  text-align: left;
-  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
-}
-.nav-item:hover { color: var(--color-bright); background: rgba(255,255,255,0.03); }
-.nav-item.active { color: var(--color-bright); background: rgba(212,168,83,0.08); border-left-color: #d4a853; }
-.nav-item .nav-ico { width: 15px; height: 15px; flex: 0 0 auto; opacity: 0.7; }
-.nav-item.active .nav-ico { opacity: 1; color: #d4a853; }
-.nav-item:focus-visible { outline: 1px solid var(--color-accent); outline-offset: -1px; }
-
-.nav-foot {
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--color-line-soft);
-  font: 500 0.62rem/1.7 var(--font-mono);
-  letter-spacing: 0.1em;
-  color: var(--color-dim);
-}
-
-.app-sec { display: none; min-width: 0; }
-.app-sec.active { display: block; animation: secIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@keyframes secIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-/* Money, counters and metadata align vertically across rows. */
-table, .card .value, .price, .data-table td.mono, .data-table th, .num, .stat { font-variant-numeric: tabular-nums; }
-
-.sec-head { margin-bottom: 24px; }
-.sec-head .section-title { margin-top: 10px; }
-.sec-head .sub { margin-top: 8px; max-width: 640px; }
-
-.stat-note { margin-top: 8px; font-size: 0.72rem; color: var(--color-dim); font-family: var(--font-mono); }
-.stat-note.warn { color: var(--color-warn); }
-
-/* admin: create form + user editor */
-.create-box {
-  background: var(--color-panel-2);
-  border: 1px solid var(--color-line);
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-  align-items: end;
-}
-.user-editor {
-  margin-top: 18px;
-  border-top: 1px solid var(--color-line);
-  padding-top: 16px;
-}
-
-@media (max-width: 900px) {
-  .app-grid { grid-template-columns: 1fr; gap: 12px; }
-  #sidebar {
-    position: static;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 4px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--color-line-soft);
-  }
-  .nav-item { border-left: 0; border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0; white-space: nowrap; width: auto; }
-  .nav-item.active { border-left: 0; border-bottom-color: #d4a853; }
-  .nav-foot { display: none; }
-}
-
-/* ---------------- layout ---------------- */
-
-main { padding: 48px 0 96px; }
-
-.eyebrow {
-  color: var(--color-muted);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.rule-label { display: flex; align-items: center; gap: 0.9rem; }
-.rule-label::before { content: ""; width: 2.2rem; height: 1px; background: var(--color-accent); opacity: 0.4; }
-
-.section-title {
-  font-size: clamp(1.7rem, 3vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.08;
-}
-
-.sub { color: var(--color-muted); font-size: 0.9rem; }
-
-.view { display: none; }
-.view.active { display: block; }
-
-/* ---------------- cards + stats ---------------- */
-
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 28px 0; }
-
-.card {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line-soft);
-  border-radius: 4px;
-  padding: 20px;
-  transition: border-color 200ms ease, background-color 200ms ease;
-}
-
-.card:hover { border-color: #333338; background: var(--color-panel-2); }
-
-.card .label {
-  color: var(--color-dim);
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-
-.card .value { font-size: 1.7rem; font-weight: 600; letter-spacing: -0.01em; }
-.card .value.orange { color: var(--pc-orange); }
-
-.bar { height: 3px; border-radius: 1px; background: var(--color-line-soft); margin-top: 14px; overflow: hidden; }
-.bar-fill { height: 100%; background: var(--color-bright); transition: width 400ms ease; }
-.bar-fill.warn { background: var(--pc-orange); }
-.bar-fill.full { background: var(--color-bad); }
-
-/* ---------------- sections ---------------- */
-
-section.panel {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line-soft);
-  border-radius: 4px;
-  padding: 26px;
-  margin-bottom: 18px;
-}
-
-section.panel > h2 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin-bottom: 18px;
-}
-
-/* ---------------- table ---------------- */
-
-.table-shell { overflow: auto; border: 1px solid var(--color-line-soft); border-radius: 4px; }
-
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-
-.data-table th, .data-table td {
-  padding: 0.85rem 0.95rem;
-  border-bottom: 1px solid var(--color-line-soft);
-  text-align: left;
-  vertical-align: middle;
-}
-
-.data-table th {
-  color: var(--color-dim);
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.data-table tr:last-child td { border-bottom: 0; }
-.data-table tbody tr { transition: background-color 150ms ease; }
-.data-table tbody tr:hover { background: var(--color-panel-2); }
-
-/* ---------------- badges ---------------- */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.28rem 0.55rem;
-  border: 1px solid var(--color-line);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--color-muted);
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.badge-accent { border-color: rgba(255, 255, 255, 0.3); color: var(--color-accent-2); }
-.badge-good { border-color: rgba(134, 239, 172, 0.35); color: var(--color-good); }
-.badge-warn { border-color: rgba(251, 191, 36, 0.4); color: var(--color-warn); }
-.badge-bad { border-color: rgba(252, 165, 165, 0.4); color: var(--color-bad); }
-.badge-orange { border-color: rgba(212, 168, 83, 0.5); color: var(--pc-orange); }
-
-/* ---------------- plans ---------------- */
-
-.plan-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-
-.plan-card {
-  border: 1px solid var(--color-line-soft);
-  border-radius: 4px;
-  background: var(--color-panel);
-  padding: 26px;
-  position: relative;
-  transition: border-color 200ms ease, background-color 200ms ease;
-}
-
-.plan-card:hover { border-color: #333338; background: var(--color-panel-2); }
-.plan-card.featured { border-color: rgba(255, 122, 26, 0.55); }
-
-.plan-card h2 { font-size: 1.2rem; font-weight: 600; }
-.plan-card .price { font-size: 2rem; font-weight: 600; margin: 12px 0; letter-spacing: -0.02em; }
-.plan-card .price small { font-size: 0.78rem; color: var(--color-dim); font-weight: 400; }
-
-.plan-card ul { list-style: none; margin: 18px 0 22px; }
-.plan-card li { padding: 5px 0; font-size: 0.86rem; color: var(--color-muted); }
-.plan-card li::before { content: "— "; color: var(--color-dim); }
-
-.plan-card .badge { position: absolute; top: -10px; right: 16px; background: var(--color-ink); }
-.plan-card .badge.filled { background: var(--pc-orange); border-color: var(--pc-orange); color: #0a0a0a; }
-
-/* ---------------- upcoming ---------------- */
-
-.upcoming-item { padding: 16px 0; border-bottom: 1px solid var(--color-line-soft); }
-.upcoming-item:last-child { border-bottom: none; }
-.upcoming-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
-.upcoming-item p { font-size: 0.86rem; color: var(--color-muted); }
-.upcoming-item .meta { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
-
-.tag {
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--color-line);
-  border-radius: 2px;
-  color: var(--color-dim);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.notice {
-  padding: 14px 18px;
-  border: 1px solid rgba(255, 122, 26, 0.35);
-  border-radius: 4px;
-  background: rgba(255, 122, 26, 0.05);
-  color: var(--color-muted);
-  font-size: 0.86rem;
-  margin-bottom: 20px;
-}
-
-.notice strong { color: var(--color-bright); font-weight: 600; }
-
-.error {
-  border: 1px solid rgba(252, 165, 165, 0.45);
-  color: var(--color-bad);
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-size: 0.84rem;
-  margin-bottom: 16px;
-}
-
-.mono { font-family: var(--font-mono); }
-
-.spinner {
-  width: 16px; height: 16px;
-  border: 1.5px solid var(--color-line);
-  border-top-color: var(--color-bright);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block; vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ---------------- skeleton loaders ---------------- */
-.skel {
-  display: inline-block;
-  height: 10px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.045) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.045) 63%);
-  background-size: 400% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-  vertical-align: middle;
-}
-.skel.w40 { width: 40%; } .skel.w55 { width: 55%; } .skel.w70 { width: 70%; } .skel.w90 { width: 90%; }
-.skel.tall { height: 12px; }
-@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
-tr.skel-row td { padding: 13px 10px; border-bottom: 1px solid var(--color-line-soft); }
-.skel-lines { display: grid; gap: 10px; padding: 6px 0; }
-@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
-
-/* ---------------- empty states ---------------- */
-.empty {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding: 34px 18px;
-  text-align: center;
-}
-.empty .empty-mark { color: var(--pc-orange); opacity: 0.85; }
-.empty .empty-title { font-size: 0.92rem; color: var(--color-bright); font-weight: 600; }
-.empty .empty-copy { font-size: 0.84rem; color: var(--color-dim); max-width: 46ch; }
-.empty .empty-cmd {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--color-muted);
-  background: var(--color-panel-2);
-  border: 1px solid var(--color-line);
-  border-radius: 4px;
-  padding: 7px 12px;
-  cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease;
-}
-.empty .empty-cmd:hover { border-color: var(--pc-orange); color: var(--color-bright); }
-.empty .empty-alt { font-size: 0.76rem; color: var(--color-dim); }
-.empty .empty-alt a { color: var(--pc-orange); }
-
-/* ---------------- boot splash ---------------- */
-#boot {
-  position: fixed; inset: 0; z-index: 300;
-  display: grid; place-items: center;
-  background: var(--color-ink);
-  pointer-events: none;
-  animation: bootOut 420ms ease 900ms forwards;
-}
-#boot.gone { display: none; }
-.boot-inner { display: grid; justify-items: center; gap: 16px; }
-.boot-mark { width: 56px; height: 56px; color: var(--pc-orange); animation: bootIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.boot-word {
-  font-family: var(--font-brand);
-  font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.34em; text-transform: uppercase;
-  color: var(--color-bright);
-  animation: bootIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) 90ms both;
-}
-.boot-word span { color: var(--color-dim); font-weight: 600; }
-.boot-bar { width: 148px; height: 1px; background: var(--color-line); overflow: hidden; }
-.boot-bar i { display: block; height: 100%; width: 38%; background: var(--pc-orange); animation: bootScan 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-@keyframes bootScan { from { transform: translateX(-110%); } to { transform: translateX(380%); } }
-@keyframes bootIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
-@keyframes bootOut { to { opacity: 0; visibility: hidden; } }
-@media (prefers-reduced-motion: reduce) {
-  #boot { display: none; }
-  .app-sec.active { animation: none; }
-}
-
-/* ---------------- login ---------------- */
-
-.login-wrap { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; }
-.login-wrap .section-title { font-size: clamp(2rem, 4vw, 2.8rem); }
-.login-wrap .brand { font-size: clamp(2rem, 4vw, 2.8rem); }
-
-footer {
-  border-top: 1px solid var(--color-line-soft);
-  padding: 28px 0;
-  color: var(--color-dim);
-  font-size: 0.8rem;
-  text-align: center;
-}
-footer a { color: var(--color-muted); border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 1px; }
-footer a:hover { color: var(--color-bright); border-color: var(--color-accent-2); }
-footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
-
-@media (max-width: 640px) {
-  .container-shell { width: min(100% - 1.75rem, 1240px); }
-}
-@keyframes toastIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-</style>
+<link rel="preload" href="fonts/Archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/JetBrainsMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/sections.css">
 </head>
 <body>
 <div id="boot" aria-hidden="true">
@@ -718,18 +84,18 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 
   <!-- Signed in -->
   <div id="view-app" class="view" style="display:none;">
-    <div id="error-box" class="error" style="display:none;"></div>
+    <div id="error-box" class="error" role="alert" style="display:none;"></div>
 
     <div class="app-grid">
       <nav id="sidebar" aria-label="Dashboard sections">
-        <button class="nav-item active" data-sec="overview" onclick="showSection('overview')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview</button>
-        <button class="nav-item" data-sec="scans" onclick="showSection('scans')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scans</button>
-        <button class="nav-item" data-sec="tools" onclick="showSection('tools')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Tools</button>
-        <button class="nav-item" data-sec="billing" onclick="showSection('billing')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Billing</button>
-        <button class="nav-item" data-sec="account" onclick="showSection('account')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account</button>
-        <button class="nav-item" data-sec="plans" onclick="showSection('plans')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Plans</button>
-        <button class="nav-item" data-sec="roadmap" onclick="showSection('roadmap')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Roadmap</button>
-        <button class="nav-item" data-sec="admin" id="nav-admin" style="display:none" onclick="showSection('admin')"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</button>
+        <button class="nav-item active" data-section="overview"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview</button>
+        <button class="nav-item" data-section="scans"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scans</button>
+        <button class="nav-item" data-section="tools"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Tools</button>
+        <button class="nav-item" data-section="billing"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Billing</button>
+        <button class="nav-item" data-section="account"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account</button>
+        <button class="nav-item" data-section="plans"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Plans</button>
+        <button class="nav-item" data-section="roadmap"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Roadmap</button>
+        <button class="nav-item" data-section="admin" id="nav-admin" style="display:none"><svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</button>
         <div class="nav-foot">CTRL + K<br>COMMAND PALETTE</div>
       </nav>
 
@@ -795,15 +161,15 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
         </div>
         <section class="panel">
           <div class="toolbar">
-            <button class="btn btn-ghost" onclick="loadScans();loadTrend();toast('Refreshed.')">Refresh</button>
-            <button class="btn btn-ghost" id="auto-btn" onclick="toggleAutoRefresh()">Auto-refresh: off</button>
+            <button class="btn btn-ghost" data-action="refresh-scans">Refresh</button>
+            <button class="btn btn-ghost" id="auto-btn" data-action="toggle-auto">Auto-refresh: off</button>
             <span class="spacer"></span>
-            <button class="btn btn-ghost danger-zone" id="bulk-btn" onclick="bulkDeleteSelected()" disabled>Delete selected</button>
+            <button class="btn btn-ghost danger-zone" id="bulk-btn" data-action="bulk-delete" disabled>Delete selected</button>
           </div>
           <div id="trend-chart" style="margin-bottom:14px"></div>
           <div class="table-shell">
             <table class="data-table">
-              <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all" onclick="toggleSelectAll(this)"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
+              <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
               <tbody id="scans-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr></tbody>
             </table>
           </div>
@@ -822,13 +188,13 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             <div>
               <h3>Findings explorer</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <input id="fx-q" placeholder="Search findings…" style="flex:1;min-width:180px" onkeydown="if(event.key==='Enter')runFindings()">
-                <select id="fx-sev">
+                <input id="fx-q" placeholder="Search findings…" aria-label="Search findings" data-enter="run-findings" style="flex:1;min-width:180px">
+                <select id="fx-sev" aria-label="Severity filter">
                   <option value="">All severities</option>
                   <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>INFO</option>
                 </select>
-                <button class="btn btn-secondary" onclick="runFindings()">Search</button>
-                <button class="btn btn-ghost" onclick="exportFindingsCSV()">CSV</button>
+                <button class="btn btn-secondary" data-action="run-findings">Search</button>
+                <button class="btn btn-ghost" data-action="export-findings">CSV</button>
               </div>
               <label id="fx-allwrap" style="display:none;margin-top:8px;font-size:0.78rem;color:var(--color-muted);cursor:pointer">
                 <input type="checkbox" id="fx-all" style="vertical-align:-2px"> Search all users (admin)
@@ -837,10 +203,10 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             <div>
               <h3>Compare scans</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <select id="cmp-a" style="flex:1;min-width:140px"></select>
+                <select id="cmp-a" aria-label="Compare scan A" style="flex:1;min-width:140px"></select>
                 <span style="color:var(--color-muted)">vs</span>
-                <select id="cmp-b" style="flex:1;min-width:140px"></select>
-                <button class="btn btn-secondary" onclick="runCompare()">Compare</button>
+                <select id="cmp-b" aria-label="Compare scan B" style="flex:1;min-width:140px"></select>
+                <button class="btn btn-secondary" data-action="run-compare">Compare</button>
               </div>
             </div>
           </div>
@@ -849,8 +215,8 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div style="margin-top:18px;border-top:1px solid rgba(148,163,184,0.18);padding-top:14px;">
             <h3>Web search</h3>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <input id="ws-q" placeholder="Search the web…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')runWebSearch()">
-              <button class="btn btn-secondary" onclick="runWebSearch()">Search</button>
+              <input id="ws-q" placeholder="Search the web…" aria-label="Web search" data-enter="run-web-search" style="flex:1;min-width:200px">
+              <button class="btn btn-secondary" data-action="run-web-search">Search</button>
             </div>
             <div id="ws-results" style="margin-top:12px"></div>
           </div>
@@ -886,20 +252,20 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="grid-2">
             <div>
               <h3>Profile</h3>
-              <div class="form-row"><label>Username</label><input id="acct-username" autocomplete="username"></div>
-              <div class="form-row"><label>Email</label><input id="acct-email" type="email" autocomplete="email"></div>
-              <div class="form-row"><label>First name</label><input id="acct-firstname" autocomplete="given-name"></div>
-              <div class="form-row"><label>Last name</label><input id="acct-lastname" autocomplete="family-name"></div>
-              <button class="btn btn-secondary" onclick="saveProfile()">Save profile</button>
-              <span class="form-note" id="profile-note"></span>
+              <div class="form-row"><label for="acct-username">Username</label><input id="acct-username" autocomplete="username"></div>
+              <div class="form-row"><label for="acct-email">Email</label><input id="acct-email" type="email" autocomplete="email"></div>
+              <div class="form-row"><label for="acct-firstname">First name</label><input id="acct-firstname" autocomplete="given-name"></div>
+              <div class="form-row"><label for="acct-lastname">Last name</label><input id="acct-lastname" autocomplete="family-name"></div>
+              <button class="btn btn-secondary" data-action="save-profile">Save profile</button>
+              <span class="form-note" id="profile-note" role="status"></span>
             </div>
             <div>
               <h3>Change password</h3>
-              <div class="form-row"><label>Current password</label><input id="pw-current" type="password" autocomplete="current-password"></div>
-              <div class="form-row"><label>New password</label><input id="pw-new" type="password" autocomplete="new-password"></div>
-              <div class="form-row"><label>Confirm new password</label><input id="pw-confirm" type="password" autocomplete="new-password"></div>
-              <button class="btn btn-secondary" onclick="changePassword()">Update password</button>
-              <span class="form-note" id="pw-note"></span>
+              <div class="form-row"><label for="pw-current">Current password</label><input id="pw-current" type="password" autocomplete="current-password"></div>
+              <div class="form-row"><label for="pw-new">New password</label><input id="pw-new" type="password" autocomplete="new-password"></div>
+              <div class="form-row"><label for="pw-confirm">Confirm new password</label><input id="pw-confirm" type="password" autocomplete="new-password"></div>
+              <button class="btn btn-secondary" data-action="change-password">Update password</button>
+              <span class="form-note" id="pw-note" role="status"></span>
             </div>
           </div>
           <h3 style="margin-top:22px;">Active sessions</h3>
@@ -944,10 +310,10 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
                 <li>Email support</li>
               </ul>
               <div class="billing-toggle" role="group" aria-label="Pro billing interval">
-                <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="monthly" onclick="setBillingInterval('pro','monthly',this)">Monthly</button>
-                <button class="btn btn-ghost interval-btn" data-plan="pro" data-interval="yearly" onclick="setBillingInterval('pro','yearly',this)">Yearly −17%</button>
+                <button class="btn btn-ghost interval-btn" data-action="set-interval" data-plan="pro" data-interval="monthly">Monthly</button>
+                <button class="btn btn-ghost interval-btn" data-action="set-interval" data-plan="pro" data-interval="yearly">Yearly −17%</button>
               </div>
-              <button class="btn btn-orange" onclick="checkout('pro')">Buy Pro</button>
+              <button class="btn btn-gold" data-action="checkout" data-plan="pro">Buy Pro</button>
             </div>
             <div class="plan-card">
               <span class="badge">Enterprise</span>
@@ -961,10 +327,10 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
                 <li>Air-gapped DB updates, SLA 99.9%</li>
               </ul>
               <div class="billing-toggle" role="group" aria-label="Enterprise billing interval">
-                <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="monthly" onclick="setBillingInterval('enterprise','monthly',this)">Monthly</button>
-                <button class="btn btn-ghost interval-btn" data-plan="enterprise" data-interval="yearly" onclick="setBillingInterval('enterprise','yearly',this)">Yearly −17%</button>
+                <button class="btn btn-ghost interval-btn" data-action="set-interval" data-plan="enterprise" data-interval="monthly">Monthly</button>
+                <button class="btn btn-ghost interval-btn" data-action="set-interval" data-plan="enterprise" data-interval="yearly">Yearly −17%</button>
               </div>
-              <button class="btn btn-secondary" onclick="checkout('enterprise')">Buy Enterprise</button>
+              <button class="btn btn-secondary" data-action="checkout" data-plan="enterprise">Buy Enterprise</button>
             </div>
           </div>
         </section>
@@ -984,7 +350,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             are <strong>never used for model training</strong>.
           </div>
           <div class="upcoming-item">
-            <h4>AI Agent <span class="badge badge-orange">Upcoming</span></h4>
+            <h4>AI Agent <span class="badge badge-gold">Upcoming</span></h4>
             <p>AI-assisted remediation: ask questions about findings, generate fixes, review patches.
                Rate-limited per plan; data stays yours — no model training, ever.</p>
             <div class="meta"><span class="tag">docs</span><span class="tag">iris.ai</span><span class="tag">no-training</span></div>
@@ -1013,18 +379,18 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
         <section class="panel">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
             <h2 style="margin:0;margin-right:auto;">Users <span class="badge" id="admin-count">0</span></h2>
-            <input id="admin-search" placeholder="Filter users…" oninput="renderAdminUsers()" style="background:var(--color-panel-2);border:1px solid var(--color-line);border-radius:4px;color:var(--color-bright);padding:8px 12px;font:inherit;min-width:180px">
-            <button class="btn btn-ghost" onclick="loadAdmin()">Refresh</button>
-            <button class="btn btn-secondary" onclick="toggleCreateUser()">+ Create user</button>
+            <input id="admin-search" placeholder="Filter users…" aria-label="Filter users" data-enter="admin-refresh" style="background:var(--color-panel-2);border:1px solid var(--color-line);border-radius:4px;color:var(--color-bright);padding:8px 12px;font:inherit;min-width:180px">
+            <button class="btn btn-ghost" data-action="admin-refresh">Refresh</button>
+            <button class="btn btn-secondary" data-action="toggle-create-user">+ Create user</button>
           </div>
 
           <div id="admin-create" class="create-box" style="display:none">
-            <div class="form-row"><label>Username</label><input id="new-username" placeholder="e.g. jane.doe" autocomplete="off"></div>
-            <div class="form-row"><label>Email</label><input id="new-email" type="email" placeholder="jane@example.com" autocomplete="off"></div>
-            <div class="form-row"><label>First name</label><input id="new-first" autocomplete="off"></div>
-            <div class="form-row"><label>Last name</label><input id="new-last" autocomplete="off"></div>
-            <div class="form-row"><label>Initial password (min 8)</label><input id="new-password" type="password" autocomplete="new-password"></div>
-            <div class="form-row"><label>Plan tier</label>
+            <div class="form-row"><label for="new-username">Username</label><input id="new-username" placeholder="e.g. jane.doe" autocomplete="off"></div>
+            <div class="form-row"><label for="new-email">Email</label><input id="new-email" type="email" placeholder="jane@example.com" autocomplete="off"></div>
+            <div class="form-row"><label for="new-first">First name</label><input id="new-first" autocomplete="off"></div>
+            <div class="form-row"><label for="new-last">Last name</label><input id="new-last" autocomplete="off"></div>
+            <div class="form-row"><label for="new-password">Initial password (min 8)</label><input id="new-password" type="password" autocomplete="new-password"></div>
+            <div class="form-row"><label for="new-tier">Plan tier</label>
               <select id="new-tier">
                 <option value="">default (free)</option>
                 <option value="free">Free</option>
@@ -1034,9 +400,9 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
               </select>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-primary" onclick="adminCreate()">Create user</button>
-              <button class="btn btn-ghost" onclick="toggleCreateUser()">Cancel</button>
-              <span class="form-note" id="create-note"></span>
+              <button class="btn btn-primary" data-action="admin-create">Create user</button>
+              <button class="btn btn-ghost" data-action="toggle-create-user">Cancel</button>
+              <span class="form-note" id="create-note" role="status"></span>
             </div>
           </div>
 
@@ -1055,11 +421,11 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
               <span class="badge badge-bad" id="adm-banned-badge" style="display:none">Banned</span>
               <span class="badge badge-warn" id="adm-disabled-badge" style="display:none">Login disabled</span>
               <span style="flex:1"></span>
-              <button class="btn btn-ghost" onclick="adminCloseDetail()">Close</button>
+              <button class="btn btn-ghost" data-action="admin-close-detail">Close</button>
             </div>
             <div class="grid-2" style="margin-top:16px;gap:20px;">
               <div>
-                <div class="form-row"><label>Plan tier</label>
+                <div class="form-row"><label for="adm-tier">Plan tier</label>
                   <select id="adm-tier">
                     <option value="">default (billing / role)</option>
                     <option value="free">Free</option>
@@ -1068,19 +434,19 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
                     <option value="admin">Admin (unlimited)</option>
                   </select>
                 </div>
-                <div class="form-row"><label>Daily scan limit (0 = tier default)</label><input id="adm-daily" type="number" min="0" max="100000"></div>
-                <div class="form-row"><label>Admin note</label><input id="adm-note" placeholder="optional"></div>
-                <button class="btn btn-secondary" onclick="adminSaveUser()">Save changes</button>
-                <span class="form-note" id="adm-save-note"></span>
+                <div class="form-row"><label for="adm-daily">Daily scan limit (0 = tier default)</label><input id="adm-daily" type="number" min="0" max="100000"></div>
+                <div class="form-row"><label for="adm-note">Admin note</label><input id="adm-note" placeholder="optional"></div>
+                <button class="btn btn-secondary" data-action="admin-save">Save changes</button>
+                <span class="form-note" id="adm-save-note" role="status"></span>
               </div>
               <div>
-                <div class="form-row"><label>New password (min 8)</label><input id="adm-pw" type="password" autocomplete="new-password"></div>
-                <button class="btn btn-secondary" onclick="adminResetPw()">Reset password</button>
+                <div class="form-row"><label for="adm-pw">New password (min 8)</label><input id="adm-pw" type="password" autocomplete="new-password"></div>
+                <button class="btn btn-secondary" data-action="admin-reset-pw">Reset password</button>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
-                  <button class="btn btn-ghost" id="adm-ban-btn" onclick="adminToggleBan()">Ban user</button>
-                  <button class="btn btn-ghost" id="adm-enable-btn" onclick="adminToggleEnabled()">Disable login</button>
-                  <button class="btn btn-ghost" onclick="adminRevoke()">Revoke sessions</button>
-                  <button class="btn btn-ghost danger-zone" onclick="adminDeleteUser()">Delete user</button>
+                  <button class="btn btn-ghost" id="adm-ban-btn" data-action="admin-toggle-ban">Ban user</button>
+                  <button class="btn btn-ghost" id="adm-enable-btn" data-action="admin-toggle-enabled">Disable login</button>
+                  <button class="btn btn-ghost" data-action="admin-revoke">Revoke sessions</button>
+                  <button class="btn btn-ghost danger-zone" data-action="admin-delete">Delete user</button>
                 </div>
                 <div class="stat-note" style="line-height:1.6">Ban blocks API + sessions instantly. Disable login stops new sign-ins at Keycloak. Revoke ends live sessions, clears stored tokens and share links. Delete removes the account and purges all scans.</div>
               </div>
@@ -1119,10 +485,10 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
   </div>
 </main>
 
-<div id="palette" onclick="if(event.target===this)closePalette()">
+<div id="palette" role="dialog" aria-modal="true" aria-label="Command palette">
   <div class="pal-box">
-    <input id="pal-input" placeholder="Type a command or jump to…" autocomplete="off" spellcheck="false" oninput="renderPalette()" onkeydown="paletteKey(event)">
-    <div id="pal-list"></div>
+    <input id="pal-input" placeholder="Type a command or jump to…" autocomplete="off" spellcheck="false" aria-label="Command">
+    <div id="pal-list" role="listbox" aria-label="Commands"></div>
     <div class="pal-hint">↑↓ navigate · Enter run · Esc close · Ctrl+K anywhere</div>
   </div>
 </div>
@@ -1141,1091 +507,6 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
   </div>
 </footer>
 
-<script>
-const $ = (id) => document.getElementById(id);
-
-// ---- section routing (one page per dashboard category) ----
-const SECTIONS = ['overview', 'scans', 'tools', 'billing', 'account', 'plans', 'roadmap', 'admin'];
-let currentSec = 'overview';
-
-function showSection(name) {
-  if (SECTIONS.indexOf(name) === -1) name = 'overview';
-  if (name === 'admin' && !me_admin) name = 'overview';
-  currentSec = name;
-  document.querySelectorAll('.app-sec').forEach(s => s.classList.toggle('active', s.id === 'sec-' + name));
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.sec === name));
-  if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
-  if (name === 'scans') { loadScans(); loadTrend(); }
-  if (name === 'admin' && me_admin) { loadAdmin(); loadSystem(); }
-  window.scrollTo(0, 0);
-}
-
-window.addEventListener('hashchange', () => showSection(location.hash.slice(1)));
-
-async function init() {
-  try {
-    const me = await api('/api/v1/me');
-    $('view-login').style.display = 'none';
-    $('view-app').style.display = 'block';
-    $('user-chip').style.display = 'flex';
-    $('username').textContent = me.username || me.email;
-    $('greeting').textContent = `Welcome back, ${me.username || 'user'}`;
-    if (me.admin) {
-      me_admin = true;
-      $('nav-admin').style.display = '';
-      $('fx-allwrap').style.display = 'block';
-      loadAdmin();
-      loadAdminTrend();
-      loadSystem();
-    }
-    loadPlan();
-    loadUsage();
-    loadAccount();
-    loadSessions();
-    loadScans();
-    loadTrend();
-    loadOverview();
-    showSection(location.hash.slice(1) || 'overview');
-    document.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
-    });
-  } catch (e) {
-    $('view-login').style.display = 'block';
-    $('view-app').style.display = 'none';
-  }
-}
-
-async function api(path, opts) {
-  const r = await fetch(path, opts);
-  if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || r.statusText);
-  return data;
-}
-
-async function loadPlan() {
-  try {
-    const p = await api('/api/v1/plan');
-    const tier = p.tier || 'free';
-    const badge = tier === 'admin' || tier === 'enterprise' ? 'badge-orange' : tier === 'pro' ? 'badge-accent' : '';
-    $('plan-tier').innerHTML = `<span class="badge ${badge}">${tier.toUpperCase()}</span>`;
-    $('plan-sub').textContent = p.name ? `${p.name} plan · PixelCity ID` : 'Iris plan · PixelCity ID';
-    const unlimited = tier === 'admin';
-
-    // Daily quota (resets 00:00 UTC)
-    const dUsed = p.daily_used ?? 0, dQuota = p.daily_quota ?? 0;
-    $('today-used').textContent = dQuota ? `${dUsed} / ${dQuota}` : unlimited ? `${dUsed} · unlimited` : String(dUsed);
-    setBar('today-bar', dQuota ? dUsed / dQuota : 0);
-    planDailyResetAt = p.daily_resets_at || 0;
-    updateResetNote();
-
-    // Lifetime quota
-    const used = p.scans_used ?? 0, quota = p.scan_quota ?? 0;
-    $('scans-used').textContent = quota ? `${used} / ${quota}` : unlimited ? `${used} · unlimited` : String(used);
-    setBar('scans-bar', quota ? used / quota : 0);
-    $('scans-note').textContent = quota ? `${Math.max(0, quota - used)} left all-time` : '';
-
-    const aiUsed = p.ai_pages_used ?? 0, aiQuota = p.ai_pages_quota ?? 0;
-    $('ai-used').textContent = aiQuota ? `${aiUsed} / ${aiQuota}` : unlimited ? `${aiUsed} · unlimited` : tier === 'free' ? '—' : String(aiUsed);
-    setBar('ai-bar', aiQuota ? aiUsed / aiQuota : 0);
-  } catch (e) { planFallback(); }
-}
-
-// ---- daily reset countdown (ticks once per second) ----
-let planDailyResetAt = 0;
-function updateResetNote() {
-  const el = $('today-reset');
-  if (!el) return;
-  if (!planDailyResetAt) { el.className = 'stat-note'; el.textContent = 'resets 00:00 UTC'; return; }
-  const secs = Math.max(0, Math.floor(planDailyResetAt - Date.now() / 1000));
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
-  const pad = n => String(n).padStart(2, '0');
-  el.className = 'stat-note' + (secs < 1800 ? ' warn' : '');
-  el.textContent = `resets in ${pad(h)}:${pad(m)}:${pad(s)}`;
-}
-setInterval(updateResetNote, 1000);
-
-function planFallback() {
-  $('plan-tier').innerHTML = '<span class="badge">FREE</span>';
-  $('plan-sub').textContent = 'Plan service unreachable — showing defaults.';
-}
-
-function setBar(id, frac) {
-  const el = $(id); if (!el) return;
-  el.style.width = Math.min(100, frac * 100) + '%';
-  el.className = 'bar-fill' + (frac >= 1 ? ' full' : frac > .8 ? ' warn' : '');
-}
-
-async function loadScans() {
-  try {
-    const s = await api('/api/v1/scans?limit=25');
-    const body = $('scans-body');
-    if (!s.entries || !s.entries.length) {
-      body.innerHTML = emptyRow(6, 'No scans yet', 'Every scan you run — CLI, CI or API — lands here with its full report.', 'iris webscan https://example.com');
-      updateBulkBtn();
-      return;
-    }
-    fillCompareSelects(s.entries || []);
-    body.innerHTML = s.entries.map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',6)">
-      <td class="sel-col"><input type="checkbox" class="scan-sel" data-id="${esc(e.id)}" onclick="event.stopPropagation()" onchange="updateBulkBtn()"></td>
-      <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
-      <td><span class="mono">${esc(e.scanner)}</span></td>
-      <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
-      <td style="white-space:nowrap">${sevChips(e)}</td>
-      <td class="mono">${(e.duration_seconds ?? 0).toFixed(2)}s</td>
-    </tr>`).join('');
-    updateBulkBtn();
-  } catch (e) {
-    $('scans-body').innerHTML = emptyRow(6, 'Scan history unavailable', 'The scan store did not respond. Refresh in a moment or try again later.');
-  }
-}
-
-let adminUsers = [];
-let admCur = null;
-
-async function loadAdmin() {
-  try {
-    const u = await api('/api/v1/admin/users');
-    adminUsers = u.users || [];
-    const kc = $('admin-kc-status');
-    if (kc) kc.textContent = u.keycloak ? 'keycloak connected' : (u.keycloak_error ? 'keycloak unreachable' : 'local only');
-    renderAdminUsers();
-  } catch (e) {
-    $('admin-users-body').innerHTML = emptyRow(7, 'Directory unavailable', 'The user directory did not load — Keycloak or the scan store may be restarting.');
-  }
-  await loadAdminScans(adminUserFilter);
-}
-
-function renderAdminUsers() {
-  const q = ($('admin-search') ? $('admin-search').value : '').trim().toLowerCase();
-  const rows = adminUsers.filter(u => !q ||
-    (u.username || '').toLowerCase().includes(q) ||
-    (u.email || '').toLowerCase().includes(q));
-  $('admin-count').textContent = adminUsers.length;
-  const status = u => {
-    let h = '';
-    if (u.banned) h += '<span class="badge badge-bad">banned</span> ';
-    if (!u.enabled) h += '<span class="badge badge-warn">login off</span> ';
-    if (!h) h = '<span class="badge badge-good">active</span>';
-    if (u.source === 'scans') h += ' <span class="badge" title="Known from scan history only">orphan</span>';
-    return h;
-  };
-  $('admin-users-body').innerHTML = rows.map(u => {
-    const i = adminUsers.indexOf(u);
-    const daily = u.daily_limit ? `${u.daily_used} / ${u.daily_limit}` : (u.tier === 'admin' ? `${u.daily_used} · ∞` : String(u.daily_used));
-    return `<tr style="cursor:pointer" onclick="adminSelect(${i})">
-      <td>
-        <div style="font-weight:600">${esc(u.username || '—')}</div>
-        <div class="mono" style="font-size:0.7rem;color:var(--color-dim)">${esc(u.email || u.sub || '')}</div>
-      </td>
-      <td><span class="badge ${u.tier === 'admin' || u.tier === 'enterprise' ? 'badge-orange' : u.tier === 'pro' ? 'badge-accent' : ''}">${esc((u.tier || 'free').toUpperCase())}</span></td>
-      <td class="mono" style="font-size:0.78rem;${u.daily_limit && u.daily_used >= u.daily_limit ? 'color:var(--color-warn)' : ''}">${daily}</td>
-      <td class="mono">${u.scans ?? 0}</td>
-      <td class="mono" style="font-size:0.75rem">${u.last_scan ? new Date(u.last_scan).toLocaleString() : '—'}</td>
-      <td style="white-space:nowrap">${status(u)}</td>
-      <td style="text-align:right"><button class="btn btn-ghost" onclick="event.stopPropagation();adminSelect(${i})">Manage</button></td>
-    </tr>`;
-  }).join('') || emptyRow(7, 'No matching users', 'No account matches that filter. Clear the search to see the full directory.');
-}
-
-function adminSelect(i) {
-  const u = adminUsers[i];
-  if (!u) return;
-  const switching = !admCur || admCur.sub !== u.sub;
-  admCur = u;
-  $('adm-title').textContent = u.username || u.sub;
-  $('adm-sub').textContent = u.sub;
-  $('adm-src-badge').textContent = u.source === 'keycloak' ? 'Keycloak' : u.source === 'scans' ? 'scan history' : 'local';
-  $('adm-banned-badge').style.display = u.banned ? '' : 'none';
-  $('adm-disabled-badge').style.display = u.enabled ? 'none' : '';
-  $('adm-tier').value = u.tier_source === 'override' ? u.tier : '';
-  $('adm-daily').value = (u.tier_source === 'override' || u.daily_limit) ? (u.daily_limit || 0) : 0;
-  $('adm-note').value = u.note || '';
-  $('adm-pw').value = '';
-  if (switching) {
-    $('adm-save-note').textContent = '';
-    $('adm-save-note').className = 'form-note';
-  }
-  $('adm-ban-btn').textContent = u.banned ? 'Unban user' : 'Ban user';
-  $('adm-enable-btn').textContent = u.enabled ? 'Disable login' : 'Enable login';
-  $('adm-detail').style.display = 'block';
-  loadAdminUserDetail(u.sub);
-  $('adm-detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function loadAdminUserDetail(sub) {
-  try {
-    const d = await api('/api/v1/admin/users/' + encodeURIComponent(sub));
-    if (!admCur || admCur.sub !== sub) return;
-    const kc = d.keycloak;
-    const recent = d.recent_scans || [];
-    $('adm-scans').innerHTML = recent.length
-      ? recent.map(e => `${e.time ? new Date(e.time).toLocaleString() : '—'} · ${esc(e.scanner)} · ${esc(shorten(e.target))}`).join('<br>')
-      : 'No scans recorded.';
-    if (kc) {
-      $('adm-sub').textContent = `${sub} · created ${kc.createdTimestamp ? new Date(kc.createdTimestamp).toLocaleDateString() : '—'} · ${kc.identityProvider || 'password'}`;
-    }
-  } catch (e) { $('adm-scans').innerHTML = 'Could not load detail.'; }
-}
-
-function adminCloseDetail() { $('adm-detail').style.display = 'none'; admCur = null; }
-
-async function adminPatch(sub, body) {
-  return api('/api/v1/admin/users/' + encodeURIComponent(sub), {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-  });
-}
-
-async function adminSaveUser() {
-  if (!admCur) return;
-  const note = $('adm-save-note');
-  note.className = 'form-note'; note.textContent = 'Saving…';
-  try {
-    await adminPatch(admCur.sub, {
-      tier: $('adm-tier').value,
-      daily_limit: Math.max(0, parseInt($('adm-daily').value || '0', 10) || 0),
-      note: $('adm-note').value
-    });
-    note.className = 'form-note ok'; note.textContent = 'Saved.';
-    await loadAdmin();
-    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
-  } catch (e) {
-    note.className = 'form-note err'; note.textContent = 'Save failed: ' + e.message;
-  }
-}
-
-async function adminToggleBan() {
-  if (!admCur) return;
-  const next = !admCur.banned;
-  if (next && !confirm(`Ban ${admCur.username || admCur.sub}? They are signed out of the API immediately.`)) return;
-  try {
-    await adminPatch(admCur.sub, { banned: next });
-    toast(next ? 'User banned.' : 'User unbanned.');
-    await loadAdmin();
-    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
-  } catch (e) { toast('Ban update failed: ' + e.message, 'err'); }
-}
-
-async function adminToggleEnabled() {
-  if (!admCur) return;
-  const next = !admCur.enabled;
-  if (!next && !confirm(`Disable login for ${admCur.username || admCur.sub}? They will not be able to sign in.`)) return;
-  try {
-    await adminPatch(admCur.sub, { enabled: next });
-    toast(next ? 'Login enabled.' : 'Login disabled.');
-    await loadAdmin();
-    adminSelect(adminUsers.findIndex(u => u.sub === admCur.sub));
-  } catch (e) { toast('Login toggle failed: ' + e.message, 'err'); }
-}
-
-async function adminResetPw() {
-  if (!admCur) return;
-  const pw = $('adm-pw').value;
-  if (!pw || pw.length < 8) { toast('Password must be at least 8 characters.', 'warn'); return; }
-  if (!confirm(`Set a new password for ${admCur.username || admCur.sub}?`)) return;
-  try {
-    await api(`/api/v1/admin/users/${encodeURIComponent(admCur.sub)}/reset-password`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw, temporary: false })
-    });
-    $('adm-pw').value = '';
-    toast('Password reset.');
-  } catch (e) { toast('Password reset failed: ' + e.message, 'err'); }
-}
-
-async function adminRevoke() {
-  if (!admCur) return;
-  if (!confirm(`End every session for ${admCur.username || admCur.sub} and clear stored tokens + share links?`)) return;
-  try {
-    const r = await api(`/api/v1/admin/users/${encodeURIComponent(admCur.sub)}/revoke-sessions`, { method: 'POST' });
-    toast(`Sessions revoked (${r.shares_revoked} share link(s) closed).`);
-    loadAdminScans(adminUserFilter);
-  } catch (e) { toast('Revoke failed: ' + e.message, 'err'); }
-}
-
-async function adminDeleteUser() {
-  if (!admCur) return;
-  const who = admCur.username || admCur.sub;
-  if (!confirm(`Delete ${who} permanently? Their account and ALL scans, reports, tokens and share links are purged. This cannot be undone.`)) return;
-  try {
-    const r = await api('/api/v1/admin/users/' + encodeURIComponent(admCur.sub), { method: 'DELETE' });
-    toast(`Deleted ${who} · ${r.scans_purged} scan(s) purged.`);
-    adminCloseDetail();
-    await loadAdmin();
-    loadScans(); loadOverview(); loadPlan(); loadTrend();
-  } catch (e) { toast('Delete failed: ' + e.message, 'err'); }
-}
-
-function toggleCreateUser() {
-  const box = $('admin-create');
-  const open = box.style.display === 'none';
-  box.style.display = open ? 'grid' : 'none';
-  if (open) $('new-username').focus();
-}
-
-async function adminCreate() {
-  const note = $('create-note');
-  const body = {
-    username: $('new-username').value.trim(),
-    email: $('new-email').value.trim(),
-    first_name: $('new-first').value.trim(),
-    last_name: $('new-last').value.trim(),
-    password: $('new-password').value,
-    tier: $('new-tier').value
-  };
-  if (!body.username) { note.className = 'form-note err'; note.textContent = 'Username required.'; return; }
-  note.className = 'form-note'; note.textContent = 'Creating…';
-  try {
-    const r = await api('/api/v1/admin/users', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
-    note.className = 'form-note ok'; note.textContent = 'Created ' + (r.username || body.username) + '.';
-    ['new-username', 'new-email', 'new-first', 'new-last', 'new-password'].forEach(id => $(id).value = '');
-    await loadAdmin();
-    setTimeout(() => { $('admin-create').style.display = 'none'; }, 900);
-  } catch (e) {
-    note.className = 'form-note err'; note.textContent = 'Create failed: ' + e.message;
-  }
-}
-
-let adminUserFilter = '';
-function clearAdminFilter() { adminUserFilter = ''; loadAdminScans(''); }
-
-async function loadAdminScans(userFilter) {
-  try {
-    const q = '/api/v1/admin/scans?limit=50' + (userFilter ? '&user=' + encodeURIComponent(userFilter) : '');
-    const s = await api(q);
-    const f = $('admin-scans-filter');
-    if (userFilter) {
-      f.style.display = 'block';
-      f.innerHTML = `Filtered: <strong>${esc(userFilter)}</strong> — ${s.total} scan(s) · <a href="#" onclick="clearAdminFilter(); return false">show all</a>`;
-    } else {
-      f.style.display = 'none';
-      f.innerHTML = '';
-    }
-    $('admin-scans-body').innerHTML = (s.entries || []).map(e => `<tr style="cursor:pointer" onclick="toggleScanDetail(this,'${e.id}',5)">
-      <td class="mono" style="font-size:0.78rem">${e.time ? new Date(e.time).toLocaleString() : '—'}</td>
-      <td class="mono">${esc(e.username || e.email || '—')}</td>
-      <td><span class="mono">${esc(e.scanner)}</span></td>
-      <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
-      <td style="white-space:nowrap">${sevChips(e)}</td>
-    </tr>`).join('') || emptyRow(5, 'No scans platform-wide', 'Scans from every account appear here as soon as they run.', 'iris scan ./repo');
-  } catch (e) {
-    $('admin-scans-body').innerHTML = emptyRow(5, 'Activity unavailable', 'The platform scan feed did not load. Refresh in a moment.');
-  }
-}
-
-const SEV_COLORS = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#eab308', LOW:'#38bdf8', INFO:'#94a3b8' };
-
-function sevChips(e) {
-  const total = e.findings ?? 0;
-  const c = e.severity_counts;
-  if (!c || !Object.keys(c).length) return `<span class="mono">${total}</span>`;
-  const chips = ['critical','high','medium','low','info'].filter(k => c[k]).map(k =>
-    `<span style="color:${SEV_COLORS[k.toUpperCase()]};font-weight:600;font-size:0.72rem;margin-right:6px;white-space:nowrap">${k[0].toUpperCase()}·${c[k]}</span>`).join('');
-  return `<span class="mono" style="margin-right:4px">${total}</span>${chips}`;
-}
-
-async function toggleScanDetail(row, id, colspan) {
-  const tbody = row.parentElement;
-  const open = tbody.querySelector('.scan-detail-row');
-  if (open && open.dataset.id === id) {
-    open.remove();
-    tbody.querySelectorAll('tr[onclick]').forEach(r => r.style.background = '');
-    return;
-  }
-  tbody.querySelectorAll('.scan-detail-row').forEach(n => n.remove());
-  tbody.querySelectorAll('tr[onclick]').forEach(r => r.style.background = '');
-  row.style.background = 'rgba(99,102,241,0.08)';
-  const tr = document.createElement('tr');
-  tr.className = 'scan-detail-row';
-  tr.dataset.id = id;
-  tr.innerHTML = `<td colspan="${colspan}"><span class="spinner"></span></td>`;
-  tbody.appendChild(tr);
-  try {
-    const d = await api(`/api/v1/scans/${encodeURIComponent(id)}`);
-    if (!tr.isConnected) return;
-    tr.innerHTML = `<td colspan="${colspan}" style="padding:10px 8px 14px">${renderScanDetail(d)}</td>`;
-  } catch (e) {
-    if (!tr.isConnected) return;
-    tr.innerHTML = `<td colspan="${colspan}" style="color:var(--color-dim);padding:10px">Could not load report: ${esc(String((e && e.message) || e))}</td>`;
-  }
-}
-
-function renderScanDetail(d) {
-  const e = d.entry || {};
-  let h = '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;padding:2px 0 10px;border-bottom:1px solid rgba(148,163,184,0.18);margin-bottom:8px">';
-  h += `<span class="mono" style="font-size:0.82rem">${esc(e.target || '')}</span>`;
-  h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">${esc(e.scanner || '')} · ${e.time ? new Date(e.time).toLocaleString() : ''} · ${(e.duration_seconds ?? 0).toFixed(2)}s</span>`;
-  if (e.iris_version) h += `<span class="mono" style="font-size:0.75rem;color:var(--color-muted)">iris ${esc(e.iris_version)}</span>`;
-  h += `<span style="font-size:0.78rem">${sevChips(e)}</span>`;
-  h += `<span style="margin-left:auto;font-size:0.75rem;display:flex;gap:8px;align-items:center">
-    <button class="btn btn-ghost" style="border-color:rgba(212,168,83,.45);color:#d4a853" onclick="event.stopPropagation();createShare('${e.id}')">Share</button>
-    <button class="btn btn-ghost" style="color:var(--color-dim);border-color:var(--color-line)" onclick="event.stopPropagation();revokeShares('${e.id}')">Revoke</button>
-    <button class="btn btn-ghost" style="color:var(--color-bad);border-color:rgba(252,165,165,.35)" onclick="event.stopPropagation();deleteScan('${e.id}')">Delete</button>
-  </span>`;
-  if (e.report_bytes > 0) {
-    const id = encodeURIComponent(e.id);
-    const link = f => `<a href="/api/v1/scans/${id}?format=${f}" style="color:#818cf8" onclick="event.stopPropagation()">${f.toUpperCase()}</a>`;
-    h += `<span style="font-size:0.75rem;color:var(--color-muted)">Export: ${link('sarif')} · ${link('html')} · ${link('json')} · ${link('csv')}</span>`;
-  }
-  h += `<div id="share-${encodeURIComponent(e.id)}"></div>`;
-  h += '</div>';
-
-  const report = d.report;
-  if (!report) {
-    const note = e.report_omitted
-      ? 'Full report exceeded the storage cap — metadata only.'
-      : 'No stored report (this scan predates full-output storage).';
-    return h + `<div style="color:var(--color-dim);font-size:0.85rem">${note}</div>`;
-  }
-  const findings = [];
-  (report.results || []).forEach(r => (r.findings || []).forEach(f => findings.push(f)));
-  if (!findings.length) {
-    return h + '<div style="color:var(--color-dim);font-size:0.85rem">Clean scan — no findings recorded.</div>';
-  }
-  const MAX = 300;
-  h += '<div class="table-shell"><table class="data-table"><thead><tr><th style="width:88px">Severity</th><th>Rule</th><th>Finding</th><th style="width:150px">Category</th></tr></thead><tbody>';
-  findings.slice(0, MAX).forEach(f => {
-    const sev = String(f.severity || 'INFO').toUpperCase();
-    h += `<tr>
-      <td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
-      <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
-      <td>${esc(f.title || '')}
-        ${f.description ? `<div style="color:var(--color-muted);font-size:0.78rem;margin-top:2px">${esc(f.description)}</div>` : ''}
-        ${f.fix ? `<div style="color:var(--color-dim);font-size:0.76rem;margin-top:2px">Fix: ${esc(f.fix)}</div>` : ''}
-        ${f.code ? `<pre style="margin:6px 0 0;padding:6px 8px;background:#0b1220;border:1px solid rgba(148,163,184,0.2);border-radius:6px;font-size:0.72rem;overflow-x:auto;max-height:130px">${esc(f.code)}</pre>` : ''}
-      </td>
-      <td class="mono" style="font-size:0.74rem;color:var(--color-muted)">${esc(f.category || '')}</td>
-    </tr>`;
-  });
-  h += '</tbody></table></div>';
-  if (findings.length > MAX) h += `<div style="color:var(--color-dim);font-size:0.78rem;margin-top:6px">Showing first ${MAX} of ${findings.length} findings — full report available via <span class="mono">iris cloud usage</span> or the JSON API.</div>`;
-  return h;
-}
-
-let trendDays = 30;
-let adminTrendDays = 30;
-
-function trendSelector(which) {
-  const cur = which === 'admin' ? adminTrendDays : trendDays;
-  const btn = d => `<a href="#" onclick="setTrendDays('${which}',${d});return false" style="margin-left:7px;${d === cur ? 'color:#818cf8;font-weight:600' : 'color:var(--color-muted)'}">${d}d</a>`;
-  return `<span style="float:right">${btn(7)}${btn(30)}${btn(90)}</span>`;
-}
-
-function setTrendDays(which, d) {
-  if (which === 'admin') { adminTrendDays = d; loadAdminTrend(); }
-  else { trendDays = d; loadTrend(); }
-}
-
-async function loadTrend() {
-  try {
-    const t = await api('/api/v1/scans/trend?days=' + trendDays);
-    renderTrend($('trend-chart'), t, 'Last ' + trendDays + ' days', 'own');
-  } catch (e) { /* chart is non-critical */ }
-}
-
-async function loadAdminTrend() {
-  try {
-    const t = await api('/api/v1/admin/trend?days=' + adminTrendDays);
-    renderTrend($('admin-trend'), t, 'All users · last ' + adminTrendDays + ' days', 'admin');
-  } catch (e) { /* chart is non-critical */ }
-}
-
-// renderTrend draws a stacked-severity SVG bar chart of daily findings.
-function renderTrend(el, t, label, which) {
-  if (!el) return;
-  const pts = (t && t.points) || [];
-  if (!pts.length) return;
-  const sel = which ? trendSelector(which) : '';
-  const totalScans = pts.reduce((a, p) => a + (p.scans || 0), 0);
-  const totalFindings = pts.reduce((a, p) => a + (p.findings || 0), 0);
-  const summary = `<div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:6px">${sel}${label} · <strong style="color:var(--color-fg,#e2e8f0)">${totalScans}</strong> scans · <strong style="color:var(--color-fg,#e2e8f0)">${totalFindings}</strong> findings</div>`;
-
-  if (!totalFindings) {
-    el.innerHTML = summary + '<div style="height:6px;background:rgba(148,163,184,0.15);border-radius:4px"></div>';
-    return;
-  }
-  const W = 720, H = 96, n = pts.length, gap = n > 45 ? 1 : 2;
-  const bw = Math.max(1.5, (W - gap * (n - 1)) / n);
-  const max = Math.max(1, ...pts.map(p => p.findings));
-  const order = ['critical', 'high', 'medium', 'low', 'info', 'unknown'];
-  let bars = '';
-  pts.forEach((p, i) => {
-    const x = i * (bw + gap);
-    const buckets = Object.assign({}, p.severity || {});
-    const known = Object.keys(buckets).reduce((a, k) => a + buckets[k], 0);
-    if (p.findings > known) buckets.unknown = p.findings - known;
-    let y = H - 14;
-    order.forEach(k => {
-      const v = buckets[k] || 0;
-      if (!v) return;
-      const h = (v / max) * (H - 22);
-      y -= h;
-      const color = k === 'unknown' ? '#64748b' : (SEV_COLORS[k.toUpperCase()] || '#64748b');
-      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${color}"><title>${p.date} · ${k}: ${v} (${p.scans} scans)</title></rect>`;
-    });
-    if (!p.findings && p.scans) {
-      bars += `<rect x="${x.toFixed(1)}" y="${H - 16}" width="${bw.toFixed(1)}" height="2" fill="#334155"><title>${p.date} · ${p.scans} scans · clean</title></rect>`;
-    }
-  });
-  const first = pts[0].date, mid = pts[Math.floor(n / 2)].date, last = pts[n - 1].date;
-  el.innerHTML = summary +
-    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:96px;display:block">${bars}<line x1="0" y1="${H - 13}" x2="${W}" y2="${H - 13}" stroke="rgba(148,163,184,0.25)" stroke-width="1"/></svg>` +
-    `<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--color-muted);margin-top:3px"><span>${first}</span><span>${mid}</span><span>${last}</span></div>`;
-}
-
-function money(cents, currency) {
-  if (cents == null) return '—';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(cents / 100);
-  } catch (e) { return (cents / 100).toFixed(2); }
-}
-
-async function loadUsage() {
-  try {
-    const u = await api('/api/v1/usage?limit=25');
-    const body = $('usage-body');
-    if (!u.entries || !u.entries.length) {
-      body.innerHTML = emptyRow(5, 'No payments yet', 'Invoices and receipts appear here after your first payment.', '', 'Pick a plan \u2192 <a href="#" onclick="showSection(\'plans\');return false">Plans</a>');
-      return;
-    }
-    body.innerHTML = u.entries.map(e => `<tr>
-      <td class="mono" style="font-size:0.78rem;color:var(--color-muted)">${e.date ? new Date(e.date * 1000).toLocaleString() : '—'}</td>
-      <td>${esc(e.label || 'Payment')}</td>
-      <td class="mono">${money(e.amount, e.currency)}</td>
-      <td><span class="badge">${esc(e.status || 'unknown')}</span></td>
-      <td>${e.url ? `<a class="btn btn-ghost" href="${esc(e.url)}" target="_blank" rel="noopener">Receipt</a>` : ''}</td>
-    </tr>`).join('');
-  } catch (e) {
-    $('usage-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Usage service unreachable.</td></tr>';
-  }
-}
-
-const billingInterval = { pro: 'monthly', enterprise: 'monthly' };
-
-function setBillingInterval(plan, interval, btn) {
-  billingInterval[plan] = interval;
-  document.querySelectorAll(`.interval-btn[data-plan="${plan}"]`).forEach(b =>
-    b.classList.toggle('active', b === btn));
-}
-// Boot splash: once per browser session, removed from the DOM after exit.
-(() => {
-  const boot = document.getElementById('boot');
-  if (!boot) return;
-  let seen = false;
-  try { seen = sessionStorage.getItem('iris_booted') === '1'; sessionStorage.setItem('iris_booted', '1'); } catch (e) {}
-  if (seen || matchMedia('(prefers-reduced-motion: reduce)').matches) { boot.classList.add('gone'); return; }
-  setTimeout(() => boot.remove(), 1500);
-})();
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.interval-btn[data-interval="monthly"]').forEach(b => b.classList.add('active'));
-});
-
-async function checkout(plan) {
-  try {
-    const cs = await api('/api/v1/billing/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `plan=${plan}&interval=${billingInterval[plan] || 'monthly'}`
-    });
-    if (cs.url) location.href = cs.url;
-  } catch (e) { showError('Checkout failed: ' + e.message); }
-}
-
-async function loadAccount() {
-  try {
-    const a = await api('/api/v1/account');
-    $('acct-username').value = a.username || '';
-    $('acct-email').value = a.email || '';
-    $('acct-firstname').value = a.firstName || a.first_name || '';
-    $('acct-lastname').value = a.lastName || a.last_name || '';
-  } catch (e) { /* leave fields empty */ }
-}
-
-async function saveProfile() {
-  const note = $('profile-note');
-  note.className = 'form-note'; note.textContent = 'Saving…';
-  try {
-    await api('/api/v1/account', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: $('acct-username').value.trim(),
-        email: $('acct-email').value.trim(),
-        firstName: $('acct-firstname').value.trim(),
-        lastName: $('acct-lastname').value.trim()
-      })
-    });
-    note.className = 'form-note ok'; note.textContent = 'Profile saved.';
-    init();
-  } catch (e) {
-    note.className = 'form-note err'; note.textContent = 'Save failed: ' + e.message;
-  }
-}
-
-async function changePassword() {
-  const note = $('pw-note');
-  const np = $('pw-new').value, cp = $('pw-confirm').value;
-  if (!np || np !== cp) {
-    note.className = 'form-note err'; note.textContent = 'New passwords do not match.';
-    return;
-  }
-  note.className = 'form-note'; note.textContent = 'Updating…';
-  try {
-    await api('/api/v1/account/password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        currentPassword: $('pw-current').value,
-        newPassword: np,
-        confirmation: cp
-      })
-    });
-    $('pw-current').value = $('pw-new').value = $('pw-confirm').value = '';
-    note.className = 'form-note ok'; note.textContent = 'Password updated.';
-  } catch (e) {
-    note.className = 'form-note err'; note.textContent = 'Update failed: ' + e.message;
-  }
-}
-
-async function loadSessions() {
-  try {
-    const s = await api('/api/v1/account/sessions');
-    const body = $('sessions-body');
-    const list = s.sessions || s || [];
-    if (!list.length) {
-      body.innerHTML = emptyRow(5, 'No active sessions', 'Only this browser is signed in right now. New sign-ins from other devices will be listed here.');
-      return;
-    }
-    body.innerHTML = list.map(x => `<tr>
-      <td class="mono" style="font-size:0.78rem">${x.started ? new Date(x.started * 1000).toLocaleString() : '—'}</td>
-      <td class="mono" style="font-size:0.78rem">${x.lastAccess ? new Date(x.lastAccess * 1000).toLocaleString() : '—'}</td>
-      <td class="mono">${esc(x.ipAddress || x.ip || '—')}</td>
-      <td class="mono" style="font-size:0.78rem">${esc((x.clients || []).join(', ') || '—')}</td>
-      <td><button class="btn btn-ghost" onclick="revokeSession('${esc(x.id)}')">Revoke</button></td>
-    </tr>`).join('');
-  } catch (e) {
-    $('sessions-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Sessions unavailable.</td></tr>';
-  }
-}
-
-async function revokeSession(id) {
-  if (!confirm('Revoke this session?')) return;
-  try {
-    await api(`/api/v1/account/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    loadSessions();
-  } catch (e) { showError('Revoke failed: ' + e.message); }
-}
-
-// ---- empty states ----
-function emptyState(title, copy, cmd, alt) {
-  const mark = '<svg class="empty-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/><path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/><path d="M9 12v5"/><path d="M15 12v5"/><path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/></svg>';
-  const cmdHtml = cmd
-    ? `<button class="empty-cmd" type="button" data-cmd="${esc(cmd)}" onclick="copyCmd(this)">${esc(cmd)}</button>`
-    : '';
-  return `<div class="empty">${mark}<div class="empty-title">${title}</div>` +
-    `<div class="empty-copy">${copy}</div>${cmdHtml}` +
-    (alt ? `<div class="empty-alt">${alt}</div>` : '') + '</div>';
-}
-function copyCmd(btn) {
-  const cmd = btn.dataset.cmd || '';
-  const done = () => { btn.textContent = 'Copied to clipboard'; setTimeout(() => { btn.textContent = cmd; }, 1400); };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cmd).then(done, () => {});
-}
-function emptyRow(cols, title, copy, cmd, alt) {
-  return `<tr><td colspan="${cols}">${emptyState(title, copy, cmd, alt)}</td></tr>`;
-}
-
-function showError(msg) { const el = $('error-box'); el.textContent = msg; el.style.display = 'block'; }
-function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
-function shorten(s) { s = s ?? ''; return s.length > 42 ? s.slice(0, 39) + '…' : s; }
-function showLogin() { $('view-login').style.display = 'block'; $('view-app').style.display = 'none'; }
-
-// ---- toast notifications ----
-function toast(msg, kind) {
-  let el = $('toast-box');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast-box';
-    el.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99;display:flex;flex-direction:column;gap:8px;max-width:360px';
-    document.body.appendChild(el);
-  }
-  const t = document.createElement('div');
-  const color = kind === 'err' ? 'var(--color-bad)' : kind === 'warn' ? 'var(--color-warn)' : 'var(--color-good)';
-  t.style.cssText = `background:#141418;border:1px solid ${color};border-left-width:4px;border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--color-bright);box-shadow:0 8px 24px rgba(0,0,0,.45);animation:toastIn .18s ease`;
-  t.textContent = msg;
-  el.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 350); }, kind === 'err' ? 6000 : 3500);
-}
-
-// ---- delete scan ----
-async function deleteScan(id) {
-  if (!confirm('Delete this scan and its stored report? This cannot be undone.')) return;
-  try {
-    await api('/api/v1/scans/' + encodeURIComponent(id), { method: 'DELETE' });
-    toast('Scan deleted.');
-    loadScans(); loadPlan(); loadTrend();
-    if (me_admin) { loadAdminScans(adminUserFilter); loadAdminTrend(); }
-  } catch (e) { toast('Delete failed: ' + e.message, 'err'); }
-}
-let me_admin = false;
-
-// ---- findings explorer ----
-async function runFindings() {
-  const box = $('findings-results');
-  box.style.display = 'block';
-  box.innerHTML = '<span class="spinner"></span>';
-  try {
-    const url = findingsURL(false);
-    const r = await api(url);
-    const rows = r.findings || [];
-    if (!rows.length) {
-      box.innerHTML = emptyState('No matching findings', 'Nothing in your history matches that filter — broaden the search or scan something new.', 'iris scan ./repo');
-      return;
-    }
-    let h = `<div style="color:var(--color-muted);font-size:0.78rem;margin-bottom:8px">${rows.length} finding(s)${r.truncated ? ' (truncated)' : ''} across ${r.scans_searched} scan(s)</div>`;
-    h += '<div class="table-shell"><table class="data-table"><thead><tr><th>Severity</th><th>Rule</th><th>Finding</th><th>File</th><th>Scan</th></tr></thead><tbody>';
-    rows.forEach(f => {
-      const sev = String(f.severity || 'INFO').toUpperCase();
-      h += `<tr>
-        <td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
-        <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
-        <td>${esc(f.title || '')}</td>
-        <td class="mono" style="font-size:0.74rem">${esc(f.file || '')}${f.line ? ':' + f.line : ''}</td>
-        <td class="mono" style="font-size:0.72rem;color:var(--color-muted);cursor:pointer" onclick="toggleScanDetailByRow('${esc(f.scan_id)}')">${esc(shorten(f.target || f.scan_id))}</td>
-      </tr>`;
-    });
-    box.innerHTML = h + '</tbody></table></div>';
-    toast(`${rows.length} finding(s) found.`);
-  } catch (e) { box.innerHTML = ''; toast('Findings search failed: ' + e.message, 'err'); }
-}
-
-function findingsURL(csv) {
-  const q = $('fx-q').value.trim(), sev = $('fx-sev').value;
-  const all = me_admin && $('fx-all') && $('fx-all').checked;
-  let url = '/api/v1/scans/findings?limit=' + (csv ? 500 : 200) +
-    (q ? '&q=' + encodeURIComponent(q) : '') + (sev ? '&severity=' + encodeURIComponent(sev) : '');
-  if (all) url += '&user=*';
-  if (csv) url += '&format=csv';
-  return url;
-}
-
-function exportFindingsCSV() {
-  const a = document.createElement('a');
-  a.href = findingsURL(true);
-  a.download = 'iris-findings.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-  toast('Findings CSV download started.');
-}
-
-function toggleScanDetailByRow(id) {
-  showSection('scans');
-  setTimeout(() => {
-    const row = document.querySelector(`#scans-body tr[onclick*="'${id}'"]`);
-    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); toggleScanDetail(row, id, 6); }
-    else toast('Scan not in the recent list — open Scan history.', 'warn');
-  }, 120);
-}
-
-// ---- compare ----
-function fillCompareSelects(entries) {
-  const opts = entries.map(e =>
-    `<option value="${esc(e.id)}">${esc(new Date(e.time).toLocaleDateString())} · ${esc(e.scanner)} · ${esc(shorten(e.target))}</option>`).join('');
-  ['cmp-a', 'cmp-b'].forEach(id => {
-    const el = $(id); if (!el) return;
-    const cur = el.value;
-    el.innerHTML = opts || '<option>No scans yet</option>';
-    if (cur && entries.some(e => e.id === cur)) el.value = cur;
-  });
-}
-
-async function runCompare() {
-  const box = $('compare-results');
-  const a = $('cmp-a').value, b = $('cmp-b').value;
-  if (!a || !b) { toast('Pick two scans to compare.', 'warn'); return; }
-  if (a === b) { toast('Pick two different scans.', 'warn'); return; }
-  box.style.display = 'block';
-  box.innerHTML = '<span class="spinner"></span>';
-  try {
-    const r = await api(`/api/v1/scans/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
-    const s = r.summary || {};
-    const chip = (n, color, label) => `<span class="badge" style="border-color:${color};margin-right:8px">${n} ${label}</span>`;
-    let h = `<div style="padding:4px 0 10px">${chip(s.added || 0, 'rgba(252,165,165,.5)', 'new')}${chip(s.resolved || 0, 'rgba(134,239,172,.5)', 'resolved')}${chip(s.unchanged || 0, 'rgba(148,163,184,.4)', 'unchanged')}</div>`;
-    const renderRows = (rows, label) => {
-      if (!rows.length) return '';
-      let x = `<h4 style="margin:10px 0 6px">${label}</h4><div class="table-shell"><table class="data-table"><thead><tr><th>Severity</th><th>Rule</th><th>Finding</th><th>File</th></tr></thead><tbody>`;
-      rows.forEach(f => {
-        const sev = String(f.severity || 'INFO').toUpperCase();
-        x += `<tr><td><span style="color:${SEV_COLORS[sev] || SEV_COLORS.INFO};font-weight:600;font-size:0.78rem">${esc(sev)}</span></td>
-          <td class="mono" style="font-size:0.74rem">${esc(f.rule_id || '')}</td>
-          <td>${esc(f.title || '')}</td>
-          <td class="mono" style="font-size:0.74rem">${esc(f.file || '')}${f.line ? ':' + f.line : ''}</td></tr>`;
-      });
-      return x + '</tbody></table></div>';
-    };
-    h += renderRows(r.added || [], 'New findings') + renderRows(r.resolved || [], 'Resolved findings');
-    if (!(r.added || []).length && !(r.resolved || []).length)
-      h += '<div style="color:var(--color-dim);font-size:0.85rem">No differences — the scans are equivalent.</div>';
-    box.innerHTML = h;
-    toast(`Diff: ${s.added || 0} new, ${s.resolved || 0} resolved.`);
-  } catch (e) { box.innerHTML = ''; toast('Compare failed: ' + e.message, 'err'); }
-}
-
-// ---- web search ----
-async function runWebSearch() {
-  const box = $('ws-results');
-  const q = $('ws-q').value.trim();
-  if (!q) { toast('Type something to search.', 'warn'); return; }
-  box.innerHTML = '<span class="spinner"></span>';
-  try {
-    const r = await api('/api/v1/tools/search?q=' + encodeURIComponent(q));
-    const rows = r.results || [];
-    if (!rows.length) { box.innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem">No results.</div>'; return; }
-    box.innerHTML = rows.map(x => `<div style="padding:8px 0;border-bottom:1px solid rgba(148,163,184,.14)">
-      <a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" style="color:#818cf8;font-size:0.9rem">${esc(x.title || x.url)}</a>
-      <div style="color:var(--color-muted);font-size:0.78rem;word-break:break-all">${esc(x.url)}</div>
-      ${x.content ? `<div style="color:var(--color-dim);font-size:0.82rem;margin-top:3px">${esc(x.content.slice(0, 300))}</div>` : ''}
-      ${x.engine ? `<span class="mono" style="font-size:0.7rem;color:var(--color-muted)">${esc(x.engine)}</span>` : ''}
-    </div>`).join('');
-    toast(`${rows.length} result(s).`);
-  } catch (e) { box.innerHTML = ''; toast('Search failed: ' + e.message, 'err'); }
-}
-
-// ---- security overview ----
-const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info'];
-
-async function loadOverview() {
-  try {
-    const st = await api('/api/v1/stats');
-    const sev = st.severity || {};
-    const total = SEV_ORDER.reduce((n, k) => n + (sev[k] || 0), 0);
-    $('ov-badge').textContent = total ? `${total} findings` : 'clean';
-    $('ov-badge').className = 'badge' + (total ? (sev.critical ? ' badge-bad' : sev.high ? ' badge-warn' : ' badge-good') : ' badge-good');
-    renderDonut(sev, total);
-    // top rules
-    const rules = st.top_rules || [];
-    $('ov-top-rules').innerHTML = rules.length ? rules.map(r => {
-      const k = String(r.severity || 'INFO').toUpperCase();
-      return `<div class="top-rule">
-        <span style="color:${SEV_COLORS[k] || SEV_COLORS.INFO};font-weight:700;font-size:0.72rem;width:66px">${esc(k)}</span>
-        <span class="mono" style="font-size:0.74rem;color:var(--color-muted)">${esc(r.rule_id || r.title || '')}</span>
-        <span class="cnt">×${r.count}</span>
-      </div>`;
-    }).join('') : '<div style="color:var(--color-dim);font-size:0.85rem">No findings recorded.</div>';
-    // scanners
-    $('ov-scanners').innerHTML = (st.scanners || []).sort((a, b) => b.count - a.count)
-      .map(x => `<span class="scanner-chip">${esc(x.scanner)} <b>${x.count}</b></span>`).join('')
-      || '<span style="color:var(--color-dim);font-size:0.85rem">No scans yet.</span>';
-    $('ov-note').textContent = `${st.scans || 0} scan(s) · ${st.scans_with_reports || 0} with stored reports`;
-  } catch (e) {
-    $('ov-badge').textContent = 'unavailable';
-    $('ov-top-rules').innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem">Stats unavailable.</div>';
-  }
-}
-
-function renderDonut(sev, total) {
-  const R = 54, C = 2 * Math.PI * R;
-  let off = 0, segs = '', legend = '';
-  const shown = SEV_ORDER.filter(k => sev[k] > 0);
-  shown.forEach(k => {
-    const frac = sev[k] / (total || 1);
-    const len = frac * C;
-    segs += `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${SEV_COLORS[k.toUpperCase()]}" stroke-width="16"
-      stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"
-      transform="rotate(-90 70 70)"><title>${k}: ${sev[k]}</title></circle>`;
-    off += len;
-    legend += `<div class="row"><span><span class="dot" style="background:${SEV_COLORS[k.toUpperCase()]}"></span>${k}</span><span class="mono">${sev[k]}</span></div>`;
-  });
-  if (!shown.length) {
-    segs = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="#233" stroke-width="16"/>`;
-    legend = '<div class="row"><span>No findings</span></div>';
-  }
-  $('ov-donut').innerHTML = `<svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Findings by severity">
-    <circle cx="70" cy="70" r="${R}" fill="none" stroke="rgba(148,163,184,0.10)" stroke-width="16"/>
-    ${segs}
-    <text x="70" y="66" text-anchor="middle" fill="#fafafa" font-size="26" font-weight="700" font-family="ui-monospace,monospace">${total}</text>
-    <text x="70" y="86" text-anchor="middle" fill="#8a8a94" font-size="9" letter-spacing="2" font-family="ui-monospace,monospace">FINDINGS</text>
-  </svg>`;
-  $('ov-legend').innerHTML = legend;
-}
-
-// ---- bulk selection / delete ----
-function toggleSelectAll(box) {
-  document.querySelectorAll('.scan-sel').forEach(c => { c.checked = box.checked; });
-  updateBulkBtn();
-}
-
-function updateBulkBtn() {
-  const n = document.querySelectorAll('.scan-sel:checked').length;
-  const b = $('bulk-btn');
-  b.disabled = n === 0;
-  b.textContent = n ? `Delete selected (${n})` : 'Delete selected';
-}
-
-async function bulkDeleteSelected() {
-  const ids = [...document.querySelectorAll('.scan-sel:checked')].map(c => c.dataset.id);
-  if (!ids.length) return;
-  if (!confirm(`Delete ${ids.length} scan(s) and their stored reports? This cannot be undone.`)) return;
-  try {
-    const r = await api('/api/v1/scans/bulk-delete', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids })
-    });
-    toast(`Deleted ${r.deleted_count} scan(s)${r.failed_count ? `, ${r.failed_count} failed` : ''}.`, r.failed_count ? 'warn' : 'ok');
-    loadScans(); loadOverview(); loadPlan(); loadTrend();
-    if (me_admin) loadAdminScans(adminUserFilter);
-  } catch (e) { toast('Bulk delete failed: ' + e.message, 'err'); }
-}
-
-// ---- auto refresh ----
-let autoTimer = null;
-function toggleAutoRefresh() {
-  const b = $('auto-btn');
-  if (autoTimer) {
-    clearInterval(autoTimer); autoTimer = null;
-    b.textContent = 'Auto-refresh: off';
-    b.style.color = '';
-    toast('Auto-refresh off.');
-  } else {
-    autoTimer = setInterval(() => {
-      loadScans(); loadOverview(); loadTrend();
-      if (me_admin) { loadAdminScans(adminUserFilter); loadSystem(); }
-    }, 20000);
-    b.textContent = 'Auto-refresh: 20s';
-    b.style.color = 'var(--color-good)';
-    toast('Auto-refresh on (20s).');
-  }
-}
-
-// ---- share links ----
-async function createShare(id) {
-  try {
-    const r = await api(`/api/v1/scans/${encodeURIComponent(id)}/share`, { method: 'POST' });
-    try { await navigator.clipboard.writeText(r.url); toast('Share link copied to clipboard (expires ' + new Date(r.expires_at).toLocaleDateString() + ').'); }
-    catch (_) { toast('Share link: ' + r.url); }
-    const el = document.getElementById('share-' + encodeURIComponent(id));
-    if (el) el.innerHTML = shareBoxHTML(id, r.url);
-  } catch (e) { toast('Share failed: ' + e.message, 'err'); }
-}
-
-async function revokeShares(id) {
-  try {
-    const r = await api(`/api/v1/scans/${encodeURIComponent(id)}/share`, { method: 'DELETE' });
-    toast(`Revoked ${r.revoked} share link(s).`);
-    const el = document.getElementById('share-' + encodeURIComponent(id));
-    if (el) el.innerHTML = '';
-  } catch (e) { toast('Revoke failed: ' + e.message, 'err'); }
-}
-
-function shareBoxHTML(id, url) {
-  return `<div class="share-box"><input readonly value="${esc(url)}" onclick="this.select()"></div>`;
-}
-
-// ---- command palette ----
-const PAL_ITEMS = [
-  { t: 'Go to overview', k: 'G O', run: () => showSection('overview') },
-  { t: 'Go to scan history', k: 'G S', run: () => showSection('scans') },
-  { t: 'Go to tools (findings / compare / search)', k: 'G T', run: () => showSection('tools') },
-  { t: 'Go to billing history', k: 'G B', run: () => showSection('billing') },
-  { t: 'Go to account', k: 'G A', run: () => showSection('account') },
-  { t: 'Go to plans', k: 'G P', run: () => showSection('plans') },
-  { t: 'Go to roadmap', k: 'G R', run: () => showSection('roadmap') },
-  { t: 'Findings explorer: focus search', k: 'F', run: () => { showSection('tools'); setTimeout(() => $('fx-q').focus(), 120); } },
-  { t: 'Findings explorer: export CSV', k: 'C', run: () => exportFindingsCSV() },
-  { t: 'Web search: focus', k: 'W', run: () => { showSection('tools'); setTimeout(() => $('ws-q').focus(), 120); } },
-  { t: 'Compare scans: pick A/B', k: 'D', run: () => { showSection('tools'); setTimeout(() => $('cmp-a').focus(), 120); } },
-  { t: 'Refresh all data', k: 'R', run: () => { loadScans(); loadOverview(); loadTrend(); loadPlan(); if (me_admin) loadAdmin(); toast('Refreshed.'); } },
-  { t: 'Toggle auto-refresh (20s)', k: 'A', run: () => toggleAutoRefresh() },
-  { t: 'Sign out', k: 'Q', run: () => { location.href = '/auth/logout'; } },
-  { t: 'Admin: users', k: '', run: () => showSection('admin'), admin: true },
-  { t: 'Admin: create user', k: '', run: () => { showSection('admin'); setTimeout(() => { if ($('admin-create').style.display === 'none') toggleCreateUser(); }, 120); }, admin: true },
-  { t: 'Admin: all scans', k: '', run: () => { showSection('admin'); setTimeout(() => scrollToId('admin-scans-body'), 120); }, admin: true },
-  { t: 'Admin: system diagnostics', k: '', run: () => { showSection('admin'); setTimeout(() => scrollToId('admin-system'), 120); }, admin: true },
-];
-
-function scrollToId(id) {
-  const el = $(id);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-let palIndex = 0;
-function openPalette() {
-  $('palette').classList.add('open');
-  $('pal-input').value = '';
-  palIndex = 0;
-  renderPalette();
-  setTimeout(() => $('pal-input').focus(), 30);
-}
-function closePalette() { $('palette').classList.remove('open'); }
-
-function palFiltered() {
-  const q = $('pal-input').value.trim().toLowerCase();
-  return PAL_ITEMS.filter(it => (!it.admin || me_admin) && (!q || it.t.toLowerCase().includes(q)));
-}
-
-function renderPalette() {
-  const items = palFiltered();
-  if (palIndex >= items.length) palIndex = Math.max(0, items.length - 1);
-  $('pal-list').innerHTML = items.length ? items.map((it, i) =>
-    `<div class="pal-item${i === palIndex ? ' active' : ''}" onclick="palRun(${i})" onmouseover="palIndex=${i};renderPalette()">
-       <span>${esc(it.t)}</span>${it.k ? `<span class="pal-key">${esc(it.k)}</span>` : ''}
-     </div>`).join('')
-    : '<div class="pal-item">No matches</div>';
-}
-
-function paletteKey(e) {
-  const items = palFiltered();
-  if (e.key === 'Escape') { closePalette(); return; }
-  if (e.key === 'ArrowDown') { e.preventDefault(); palIndex = Math.min(items.length - 1, palIndex + 1); renderPalette(); }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); palIndex = Math.max(0, palIndex - 1); renderPalette(); }
-  else if (e.key === 'Enter') { e.preventDefault(); palRun(palIndex); }
-}
-
-function palRun(i) {
-  const items = palFiltered();
-  const it = items[i];
-  if (!it) return;
-  closePalette();
-  it.run();
-}
-
-// ---- admin system diagnostics ----
-async function loadSystem() {
-  try {
-    const d = await api('/api/v1/admin/system');
-    const fmtB = n => {
-      n = n || 0;
-      if (n >= 1 << 30) return (n / (1 << 30)).toFixed(2) + ' GB';
-      if (n >= 1 << 20) return (n / (1 << 20)).toFixed(2) + ' MB';
-      if (n >= 1 << 10) return (n / (1 << 10)).toFixed(1) + ' KB';
-      return n + ' B';
-    };
-    const up = d.uptime_seconds || 0;
-    const uptime = up >= 86400 ? Math.floor(up / 86400) + 'd ' + Math.floor(up % 86400 / 3600) + 'h'
-      : up >= 3600 ? Math.floor(up / 3600) + 'h ' + Math.floor(up % 3600 / 60) + 'm'
-      : Math.floor(up / 60) + 'm';
-    const cells = [
-      ['version', d.version], ['uptime', uptime],
-      ['scans', d.scans_total], ['users', d.users_total],
-      ['scans file', fmtB(d.storage && d.storage.scans_file_bytes)],
-      ['reports', `${d.storage ? d.storage.reports_count : 0} · ${fmtB(d.storage && d.storage.reports_bytes)}`],
-      ['tokens / shares', `${fmtB(d.storage && d.storage.tokens_bytes)} / ${fmtB(d.storage && d.storage.shares_bytes)}`],
-      ['retention', d.retention_days ? d.retention_days + ' days' : 'forever'],
-      ['report cap', fmtB(d.max_report_bytes)],
-      ['per-user cap', d.max_scans_per_user + ' scans'],
-      ['web search', d.searxng_configured ? 'configured' : 'off'],
-      ['data dir', d.data_dir],
-    ];
-    $('admin-system').innerHTML = cells.map(([k, v]) =>
-      `<div class="sys-cell"><div class="k">${esc(k)}</div><div class="v">${esc(String(v ?? '—'))}</div></div>`).join('');
-  } catch (e) {
-    $('admin-system').innerHTML = '<div class="sys-cell"><div class="k">status</div><div class="v">unavailable</div></div>';
-  }
-}
-
-init();
-</script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

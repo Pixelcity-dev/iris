@@ -1530,14 +1530,14 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	// Static assets embedded alongside the SPA (fonts, favicon, …). embed.FS
-	// rejects paths containing "..", so this cannot escape web/.
+	// Static assets embedded alongside the SPA (fonts, CSS, JS, favicon, …).
+	// embed.FS rejects paths containing "..", so this cannot escape web/.
 	if rel := strings.TrimPrefix(r.URL.Path, "/"); rel != "" && rel != "index.html" {
 		if data, err := webFS.ReadFile("web/" + rel); err == nil {
 			if ct := assetContentType(rel); ct != "" {
 				w.Header().Set("Content-Type", ct)
 			}
-			w.Header().Set("Cache-Control", "public, max-age=86400")
+			w.Header().Set("Cache-Control", assetCacheControl(rel))
 			_, _ = w.Write(data)
 			return
 		}
@@ -1547,8 +1547,21 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "SPA not built — see deploy/web/README", http.StatusInternalServerError)
 		return
 	}
+	// HTML is the asset manifest for the fingerprint-less CSS/JS files it
+	// references: always revalidate it so a deploy is picked up immediately.
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(data)
+}
+
+// assetCacheControl keeps versioned binary assets cached for a day while
+// forcing revalidation of CSS/JS, whose URLs are stable across deploys —
+// without this a stale module could be paired with a fresh index.html.
+func assetCacheControl(name string) string {
+	if strings.HasSuffix(name, ".css") || strings.HasSuffix(name, ".js") {
+		return "no-cache"
+	}
+	return "public, max-age=86400"
 }
 
 func assetContentType(name string) string {

@@ -1,0 +1,67 @@
+/* Iris Dashboard — reset, element defaults, typography primitives, utilities. */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: var(--color-ink); scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(140% 90% at 50% 0%, rgba(255, 255, 255, 0.02), transparent 55%),
+    var(--color-ink);
+  color: var(--color-bright);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+h1, h2, h3 { font-family: var(--font-display); }
+
+::selection { background: var(--color-accent); color: #0a0a0a; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-ink); }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 3px; }
+
+.container-shell { width: min(1240px, calc(100% - 3rem)); margin: 0 auto; }
+
+/* ---------------- typography primitives ---------------- */
+
+.eyebrow {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.rule-label { display: flex; align-items: center; gap: 0.9rem; }
+.rule-label::before { content: ""; width: 2.2rem; height: 1px; background: var(--color-accent); opacity: 0.4; }
+
+.section-title {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+}
+
+.sub { color: var(--color-muted); font-size: 0.9rem; }
+.mono { font-family: var(--font-mono); }
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* Money, counters and metadata align vertically across rows. */
+table, .card .value, .price, .data-table td.mono, .data-table th, .num, .stat { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .container-shell { width: min(100% - 1.75rem, 1240px); }
+}

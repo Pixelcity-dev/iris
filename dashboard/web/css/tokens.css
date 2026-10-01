@@ -1,0 +1,64 @@
+/* Iris Dashboard — design tokens & self-hosted variable fonts.
+ * No external font CDN (CSP-safe, offline-safe).
+ * Precision monochrome: neutral grayscale ramp, white primary actions,
+ * hairlines over borders, Archivo for type, JetBrains Mono for metadata,
+ * PixelCity gold (#d4a853) for the wordmark + accents — one accent across
+ * marketplace, dashboard and payments.
+ */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/Archivo.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("../fonts/JetBrainsMono.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("../fonts/Syne.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --color-ink: #0a0a0a;
+  --color-panel: #111113;
+  --color-panel-2: #17171a;
+  --color-line: #27272a;
+  --color-line-soft: #1e1e21;
+
+  /* text ramp */
+  --color-dim: #71717a;
+  --color-muted: #a1a1aa;
+  --color-bright: #fafafa;
+
+  /* actions */
+  --color-accent: #fafafa;
+  --color-accent-2: #d4d4d8;
+
+  /* status */
+  --color-good: #86efac;
+  --color-warn: #fbbf24;
+  --color-bad: #fca5a5;
+
+  /* PixelCity gold — the single brand accent */
+  --gold: #d4a853;
+  --gold-soft: #f0c878;
+
+  /* type */
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Syne", "Archivo", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
