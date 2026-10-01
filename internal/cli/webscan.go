@@ -47,8 +47,8 @@ Examples:
   iris webscan https://example.com --severity high
   iris scan https://example.com --scanner webscan,dast
 
-Requires login: results are saved to your dashboard scan history.
-Run "iris cloud login" once, then scan freely.
+No account needed — scans run without login.
+Run "iris cloud login" to also save results to your dashboard history.
 
 Aliases: scan URL, website, audit`,
 	Aliases: []string{"website", "audit", "wscan"},
@@ -65,14 +65,11 @@ func init() {
 }
 
 func runWebscan(cmd *cobra.Command, args []string) error {
-	// WebScan requires a PixelCity account: results are saved to the
-	// dashboard scan history. Authenticate once via device flow.
+	// No login gate: the scan itself never requires an account. A session,
+	// when present, is used afterwards to sync results to the dashboard.
 	ctx := context.Background()
 	cloudCfg := cloud.DefaultConfig()
-	accessToken, err := cloud.EnsureValidToken(ctx, cloudCfg)
-	if err != nil {
-		return fmt.Errorf("webscan requires login: %w\n\nRun: iris cloud login", err)
-	}
+	accessToken, tokenErr := cloud.EnsureValidToken(ctx, cloudCfg)
 
 	targetURL := args[0]
 	if !isURL(targetURL) {
@@ -187,7 +184,11 @@ func runWebscan(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save full results to dashboard scan history (best-effort).
-	uploadScan(ctx, cloudCfg, accessToken, "webscan", targetURL, total, duration, results, start)
+	if tokenErr == nil {
+		uploadScan(ctx, cloudCfg, accessToken, "webscan", targetURL, total, duration, results, start)
+	} else if !uploadDisabled() && !quietEnabled() {
+		fmt.Fprintln(os.Stderr, "Tip: results not saved to dashboard history — run 'iris cloud login' to sync scans.")
+	}
 
 	return nil
 }

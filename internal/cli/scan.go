@@ -106,23 +106,13 @@ func runScan(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// WebScan requires a PixelCity account — same gate as `iris webscan`
-	// (URL auto-detection includes webscan, so `iris scan <url>` is gated too).
-	// Every scan type uploads to dashboard scan history when a session
-	// exists; for non-web scans a missing/expired session just skips the
-	// upload (never fails or prompts — CI/air-gapped friendly).
+	// Scanning never requires an account — webscan included. Results are
+	// uploaded to the dashboard scan history only when a session exists;
+	// otherwise the upload is skipped (never fails or prompts — CI/air-gapped
+	// friendly).
 	scanCtx := context.Background()
 	cloudCfg := cloud.DefaultConfig()
 	cloudToken, tokenErr := cloud.EnsureValidToken(scanCtx, cloudCfg)
-	needsWebScan := false
-	for _, t := range scanTypes {
-		if t == core.ScanTypeWebScan {
-			needsWebScan = true
-		}
-	}
-	if needsWebScan && tokenErr != nil {
-		return fmt.Errorf("webscan requires login: %w\n\nRun: iris cloud login", tokenErr)
-	}
 	canUpload := tokenErr == nil
 
 	targetObj := core.Target{
@@ -198,6 +188,8 @@ func runScan(cmd *cobra.Command, args []string) error {
 		}
 		uploadScan(scanCtx, cloudCfg, cloudToken, strings.Join(names, ","),
 			target, totalFindings, duration, results, start)
+	} else if isURL(target) && !uploadDisabled() && !quietEnabled() {
+		fmt.Fprintln(os.Stderr, "Tip: results not saved to dashboard history — run 'iris cloud login' to sync scans.")
 	}
 
 	if scanExitCode && totalFindings > 0 {

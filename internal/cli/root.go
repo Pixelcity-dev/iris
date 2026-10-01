@@ -112,6 +112,12 @@ func stderrColor() bool {
 	return ui.ColorOK(rootCmd.PersistentFlags().Changed("no-color"), os.Stderr)
 }
 
+// quietEnabled reports whether --quiet was passed (errors only).
+func quietEnabled() bool {
+	v, err := rootCmd.PersistentFlags().GetBool("quiet")
+	return err == nil && v
+}
+
 func initConfig() {
 	if cfgFile != "" {
 		var err error
