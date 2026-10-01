@@ -17,6 +17,7 @@ import (
 	"github.com/Pixelcity-dev/Iris/internal/scanners/sca"
 	"github.com/Pixelcity-dev/Iris/internal/scanners/secrets"
 	"github.com/Pixelcity-dev/Iris/internal/scanners/webscan"
+	"github.com/Pixelcity-dev/Iris/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -66,6 +67,22 @@ Support: service@pixelcity.dev  •  MCP: iris mcp start for AI agents`,
 }
 
 func Execute() {
+	// Brand the version banner with the gold accent; --no-color may appear
+	// anywhere on the command line, before cobra has parsed it.
+	noColor := false
+	for _, a := range os.Args[1:] {
+		if a == "--no-color" {
+			noColor = true
+			break
+		}
+	}
+	vc := ui.ColorOK(noColor, os.Stdout)
+	rootCmd.SetVersionTemplate(ui.Gold("Iris ", vc) + `{{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
+  commit: ` + commit + `
+  built:  ` + buildTime + `
+  scanners: 10  •  langs: 11+  •  ` + ui.Gold(`https://pixelcity.top/docs/iris`, vc) + `
+`)
+
 	// cobra's error print is silenced; print once here.
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
@@ -87,6 +104,12 @@ func init() {
   built:  ` + buildTime + `
   scanners: 10  •  langs: 11+  •  https://pixelcity.top/docs/iris
 `)
+}
+
+// stderrColor reports whether gold accent output may be written to stderr
+// for the current command (--no-color, NO_COLOR, dumb TERM, non-TTY).
+func stderrColor() bool {
+	return ui.ColorOK(rootCmd.PersistentFlags().Changed("no-color"), os.Stderr)
 }
 
 func initConfig() {

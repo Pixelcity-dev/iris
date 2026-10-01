@@ -5,15 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iris Dashboard · PixelCity</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c0b'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23d4a853' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4'/%3E%3Cpath d='M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z'/%3E%3Cpath d='M9 12v5'/%3E%3Cpath d='M15 12v5'/%3E%3Cpath d='M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
+/* Self-hosted variable fonts — no external font CDN (CSP-safe, offline-safe). */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("fonts/Archivo.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/JetBrainsMono.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("fonts/Syne.woff2") format("woff2");
+}
 /*
  * Iris Dashboard — PixelCity Marketplace design system.
  * Precision monochrome: neutral grayscale ramp, white primary actions,
  * hairlines over borders, Archivo for type, JetBrains Mono for metadata,
- * PixelCity brand orange for the wordmark + accents.
+ * PixelCity gold (#d4a853) for the wordmark + accents — one accent across
+ * marketplace, dashboard and payments.
  */
 :root {
   --color-ink: #0a0a0a;
@@ -29,8 +49,8 @@
   --color-good: #86efac;
   --color-warn: #fbbf24;
   --color-bad: #fca5a5;
-  --pc-orange: #ff7a1a;
-  --pc-orange-soft: #ffa14d;
+  --pc-orange: #d4a853;
+  --pc-orange-soft: #f0c878;
   --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-brand: "Syne", "Archivo", ui-sans-serif, sans-serif;
@@ -280,7 +300,11 @@ header {
 }
 
 .app-sec { display: none; min-width: 0; }
-.app-sec.active { display: block; }
+.app-sec.active { display: block; animation: secIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes secIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Money, counters and metadata align vertically across rows. */
+table, .card .value, .price, .data-table td.mono, .data-table th, .num, .stat { font-variant-numeric: tabular-nums; }
 
 .sec-head { margin-bottom: 24px; }
 .sec-head .section-title { margin-top: 10px; }
@@ -446,7 +470,7 @@ section.panel > h2 {
 .badge-good { border-color: rgba(134, 239, 172, 0.35); color: var(--color-good); }
 .badge-warn { border-color: rgba(251, 191, 36, 0.4); color: var(--color-warn); }
 .badge-bad { border-color: rgba(252, 165, 165, 0.4); color: var(--color-bad); }
-.badge-orange { border-color: rgba(255, 122, 26, 0.5); color: var(--pc-orange); }
+.badge-orange { border-color: rgba(212, 168, 83, 0.5); color: var(--pc-orange); }
 
 /* ---------------- plans ---------------- */
 
@@ -528,6 +552,78 @@ section.panel > h2 {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---------------- skeleton loaders ---------------- */
+.skel {
+  display: inline-block;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.045) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.045) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  vertical-align: middle;
+}
+.skel.w40 { width: 40%; } .skel.w55 { width: 55%; } .skel.w70 { width: 70%; } .skel.w90 { width: 90%; }
+.skel.tall { height: 12px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+tr.skel-row td { padding: 13px 10px; border-bottom: 1px solid var(--color-line-soft); }
+.skel-lines { display: grid; gap: 10px; padding: 6px 0; }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+
+/* ---------------- empty states ---------------- */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 34px 18px;
+  text-align: center;
+}
+.empty .empty-mark { color: var(--pc-orange); opacity: 0.85; }
+.empty .empty-title { font-size: 0.92rem; color: var(--color-bright); font-weight: 600; }
+.empty .empty-copy { font-size: 0.84rem; color: var(--color-dim); max-width: 46ch; }
+.empty .empty-cmd {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.empty .empty-cmd:hover { border-color: var(--pc-orange); color: var(--color-bright); }
+.empty .empty-alt { font-size: 0.76rem; color: var(--color-dim); }
+.empty .empty-alt a { color: var(--pc-orange); }
+
+/* ---------------- boot splash ---------------- */
+#boot {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  background: var(--color-ink);
+  pointer-events: none;
+  animation: bootOut 420ms ease 900ms forwards;
+}
+#boot.gone { display: none; }
+.boot-inner { display: grid; justify-items: center; gap: 16px; }
+.boot-mark { width: 56px; height: 56px; color: var(--pc-orange); animation: bootIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.boot-word {
+  font-family: var(--font-brand);
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.34em; text-transform: uppercase;
+  color: var(--color-bright);
+  animation: bootIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) 90ms both;
+}
+.boot-word span { color: var(--color-dim); font-weight: 600; }
+.boot-bar { width: 148px; height: 1px; background: var(--color-line); overflow: hidden; }
+.boot-bar i { display: block; height: 100%; width: 38%; background: var(--pc-orange); animation: bootScan 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+@keyframes bootScan { from { transform: translateX(-110%); } to { transform: translateX(380%); } }
+@keyframes bootIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes bootOut { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  #boot { display: none; }
+  .app-sec.active { animation: none; }
+}
+
 /* ---------------- login ---------------- */
 
 .login-wrap { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; }
@@ -552,6 +648,18 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
 </style>
 </head>
 <body>
+<div id="boot" aria-hidden="true">
+  <div class="boot-inner">
+    <svg class="boot-mark" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/>
+      <path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/>
+      <path d="M9 12v5"/><path d="M15 12v5"/>
+      <path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/>
+    </svg>
+    <div class="boot-word">Iris<span> · PixelCity</span></div>
+    <div class="boot-bar"><i></i></div>
+  </div>
+</div>
 
 <header>
   <div class="container-shell header-shell">
@@ -652,7 +760,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             </div>
             <div>
               <h3>Top rules</h3>
-              <div id="ov-top-rules"><span class="spinner"></span></div>
+              <div id="ov-top-rules"><div class="skel-lines"><span class="skel w90"></span><span class="skel w90"></span><span class="skel w90"></span><span class="skel w90"></span></div></div>
             </div>
             <div>
               <h3>Scanners</h3>
@@ -681,7 +789,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="table-shell">
             <table class="data-table">
               <thead><tr><th class="sel-col"><input type="checkbox" id="sel-all" title="Select all" onclick="toggleSelectAll(this)"></th><th>Time</th><th>Scanner</th><th>Target</th><th>Findings</th><th>Duration</th></tr></thead>
-              <tbody id="scans-body"><tr><td colspan="6"><span class="spinner"></span></td></tr></tbody>
+              <tbody id="scans-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td></tr></tbody>
             </table>
           </div>
         </section>
@@ -746,7 +854,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="table-shell">
             <table class="data-table">
               <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-              <tbody id="usage-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+              <tbody id="usage-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr></tbody>
             </table>
           </div>
         </section>
@@ -783,7 +891,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="table-shell">
             <table class="data-table">
               <thead><tr><th>Started</th><th>Last access</th><th>IP address</th><th>Clients</th><th></th></tr></thead>
-              <tbody id="sessions-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+              <tbody id="sessions-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr></tbody>
             </table>
           </div>
         </section>
@@ -812,7 +920,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             <div class="plan-card featured">
               <span class="badge filled">Most popular</span>
               <h2>Pro</h2>
-              <div class="price">$15 <small>/ month</small><br><span class="sub">or $150 / year</span></div>
+              <div class="price">€15 <small>/ month</small><br><span class="sub">or €150 / year — 2 months free</span></div>
               <ul>
                 <li>Everything in Free</li>
                 <li>250 scans / day · 1000 all-time</li>
@@ -829,7 +937,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
             <div class="plan-card">
               <span class="badge">Enterprise</span>
               <h2>Enterprise</h2>
-              <div class="price">$49 <small>/ month</small><br><span class="sub">or $490 / year</span></div>
+              <div class="price">€49 <small>/ month</small><br><span class="sub">or €490 / year — 2 months free</span></div>
               <ul>
                 <li>Everything in Pro</li>
                 <li>2000 scans / day · 10000 all-time</li>
@@ -920,7 +1028,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="table-shell">
             <table class="data-table">
               <thead><tr><th>User</th><th>Plan</th><th>Today</th><th>Scans</th><th>Last scan</th><th>Status</th><th></th></tr></thead>
-              <tbody id="admin-users-body"><tr><td colspan="7"><span class="spinner"></span></td></tr></tbody>
+              <tbody id="admin-users-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w70"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w70"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w70"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w70"></span></td></tr></tbody>
             </table>
           </div>
 
@@ -985,7 +1093,7 @@ footer .brand { font-size: 0.85rem; letter-spacing: 0.02em; }
           <div class="table-shell">
             <table class="data-table">
               <thead><tr><th>Time</th><th>User</th><th>Scanner</th><th>Target</th><th>Findings</th></tr></thead>
-              <tbody id="admin-scans-body"><tr><td colspan="5"><span class="spinner"></span></td></tr></tbody>
+              <tbody id="admin-scans-body"><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr><tr class="skel-row"><td><span class="skel w70"></span></td><td><span class="skel w40"></span></td><td><span class="skel w55"></span></td><td><span class="skel w90"></span></td><td><span class="skel w40"></span></td></tr></tbody>
             </table>
           </div>
         </section>
@@ -1138,7 +1246,7 @@ async function loadScans() {
     const s = await api('/api/v1/scans?limit=25');
     const body = $('scans-body');
     if (!s.entries || !s.entries.length) {
-      body.innerHTML = '<tr><td colspan="6" style="color:var(--color-dim)">No scans recorded yet — run <span class="mono">iris webscan https://example.com</span></td></tr>';
+      body.innerHTML = emptyRow(6, 'No scans yet', 'Every scan you run — CLI, CI or API — lands here with its full report.', 'iris webscan https://example.com');
       updateBulkBtn();
       return;
     }
@@ -1153,7 +1261,7 @@ async function loadScans() {
     </tr>`).join('');
     updateBulkBtn();
   } catch (e) {
-    $('scans-body').innerHTML = '<tr><td colspan="6" style="color:var(--color-dim)">Scan history unavailable.</td></tr>';
+    $('scans-body').innerHTML = emptyRow(6, 'Scan history unavailable', 'The scan store did not respond. Refresh in a moment or try again later.');
   }
 }
 
@@ -1168,7 +1276,7 @@ async function loadAdmin() {
     if (kc) kc.textContent = u.keycloak ? 'keycloak connected' : (u.keycloak_error ? 'keycloak unreachable' : 'local only');
     renderAdminUsers();
   } catch (e) {
-    $('admin-users-body').innerHTML = '<tr><td colspan="7" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
+    $('admin-users-body').innerHTML = emptyRow(7, 'Directory unavailable', 'The user directory did not load — Keycloak or the scan store may be restarting.');
   }
   await loadAdminScans(adminUserFilter);
 }
@@ -1202,7 +1310,7 @@ function renderAdminUsers() {
       <td style="white-space:nowrap">${status(u)}</td>
       <td style="text-align:right"><button class="btn btn-ghost" onclick="event.stopPropagation();adminSelect(${i})">Manage</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" style="color:var(--color-dim)">No users match.</td></tr>';
+  }).join('') || emptyRow(7, 'No matching users', 'No account matches that filter. Clear the search to see the full directory.');
 }
 
 function adminSelect(i) {
@@ -1386,9 +1494,9 @@ async function loadAdminScans(userFilter) {
       <td><span class="mono">${esc(e.scanner)}</span></td>
       <td class="mono" style="font-size:0.78rem">${esc(shorten(e.target))}</td>
       <td style="white-space:nowrap">${sevChips(e)}</td>
-    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--color-dim)">No scans recorded yet.</td></tr>';
+    </tr>`).join('') || emptyRow(5, 'No scans platform-wide', 'Scans from every account appear here as soon as they run.', 'iris scan ./repo');
   } catch (e) {
-    $('admin-scans-body').innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">Admin data unavailable.</td></tr>';
+    $('admin-scans-body').innerHTML = emptyRow(5, 'Activity unavailable', 'The platform scan feed did not load. Refresh in a moment.');
   }
 }
 
@@ -1564,7 +1672,7 @@ async function loadUsage() {
     const u = await api('/api/v1/usage?limit=25');
     const body = $('usage-body');
     if (!u.entries || !u.entries.length) {
-      body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No payments yet — upgrade below to get started.</td></tr>';
+      body.innerHTML = emptyRow(5, 'No payments yet', 'Invoices and receipts appear here after your first payment.', '', 'Pick a plan \u2192 <a href="#" onclick="showSection(\'plans\');return false">Plans</a>');
       return;
     }
     body.innerHTML = u.entries.map(e => `<tr>
@@ -1586,6 +1694,16 @@ function setBillingInterval(plan, interval, btn) {
   document.querySelectorAll(`.interval-btn[data-plan="${plan}"]`).forEach(b =>
     b.classList.toggle('active', b === btn));
 }
+// Boot splash: once per browser session, removed from the DOM after exit.
+(() => {
+  const boot = document.getElementById('boot');
+  if (!boot) return;
+  let seen = false;
+  try { seen = sessionStorage.getItem('iris_booted') === '1'; sessionStorage.setItem('iris_booted', '1'); } catch (e) {}
+  if (seen || matchMedia('(prefers-reduced-motion: reduce)').matches) { boot.classList.add('gone'); return; }
+  setTimeout(() => boot.remove(), 1500);
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.interval-btn[data-interval="monthly"]').forEach(b => b.classList.add('active'));
 });
@@ -1663,7 +1781,7 @@ async function loadSessions() {
     const body = $('sessions-body');
     const list = s.sessions || s || [];
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="5" style="color:var(--color-dim)">No active sessions.</td></tr>';
+      body.innerHTML = emptyRow(5, 'No active sessions', 'Only this browser is signed in right now. New sign-ins from other devices will be listed here.');
       return;
     }
     body.innerHTML = list.map(x => `<tr>
@@ -1684,6 +1802,25 @@ async function revokeSession(id) {
     await api(`/api/v1/account/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
     loadSessions();
   } catch (e) { showError('Revoke failed: ' + e.message); }
+}
+
+// ---- empty states ----
+function emptyState(title, copy, cmd, alt) {
+  const mark = '<svg class="empty-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4"/><path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z"/><path d="M9 12v5"/><path d="M15 12v5"/><path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1"/></svg>';
+  const cmdHtml = cmd
+    ? `<button class="empty-cmd" type="button" data-cmd="${esc(cmd)}" onclick="copyCmd(this)">${esc(cmd)}</button>`
+    : '';
+  return `<div class="empty">${mark}<div class="empty-title">${title}</div>` +
+    `<div class="empty-copy">${copy}</div>${cmdHtml}` +
+    (alt ? `<div class="empty-alt">${alt}</div>` : '') + '</div>';
+}
+function copyCmd(btn) {
+  const cmd = btn.dataset.cmd || '';
+  const done = () => { btn.textContent = 'Copied to clipboard'; setTimeout(() => { btn.textContent = cmd; }, 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cmd).then(done, () => {});
+}
+function emptyRow(cols, title, copy, cmd, alt) {
+  return `<tr><td colspan="${cols}">${emptyState(title, copy, cmd, alt)}</td></tr>`;
 }
 
 function showError(msg) { const el = $('error-box'); el.textContent = msg; el.style.display = 'block'; }
@@ -1730,7 +1867,7 @@ async function runFindings() {
     const r = await api(url);
     const rows = r.findings || [];
     if (!rows.length) {
-      box.innerHTML = '<div style="color:var(--color-dim);font-size:0.85rem;padding:8px 0">No findings match — try a broader search or run <span class="mono">iris scan ./repo</span>.</div>';
+      box.innerHTML = emptyState('No matching findings', 'Nothing in your history matches that filter — broaden the search or scan something new.', 'iris scan ./repo');
       return;
     }
     let h = `<div style="color:var(--color-muted);font-size:0.78rem;margin-bottom:8px">${rows.length} finding(s)${r.truncated ? ' (truncated)' : ''} across ${r.scans_searched} scan(s)</div>`;

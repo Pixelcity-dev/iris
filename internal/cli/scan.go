@@ -57,7 +57,8 @@ func runScan(cmd *cobra.Command, args []string) error {
 	target := args[0]
 	start := time.Now()
 
-	fmt.Fprintf(os.Stderr, "Iris v%s - Scanning %s\n", version, target)
+	fmt.Fprintf(os.Stderr, "%s - Scanning %s\n",
+		ui.Gold(fmt.Sprintf("Iris v%s", version), stderrColor()), target)
 
 	ruleEngine := core.NewRuleEngine()
 	ruleEngine.LoadRulesFromDir("rules")
@@ -156,8 +157,8 @@ func runScan(cmd *cobra.Command, args []string) error {
 		totalFindings += len(r.Findings)
 	}
 
-	fmt.Fprintf(os.Stderr, "\nScan completed in %.2f seconds\n", duration)
-	fmt.Fprintf(os.Stderr, "Found %d issues\n", totalFindings)
+	fmt.Fprintf(os.Stderr, "\n%s\n", ui.Gold(fmt.Sprintf("Scan completed in %.2f seconds", duration), stderrColor()))
+	fmt.Fprintf(os.Stderr, "%s\n", ui.Gold(fmt.Sprintf("Found %d issues", totalFindings), stderrColor()))
 
 	for _, format := range scanFormats {
 		rpt := reporter.GetReporter(format)
