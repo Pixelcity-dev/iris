@@ -36,6 +36,8 @@ func (s *WebScanScanner) SupportedTargets() []core.TargetKind {
 }
 
 func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []core.Rule) ([]core.Finding, error) {
+	_ = ctx
+	_ = rules
 	// Accept both URL and FS where URI looks like URL
 	raw := target.URI
 	if target.Kind == core.TargetFS && !isURL(raw) {
@@ -50,28 +52,19 @@ func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []c
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
-
-	// Normalize: ensure scheme
-	if u.Scheme == "" {
-		u.Scheme = "https"
+	if (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.Opaque != "" {
+		return nil, fmt.Errorf("webscan requires an absolute http:// or https:// URL with a hostname")
+	}
+	if u.User != nil {
+		return nil, fmt.Errorf("webscan URLs must not include credentials")
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				d := &net.Dialer{Timeout: 5 * time.Second}
-				return d.DialContext(ctx, network, addr)
-			},
-		},
-		// Don't follow redirects automatically for redirect checks, but for general fetch we want to follow
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 3 {
-				return http.ErrUseLastResponse
-			}
-			return nil
-		},
+	client := newWebScanClient()
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 3 || !sameWebOrigin(u, req.URL) {
+			return http.ErrUseLastResponse
+		}
+		return nil
 	}
 
 	var findings []core.Finding
@@ -88,6 +81,9 @@ func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []c
 			Fix:         "Ensure target is reachable and not blocking scanners",
 			Confidence:  0.9,
 		})
+		if u.Scheme == "https" {
+			findings = append(findings, checkTLSDeep(u)...)
+		}
 		return findings, nil
 	}
 	// Ensure baseBody closed after
@@ -138,8 +134,35 @@ func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []c
 
 // helpers
 
-func isURL(s string) bool {
-	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+func newWebScanClient() *http.Client {
+	return &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				d := &net.Dialer{Timeout: 5 * time.Second}
+				return d.DialContext(ctx, network, addr)
+			},
+		},
+	}
+}
+
+func isURL(s string) bool { return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://") }
+
+func sameWebOrigin(target, next *url.URL) bool {
+	if !strings.EqualFold(target.Scheme, next.Scheme) || !strings.EqualFold(target.Hostname(), next.Hostname()) {
+		return false
+	}
+	port := func(u *url.URL) string {
+		if p := u.Port(); p != "" {
+			return p
+		}
+		if strings.EqualFold(u.Scheme, "https") {
+			return "443"
+		}
+		return "80"
+	}
+	return port(target) == port(next)
 }
 
 func fetchURL(raw string, client *http.Client) (*http.Response, string) {
@@ -172,6 +195,16 @@ func fetchWithHeader(raw string, client *http.Client, headers map[string]string)
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	return resp, string(b)
+}
+
+func hasCSPDirective(policy, directive string) bool {
+	for _, part := range strings.Split(policy, ";") {
+		fields := strings.Fields(strings.TrimSpace(part))
+		if len(fields) > 0 && strings.EqualFold(fields[0], directive) {
+			return true
+		}
+	}
+	return false
 }
 
 // 1. Security Headers Deep
@@ -238,6 +271,30 @@ func checkSecurityHeadersDeep(target *url.URL, client *http.Client, resp *http.R
 					Title:       "Overly permissive CSP with wildcard",
 					Description: "CSP uses wildcard (*) which allows any origin",
 					Fix:         "Restrict CSP to specific origins, avoid *",
+					Confidence:  0.85,
+				})
+			}
+		}
+		if strings.Contains(lower, "unsafe-eval") {
+			findings = append(findings, core.Finding{
+				RuleID:      "webscan-weak-csp-unsafe-eval",
+				Severity:    core.SeverityMedium,
+				Category:    "security-headers",
+				Title:       "Weak CSP allows unsafe-eval",
+				Description: "CSP allows unsafe-eval, which can increase the impact of script injection vulnerabilities",
+				Fix:         "Remove unsafe-eval and avoid APIs such as eval() and new Function()",
+				Confidence:  0.9,
+			})
+		}
+		for _, directive := range []string{"base-uri", "form-action"} {
+			if !hasCSPDirective(csp, directive) {
+				findings = append(findings, core.Finding{
+					RuleID:      "webscan-csp-missing-" + directive,
+					Severity:    core.SeverityMedium,
+					Category:    "security-headers",
+					Title:       "CSP missing " + directive,
+					Description: "CSP should explicitly restrict " + directive + " to reduce injection and form-submission risks",
+					Fix:         "Add " + directive + " 'self' (or a narrower policy appropriate for the application)",
 					Confidence:  0.85,
 				})
 			}
@@ -347,12 +404,13 @@ func checkTLSDeep(target *url.URL) []core.Finding {
 		return findings
 	}
 	// TLS handshake to inspect cert
-	host := target.Host
-	if !strings.Contains(host, ":") {
-		host = host + ":443"
+	port := target.Port()
+	if port == "" {
+		port = "443"
 	}
+	host := net.JoinHostPort(target.Hostname(), port)
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, "tcp", host, &tls.Config{
-		InsecureSkipVerify: true,
+		ServerName: target.Hostname(),
 	})
 	if err != nil {
 		findings = append(findings, core.Finding{
@@ -736,10 +794,7 @@ func checkExposedFiles(target *url.URL, client *http.Client) []core.Finding {
 		// For security.txt we want opposite: missing is info, present is not a finding
 		isSecurityTxt := p.path == "/.well-known/security.txt"
 		urlStr := base + p.path
-		resp, body := fetchURL(urlStr, &http.Client{
-			Timeout:   5 * time.Second,
-			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
-		})
+		resp, body := fetchURL(urlStr, client)
 		if resp == nil {
 			continue
 		}
@@ -839,12 +894,9 @@ func checkClickjacking(resp *http.Response) []core.Finding {
 func checkOpenRedirect(target *url.URL, client *http.Client) []core.Finding {
 	var findings []core.Finding
 	// Do not follow redirects
-	noRedir := &http.Client{
-		Timeout:   5 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+	noRedir := *client
+	noRedir.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
 	}
 	payloads := []string{
 		"https://evil.com",
@@ -860,7 +912,7 @@ func checkOpenRedirect(target *url.URL, client *http.Client) []core.Finding {
 			q := u2.Query()
 			q.Set(param, payload)
 			u2.RawQuery = q.Encode()
-			resp, _ := fetchURL(u2.String(), noRedir)
+			resp, _ := fetchURL(u2.String(), &noRedir)
 			if resp == nil {
 				continue
 			}
@@ -1081,11 +1133,9 @@ func checkHTTPSRedirect(target *url.URL, client *http.Client) []core.Finding {
 	if target.RawQuery != "" {
 		httpURL += "?" + target.RawQuery
 	}
-	noRedir := &http.Client{
-		Timeout: 5 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+	noRedir := *client
+	noRedir.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
 	}
 	resp, err := noRedir.Get(httpURL)
 	if err != nil || resp == nil {

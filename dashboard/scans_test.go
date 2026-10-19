@@ -61,7 +61,7 @@ func TestScanDetailOwnerAdminAnon(t *testing.T) {
 	get := func(id, cookie string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest("GET", "/api/v1/scans/"+id, nil)
 		if cookie != "" {
-			req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+			req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 		}
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)

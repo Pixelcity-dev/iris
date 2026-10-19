@@ -189,9 +189,13 @@ func jsonReq(t *testing.T, mux *http.ServeMux, method, target, cookie, body stri
 		rdr = strings.NewReader(body)
 	}
 	req := httptest.NewRequest(method, target, rdr)
+	req.Host = "dashboard.example.test"
 	req.Header.Set("Content-Type", "application/json")
+	if cookie != "" && method != http.MethodGet && method != http.MethodHead {
+		req.Header.Set("Origin", "https://dashboard.example.test")
+	}
 	if cookie != "" {
-		req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+		req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 	}
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)

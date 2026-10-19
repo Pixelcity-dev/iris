@@ -76,6 +76,7 @@ const actions = {
   'admin-clear-filter': () => clearAdminFilter(),
 
   // misc
+  'sign-out': () => fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }).then((res) => res.json()).then(({ logout_url }) => { location.href = logout_url; }),
   'copy-cmd': (el) => copyCmd(el),
   'select-text': (el) => el.select(),
 };

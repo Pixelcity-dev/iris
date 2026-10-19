@@ -34,16 +34,30 @@ func (s *DASTScanner) SupportedTargets() []core.TargetKind {
 }
 
 func (s *DASTScanner) Scan(ctx context.Context, target core.Target, rules []core.Rule) ([]core.Finding, error) {
+	_ = ctx
+	_ = rules
 	var findings []core.Finding
 	targetURL, err := url.Parse(target.URI)
 	if err != nil {
 		return nil, fmt.Errorf("invalid target URL: %w", err)
 	}
+	if (targetURL.Scheme != "http" && targetURL.Scheme != "https") || targetURL.Hostname() == "" || targetURL.Opaque != "" {
+		return nil, fmt.Errorf("dast requires an absolute http:// or https:// URL with a hostname")
+	}
+	if targetURL.User != nil {
+		return nil, fmt.Errorf("dast URLs must not include credentials")
+	}
 
 	client := &http.Client{
 		Timeout: 15 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 3 || !sameOrigin(targetURL, req.URL) {
+				return http.ErrUseLastResponse
+			}
+			return nil
 		},
 	}
 
@@ -67,6 +81,22 @@ func (s *DASTScanner) Scan(ctx context.Context, target core.Target, rules []core
 	findings = append(findings, checkHTTPMethods(targetURL, client)...)
 
 	return findings, nil
+}
+
+func sameOrigin(target, next *url.URL) bool {
+	if !strings.EqualFold(target.Scheme, next.Scheme) || !strings.EqualFold(target.Hostname(), next.Hostname()) {
+		return false
+	}
+	port := func(u *url.URL) string {
+		if p := u.Port(); p != "" {
+			return p
+		}
+		if strings.EqualFold(u.Scheme, "https") {
+			return "443"
+		}
+		return "80"
+	}
+	return port(target) == port(next)
 }
 
 func checkSecurityHeaders(targetURL *url.URL, resp *http.Response) []core.Finding {
@@ -182,7 +212,15 @@ func checkTLSDeep(targetURL *url.URL) []core.Finding {
 	if !strings.Contains(host, ":") {
 		host += ":443"
 	}
-	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, "tcp", host, &tls.Config{InsecureSkipVerify: true})
+	port := targetURL.Port()
+	if port == "" {
+		port = "443"
+	}
+	host = net.JoinHostPort(targetURL.Hostname(), port)
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, "tcp", host, &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		ServerName: targetURL.Hostname(),
+	})
 	if err != nil {
 		findings = append(findings, core.Finding{
 			RuleID: "dast-tls-handshake-fail", Severity: core.SeverityHigh, Category: "transport-security",

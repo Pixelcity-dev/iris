@@ -277,8 +277,9 @@ func TestTrendRouteBeatsIDWildcard(t *testing.T) {
 	mux.HandleFunc("GET /api/v1/scans/trend", srv.handleTrend)
 	mux.HandleFunc("GET /api/v1/scans/{id}", srv.handleScanGet)
 
-	req := httptest.NewRequest("GET", "/api/v1/scans/trend?days=7", nil)
-	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookieFor(t, srv, "u-owner", "alice", nil)})
+	req := httptest.NewRequest("GET", "https://dashboard.example.test/api/v1/scans/trend?days=7", nil)
+	req.Host = "dashboard.example.test"
+	req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookieFor(t, srv, "u-owner", "alice", nil)})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	if rec.Code != 200 {

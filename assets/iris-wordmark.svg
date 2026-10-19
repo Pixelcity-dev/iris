@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 104" role="img" aria-labelledby="title desc">
+  <title id="title">Iris security</title>
+  <desc id="desc">Iris shield and radar mark beside the Iris wordmark.</desc>
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#76a9ff"/>
+      <stop offset="1" stop-color="#9675ff"/>
+    </linearGradient>
+    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#55e3bd"/>
+      <stop offset="1" stop-color="#55e3bd" stop-opacity=".16"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(10 8)">
+    <rect width="88" height="88" rx="24" fill="#101521" stroke="#273247" stroke-width="2"/>
+    <path d="M44 12 20 22v19c0 17 10 29 24 37 14-8 24-20 24-37V22L44 12Z" fill="#111b2a" stroke="url(#shield)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M44 27a17 17 0 0 1 17 17H44V27Z" fill="url(#sweep)"/>
+    <path d="m30 57 14-13 17-17" fill="none" stroke="#55e3bd" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="33" cy="33" r="2.5" fill="#76a9ff"/>
+    <circle cx="56" cy="57" r="2.5" fill="#76a9ff"/>
+  </g>
+  <text x="120" y="62" fill="#f3f6fb" font-family="Inter,Manrope,Arial,sans-serif" font-size="52" font-weight="750" letter-spacing="-2">iris</text>
+  <text x="122" y="85" fill="#9ba9bd" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="3.2">SECURITY PLATFORM</text>
+</svg>

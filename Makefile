@@ -60,11 +60,11 @@ clean:
 
 .PHONY: docker-build
 docker-build:
-	docker build -t deepsec:$(VERSION) -f docker/Dockerfile .
+	docker build -t iris:$(VERSION) -f docker/Dockerfile .
 
 .PHONY: docker-run
 docker-run:
-	docker run --rm deepsec:$(VERSION)
+	docker run --rm iris:$(VERSION)
 
 .PHONY: init
 init:

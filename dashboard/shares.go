@@ -249,8 +249,10 @@ func (s *server) shareURL(r *http.Request, token string) string {
 	if r.TLS == nil && !s.cfg.CookieSecure {
 		scheme = "http"
 	}
-	if xf := r.Header.Get("X-Forwarded-Proto"); xf != "" {
-		scheme = xf
+	if xf := r.Header.Get("X-Forwarded-Proto"); xf == "https" {
+		scheme = "https"
+	} else if xf != "" {
+		scheme = "http"
 	}
 	host := r.Host
 	return scheme + "://" + host + "/s/" + token

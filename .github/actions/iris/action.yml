@@ -1,5 +1,5 @@
 name: 'Iris Security Scan'
-description: 'Run Iris security scanner on your codebase'
+description: 'Run Iris security checks on a repository and write findings to a supported report format.'
 author: 'Pixelcity'
 
 branding:
@@ -8,15 +8,15 @@ branding:
 
 inputs:
   scan-type:
-    description: 'Type of scan to run (sast, sca, secrets, iac, container, dast, network, license)'
+    description: 'Comma-separated scanners to run (sast, sca, secrets, iac, container, dast, webscan, network, license, format)'
     required: false
     default: 'sast,sca,secrets'
   severity:
-    description: 'Minimum severity level to report'
+    description: 'Minimum finding severity to include (info, low, medium, high, critical)'
     required: false
     default: 'low'
   format:
-    description: 'Output format (sarif, json, table)'
+    description: 'Output format (sarif, json, table, html, csv; check iris scan --help for additional formats)'
     required: false
     default: 'sarif'
   output:
@@ -24,7 +24,7 @@ inputs:
     required: false
     default: 'iris-results.sarif'
   upload-code-scanning:
-    description: 'Upload results to GitHub Code Scanning'
+    description: 'Upload the SARIF report to GitHub Code Scanning (requires SARIF output and permissions)'
     required: false
     default: 'false'
 
@@ -34,7 +34,7 @@ runs:
     - name: Install Iris
       shell: bash
       run: |
-        curl -sSL https://iris.dev/install.sh | sh
+        curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
 
     - name: Run Iris Scan
       shell: bash
