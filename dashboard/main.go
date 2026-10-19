@@ -597,12 +597,15 @@ func (s *server) handleScansGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // requestIdentity resolves the caller from a bearer token (CLI) or the
-// ds_session cookie (browser). Used by read APIs shared by both.
+// iris_session cookie (browser). Used by read APIs shared by both.
 func (s *server) requestIdentity(r *http.Request) (*session, error) {
 	if strings.TrimSpace(r.Header.Get("Authorization")) != "" {
 		return s.bearerIdentity(r)
 	}
-	c, err := r.Cookie("ds_session")
+	if err := verifyBrowserRequest(r); err != nil {
+		return nil, err
+	}
+	c, err := r.Cookie("iris_session")
 	if err != nil {
 		return nil, errors.New("not logged in")
 	}
@@ -699,6 +702,48 @@ func randHex(n int) string {
 	return string(out)
 }
 
+// verifyBrowserRequest rejects cross-origin requests authenticated by a browser cookie.
+func verifyBrowserRequest(r *http.Request) error {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+		return nil
+	}
+	if strings.TrimSpace(r.Header.Get("Authorization")) != "" {
+		return nil
+	}
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return errors.New("Origin header required for browser session requests")
+	}
+	u, err := url.Parse(origin)
+	if err != nil || u.Host == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+		return errors.New("invalid request Origin")
+	}
+	if !strings.EqualFold(u.Host, r.Host) || u.Scheme != "https" {
+		return errors.New("cross-origin browser session request rejected")
+	}
+	return nil
+}
+
+// securityHeaders adds defense-in-depth browser security headers to every response.
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		h.Set("Cross-Origin-Opener-Policy", "same-origin")
+		h.Set("Cross-Origin-Resource-Policy", "same-origin")
+		h.Set("Content-Security-Policy", "default-src 'self'; base-uri 'self'; form-action 'self' https://id.pixelcity.dev https://payments.pixelcity.dev; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://dashboard.pixelcity.dev https://pixelcity.dev; font-src 'self'; connect-src 'self' https://dashboard.pixelcity.dev; upgrade-insecure-requests")
+		h.Set("X-XSS-Protection", "0")
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			h.Set("Cache-Control", "no-store")
+			h.Set("Pragma", "no-cache")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // accessLog emits one line per request: method, path, status, duration.
 // Paths only (no query strings) so OAuth codes never reach the log.
 func accessLog(next http.Handler) http.Handler {
@@ -757,7 +802,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/login", srv.handleLogin)
 	mux.HandleFunc("GET /auth/callback", srv.handleCallback)
-	mux.HandleFunc("GET /auth/logout", srv.handleLogout)
+	mux.HandleFunc("POST /auth/logout", srv.handleLogout)
 	mux.HandleFunc("GET /api/v1/healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]interface{}{"status": "ok", "version": appVersion})
 	})
@@ -798,12 +843,20 @@ func main() {
 
 	log.Printf("Iris dashboard listening on %s (issuer=%s, redirect=%s)",
 		cfg.Listen, cfg.Issuer, cfg.RedirectURL)
-	log.Fatal(http.ListenAndServe(cfg.Listen, accessLog(mux)))
+	log.Fatal(http.ListenAndServe(cfg.Listen, securityHeaders(accessLog(mux))))
 }
 
 func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	state, _ := randBytes(16)
-	verifier, _ := randBytes(32)
+	state, err := randBytes(16)
+	if err != nil {
+		http.Error(w, "could not create login state", http.StatusInternalServerError)
+		return
+	}
+	verifier, err := randBytes(32)
+	if err != nil {
+		http.Error(w, "could not create login verifier", http.StatusInternalServerError)
+		return
+	}
 	challenge := s256Challenge(verifier)
 
 	http.SetCookie(w, &http.Cookie{
@@ -903,27 +956,35 @@ func (s *server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name: "ds_session", Value: val, Path: "/",
+		Name: "iris_session", Value: val, Path: "/",
 		MaxAge: 12 * 3600, HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode,
 	})
 	// clear oauth cookies
-	http.SetCookie(w, &http.Cookie{Name: "oauth_state", Value: "", MaxAge: -1, Path: "/"})
-	http.SetCookie(w, &http.Cookie{Name: "oauth_verifier", Value: "", MaxAge: -1, Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: "oauth_state", Value: "", MaxAge: -1, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: "oauth_verifier", Value: "", MaxAge: -1, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	if c, err := r.Cookie("ds_session"); err == nil {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := verifyBrowserRequest(r); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	if c, err := r.Cookie("iris_session"); err == nil {
 		if sess, verr := verifySession([]byte(c.Value), s.cfg.SessionSecret); verr == nil {
 			s.tokens.Delete(sess.Sub)
 		}
 	}
-	http.SetCookie(w, &http.Cookie{Name: "ds_session", Value: "", MaxAge: -1, Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: "iris_session", Value: "", MaxAge: -1, Path: "/", HttpOnly: true, Secure: s.cfg.CookieSecure, SameSite: http.SameSiteLaxMode})
 	root := strings.TrimSuffix(s.cfg.RedirectURL, "/auth/callback")
 	q := url.Values{}
 	q.Set("post_logout_redirect_uri", root+"/")
 	q.Set("client_id", s.cfg.ClientID)
-	http.Redirect(w, r, s.dsc.LogoutEp+"?"+q.Encode(), http.StatusFound)
+	writeJSON(w, map[string]string{"logout_url": s.dsc.LogoutEp + "?" + q.Encode()})
 }
 
 func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
@@ -1511,7 +1572,7 @@ type sessKey struct{}
 
 func (s *server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c, err := r.Cookie("ds_session")
+		c, err := r.Cookie("iris_session")
 		if err != nil {
 			writeErr(w, http.StatusUnauthorized, errors.New("not logged in"))
 			return

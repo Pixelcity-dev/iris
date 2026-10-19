@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 598" role="img" aria-labelledby="title desc">
+  <title id="title">Iris sample security scan</title>
+  <desc id="desc">Illustrative terminal output showing a synthetic scan with one medium-severity credential finding.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1018"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#65e1c1"/>
+      <stop offset="1" stop-color="#83a8ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="1038" height="596" rx="20" fill="url(#bg)" stroke="#293449" stroke-width="2"/>
+  <path d="M20 1h1000a19 19 0 0 1 19 19v42H1V20A19 19 0 0 1 20 1Z" fill="#171f2c"/>
+  <circle cx="29" cy="31" r="6" fill="#ff6b6b"/><circle cx="51" cy="31" r="6" fill="#f7c66a"/><circle cx="73" cy="31" r="6" fill="#5bd3a7"/>
+  <text x="520" y="37" text-anchor="middle" fill="#a8b4c6" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">iris scan ./demo --scanner sast,secrets --no-upload</text>
+  <rect x="36" y="78" width="968" height="3" rx="2" fill="url(#accent)" opacity=".85"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">
+    <text x="44" y="119" fill="#d9e2ef">$ iris scan ./demo --scanner sast,secrets --no-upload</text>
+    <text x="44" y="157" fill="#7ddbc0">Iris v1.2.0 — Scanning ./demo</text>
+    <text x="44" y="187" fill="#9ba9bd">  secrets  →  1 finding</text>
+    <text x="44" y="213" fill="#9ba9bd">  sast     →  clean</text>
+    <text x="44" y="255" fill="#7ddbc0">Scan completed in 0.00 seconds</text>
+    <text x="44" y="283" fill="#d9e2ef">Found 1 issue</text>
+    <text x="44" y="330" fill="#8291a7">SUMMARY</text>
+    <text x="44" y="359" fill="#b8c5d8">Risk score</text><text x="220" y="359" fill="#f4c66a">3 · LOW</text>
+    <text x="44" y="386" fill="#b8c5d8">Findings</text><text x="220" y="386" fill="#f4c66a">1 MEDIUM</text>
+    <rect x="44" y="410" width="952" height="1" fill="#2a3445"/>
+    <text x="44" y="443" fill="#f4c66a">[MEDIUM] Generic Secret</text>
+    <text x="44" y="470" fill="#9ba9bd">File: config.go:3  ·  Rule: secrets-generic-secret</text>
+    <text x="44" y="499" fill="#d9e2ef">Potential Generic Secret detected</text>
+    <text x="44" y="528" fill="#9ba9bd">Fix: Move credentials to environment variables or a secrets manager.</text>
+    <text x="44" y="568" fill="#8291a7">Example scan only · synthetic placeholder, no real secrets</text>
+  </g>
+</svg>

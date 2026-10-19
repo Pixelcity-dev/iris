@@ -1,7 +1,7 @@
 package main
 
 // Server-side Keycloak token store, keyed by session subject.
-// The ds_session cookie carries identity only — browsers silently drop
+// The iris_session cookie carries identity only — browsers silently drop
 // cookies over 4096 bytes, and embedding access/refresh tokens pushed
 // sessions past that limit (login appeared to succeed but never stuck).
 // Tokens persist to TOKENS_FILE (data volume) so restarts keep account

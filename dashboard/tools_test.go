@@ -50,8 +50,12 @@ func seedReportScan(t *testing.T, srv *server, id, sub, user, report string) {
 func doReq(t *testing.T, mux *http.ServeMux, method, target, cookie string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(method, target, nil)
+	req.Host = "dashboard.example.test"
+	if cookie != "" && method != http.MethodGet && method != http.MethodHead {
+		req.Header.Set("Origin", "https://dashboard.example.test")
+	}
 	if cookie != "" {
-		req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+		req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 	}
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
@@ -314,8 +318,11 @@ func TestBulkDeleteOwnership(t *testing.T) {
 	cookie := cookieFor(t, srv, "u-owner", "alice", nil)
 	body := `{"ids":["bd-mine","bd-yours","missing"]}`
 	req := httptest.NewRequest("POST", "/api/v1/scans/bulk-delete", strings.NewReader(body))
+	req.Host = "dashboard.example.test"
+	req.Header.Set("Origin", "https://dashboard.example.test")
 	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+	req.Header.Set("Origin", "https://dashboard.example.test")
+	req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	if rec.Code != 200 {
@@ -337,7 +344,9 @@ func TestBulkDeleteOwnership(t *testing.T) {
 	}
 	// Bad body.
 	req = httptest.NewRequest("POST", "/api/v1/scans/bulk-delete", strings.NewReader(`{}`))
-	req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+	req.Host = "dashboard.example.test"
+	req.Header.Set("Origin", "https://dashboard.example.test")
+	req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {

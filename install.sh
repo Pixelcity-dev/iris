@@ -11,19 +11,19 @@ set -e
 #   sh -c "$(curl -fsSL https://cdn.pixelcity.dev/iris/install.sh)"
 #
 # Custom version / dir:
-#   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | DEEPSEC_VERSION=v1.2.0 sh
+#   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | IRIS_VERSION=v1.2.0 sh
 #   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | INSTALL_DIR=/usr/local/bin sh
 #
 # Other methods:
-#   go install github.com/Pixelcity-dev/Deepsec/cmd/iris@latest
+#   go install github.com/Pixelcity-dev/iris/cmd/iris@latest
 #   docker pull pixelcity/iris:latest && docker run --rm pixelcity/iris --help
 #   brew install pixelcity/tap/iris  (coming soon)
 
-DEEPSEC_VERSION="${DEEPSEC_VERSION:-v1.2.0}"
+IRIS_VERSION="${IRIS_VERSION:-v1.2.0}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 BASE_URL="${BASE_URL:-https://cdn.pixelcity.dev/iris/releases}"
 FALLBACK_URL="https://cdn.pixelcity.top/iris/releases"
-GITHUB_RELEASES="https://github.com/Pixelcity-dev/Deepsec/releases/download"
+GITHUB_RELEASES="https://github.com/Pixelcity-dev/iris/releases/download"
 
 # colors (auto-disable if not tty)
 if [ -t 1 ]; then
@@ -45,7 +45,7 @@ for arg in "$@"; do
       echo "Usage: curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh"
       echo ""
       echo "Env:"
-      echo "  DEEPSEC_VERSION=v1.2.0   version to install (or 'latest')"
+      echo "  IRIS_VERSION=v1.2.0   version to install (or 'latest')"
       echo "  INSTALL_DIR=\$HOME/.local/bin   install directory"
       echo "  BASE_URL=https://cdn.pixelcity.dev/iris/releases override"
       echo "Args:"
@@ -62,7 +62,7 @@ for arg in "$@"; do
       exit 0
       ;;
     --version)
-      echo "$DEEPSEC_VERSION"
+      echo "$IRIS_VERSION"
       exit 0
       ;;
     --dry-run)
@@ -77,7 +77,7 @@ echo -e "${CYAN} |  _ \\  ___  ___ _   _ _ __ ___|  _ \\|  _ \\ \\ V / |${NC}"
 echo -e "${CYAN} | | | |/ _ \\/ __| | | | '__/ __| | | | | | | | |  |${NC}"
 echo -e "${CYAN} | |_| |  __/\\__ \\ |_| | | | (__| |_| | |_| | | |  |${NC}"
 echo -e "${CYAN} |____/ \\___||___/\\__,_|_|  \\___|____/|____/ |_|__|${NC}"
-echo -e "${CYAN}                                     ${DEEPSEC_VERSION}${NC}"
+echo -e "${CYAN}                                     ${IRIS_VERSION}${NC}"
 echo ""
 echo -e "  ${DIM}All-in-one Cybersecurity CLI — SAST/SCA/Secrets/IaC/Container/DAST/Network/License + WebScan${NC}"
 echo ""
@@ -93,23 +93,33 @@ check_deps() {
 }
 
 resolve_latest() {
-  if [ "$DEEPSEC_VERSION" = "latest" ] || [ "$DEEPSEC_VERSION" = "stable" ]; then
+  if [ "$IRIS_VERSION" = "latest" ] || [ "$IRIS_VERSION" = "stable" ]; then
     info "Resolving latest version..."
-    # try CDN VERSION file, then fallback to v1.2.0
-    LATEST_URL="$BASE_URL/../VERSION"
-    # Try to fetch latest version string; ignore errors
+    # Resolve the latest symlinked release first, then use VERSION metadata.
+    LATEST_URL="$BASE_URL/latest/VERSION"
     RESOLVED=""
     if command -v curl >/dev/null 2>&1; then
       RESOLVED=$(curl -fsSL "$LATEST_URL" 2>/dev/null | tr -d ' \n\r' | head -c 20 || true)
+      if [ -z "$RESOLVED" ]; then
+        RESOLVED=$(curl -fsSL "$BASE_URL/../VERSION" 2>/dev/null | tr -d ' \n\r' | head -c 20 || true)
+      fi
     elif command -v wget >/dev/null 2>&1; then
       RESOLVED=$(wget -qO- "$LATEST_URL" 2>/dev/null | tr -d ' \n\r' | head -c 20 || true)
+      if [ -z "$RESOLVED" ]; then
+        RESOLVED=$(wget -qO- "$BASE_URL/../VERSION" 2>/dev/null | tr -d ' \n\r' | head -c 20 || true)
+      fi
     fi
-    if echo "$RESOLVED" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
-      DEEPSEC_VERSION="$RESOLVED"
-      info "Latest is $DEEPSEC_VERSION"
+    if echo "$RESOLVED" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
+      case "$RESOLVED" in v*) IRIS_VERSION="$RESOLVED" ;; *) IRIS_VERSION="v$RESOLVED" ;; esac
+      info "Latest is $IRIS_VERSION"
     else
-      DEEPSEC_VERSION="v1.2.0"
-      warn "Could not resolve latest, using $DEEPSEC_VERSION"
+      if command -v curl >/dev/null 2>&1; then
+        IRIS_VERSION="$(curl -fsSL "${BASE_URL%/releases}/VERSION" 2>/dev/null | tr -d ' \n\r' || true)"
+      elif command -v wget >/dev/null 2>&1; then
+        IRIS_VERSION="$(wget -qO- "${BASE_URL%/releases}/VERSION" 2>/dev/null | tr -d ' \n\r' || true)"
+      fi
+      case "$IRIS_VERSION" in v[0-9]*) ;; [0-9]*) IRIS_VERSION="v$IRIS_VERSION" ;; *) IRIS_VERSION="v1.2.0" ;; esac
+      warn "Could not resolve latest, using $IRIS_VERSION"
     fi
   fi
 }
@@ -165,12 +175,15 @@ download_file() {
 }
 
 install_binary() {
-  info "Downloading Iris ${DEEPSEC_VERSION} for ${DETECTED}..."
+  if ! printf '%s' "$IRIS_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
+    error "Invalid IRIS_VERSION '$IRIS_VERSION'; expected a version like v1.2.0."
+  fi
+  info "Downloading Iris ${IRIS_VERSION} for ${DETECTED}..."
 
   # primary and fallback URLs
-  PRIMARY_URL="${BASE_URL}/${DEEPSEC_VERSION}/iris-${DETECTED}"
-  FALLBACK_PRIMARY="${FALLBACK_URL}/${DEEPSEC_VERSION}/iris-${DETECTED}"
-  GITHUB_URL="${GITHUB_RELEASES}/${DEEPSEC_VERSION}/iris-${DETECTED}"
+  PRIMARY_URL="${BASE_URL}/${IRIS_VERSION}/iris-${DETECTED}"
+  FALLBACK_PRIMARY="${FALLBACK_URL}/${IRIS_VERSION}/iris-${DETECTED}"
+  GITHUB_URL="${GITHUB_RELEASES}/${IRIS_VERSION}/iris-${DETECTED}"
   [ "$PLATFORM" = "windows" ] && PRIMARY_URL="${PRIMARY_URL}.exe" && FALLBACK_PRIMARY="${FALLBACK_PRIMARY}.exe" && GITHUB_URL="${GITHUB_URL}.exe"
 
   mkdir -p "$INSTALL_DIR"
@@ -209,9 +222,9 @@ install_binary() {
     - $GITHUB_URL
   Check your network or try manual download:
     curl -fsSL $PRIMARY_URL -o iris && chmod +x iris && sudo mv iris /usr/local/bin/
-  Or via go: go install github.com/Pixelcity-dev/Deepsec/cmd/iris@latest
+  Or via go: go install github.com/Pixelcity-dev/iris/cmd/iris@latest
   Or docker: docker run --rm pixelcity/iris --help
-  Issues: https://github.com/Pixelcity-dev/Deepsec/issues"
+  Issues: https://github.com/Pixelcity-dev/iris/issues"
   fi
 
   if [ -n "$DRY_RUN" ]; then
@@ -219,35 +232,38 @@ install_binary() {
     exit 0
   fi
 
-  # Optional sha256 check if available on CDN (iris-XXX.sha256)
+  # Require a SHA-256 checksum from the same release source before installing.
   SHA_URL="${URL_TO_TRY}.sha256"
-  if download_file "$SHA_URL" "$TEMP_SHA" 2>/dev/null; then
-    if command -v sha256sum >/dev/null 2>&1; then
-      EXPECTED=$(awk '{print $1}' "$TEMP_SHA" | head -n1)
-      ACTUAL=$(sha256sum "$TEMP_FILE" | awk '{print $1}')
-      if [ "$EXPECTED" = "$ACTUAL" ]; then
-        success "Checksum verified (sha256)"
-      else
-        warn "Checksum mismatch! expected $EXPECTED got $ACTUAL — continuing anyway"
-      fi
-    elif command -v shasum >/dev/null 2>&1; then
-      EXPECTED=$(awk '{print $1}' "$TEMP_SHA" | head -n1)
-      ACTUAL=$(shasum -a 256 "$TEMP_FILE" | awk '{print $1}')
-      if [ "$EXPECTED" = "$ACTUAL" ]; then
-        success "Checksum verified (sha256)"
-      else
-        warn "Checksum mismatch! expected $EXPECTED got $ACTUAL — continuing anyway"
-      fi
-    fi
+  if ! download_file "$SHA_URL" "$TEMP_SHA"; then
+    rm -f "$TEMP_FILE" "$TEMP_SHA"
+    error "No SHA-256 checksum available for $URL_TO_TRY; refusing to install an unverifiable binary."
   fi
+  EXPECTED=$(awk '{print $1}' "$TEMP_SHA" | head -n1 | tr '[:upper:]' '[:lower:]')
+  if ! printf '%s' "$EXPECTED" | grep -Eq '^[0-9a-f]{64}$'; then
+    rm -f "$TEMP_FILE" "$TEMP_SHA"
+    error "Invalid SHA-256 checksum metadata from $SHA_URL; refusing to install."
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    ACTUAL=$(sha256sum "$TEMP_FILE" | awk '{print $1}')
+  elif command -v shasum >/dev/null 2>&1; then
+    ACTUAL=$(shasum -a 256 "$TEMP_FILE" | awk '{print $1}')
+  else
+    rm -f "$TEMP_FILE" "$TEMP_SHA"
+    error "sha256sum or shasum is required to verify the downloaded binary."
+  fi
+  if [ "$EXPECTED" != "$ACTUAL" ]; then
+    rm -f "$TEMP_FILE" "$TEMP_SHA"
+    error "SHA-256 checksum mismatch for $URL_TO_TRY; refusing to install."
+  fi
+  success "Checksum verified (sha256)"
   rm -f "$TEMP_SHA"
 
   # Verify it's not HTML error page
   if head -c 200 "$TEMP_FILE" | grep -qi "<!DOCTYPE\|<html"; then
     rm -f "$TEMP_FILE"
-    error "Downloaded file is HTML (likely 404). Release $DEEPSEC_VERSION may not exist for $DETECTED.
+    error "Downloaded file is HTML (likely 404). Release $IRIS_VERSION may not exist for $DETECTED.
   Available: https://cdn.pixelcity.dev/iris/releases/
-  GitHub: https://github.com/Pixelcity-dev/Deepsec/releases"
+  GitHub: https://github.com/Pixelcity-dev/iris/releases"
   fi
 
   # Verify executable magic if 'file' exists
@@ -335,7 +351,7 @@ verify_install() {
     echo ""
     echo -e "  ${GREEN}Location:${NC} ${INSTALL_DIR}/${BINARY_NAME}"
     if command -v "${INSTALL_DIR}/${BINARY_NAME}" >/dev/null 2>&1; then
-      VER=$("${INSTALL_DIR}/${BINARY_NAME}" --version 2>/dev/null || "${INSTALL_DIR}/${BINARY_NAME}" version 2>/dev/null || echo "$DEEPSEC_VERSION")
+      VER=$("${INSTALL_DIR}/${BINARY_NAME}" --version 2>/dev/null || "${INSTALL_DIR}/${BINARY_NAME}" version 2>/dev/null || echo "$IRIS_VERSION")
       echo -e "  ${GREEN}Version:${NC}  $VER"
     fi
     echo ""
@@ -347,7 +363,7 @@ verify_install() {
     echo -e "    iris init                            ${DIM}# Create .iris.yaml${NC}"
     echo -e "    iris --help                          ${DIM}# All commands${NC}"
     echo ""
-    echo -e "  ${DIM}Docs:     https://github.com/Pixelcity-dev/Deepsec${NC}"
+    echo -e "  ${DIM}Docs:     https://github.com/Pixelcity-dev/iris${NC}"
     echo -e "  ${DIM}Releases: https://cdn.pixelcity.dev/iris/releases/${NC}"
     echo -e "  ${DIM}CDN:      https://cdn.pixelcity.dev/iris/install.sh${NC}"
     echo -e "  ${DIM}Alt CDN:  https://cdn.pixelcity.top/iris/install.sh${NC}"
@@ -361,7 +377,7 @@ verify_install() {
   else
     warn "Binary installed but not executable. Check ${INSTALL_DIR}/${BINARY_NAME}"
   fi
-  echo -e "${DIM}Tip: DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh  # always latest${NC}"
+  echo -e "${DIM}Tip: IRIS_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh  # always latest${NC}"
   echo ""
 }
 

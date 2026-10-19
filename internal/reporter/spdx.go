@@ -36,7 +36,7 @@ type SPDXPackage struct {
 	VersionInfo               string            `json:"versionInfo,omitempty"`
 	PackageFileName           string            `json:"packageFileName,omitempty"`
 	DownloadLocation          string            `json:"downloadLocation"`
-	filesAnalyzed             bool              `json:"filesAnalyzed"`
+	FilesAnalyzed             bool              `json:"filesAnalyzed"`
 	PackageChecksums          []SPDXChecksum    `json:"packageChecksums,omitempty"`
 	PackageExternalReferences []SPDXExternalRef `json:"packageExternalReferences,omitempty"`
 }

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 500" role="img" aria-labelledby="title desc">
+  <title id="title">Iris WebScan sample results</title>
+  <desc id="desc">Illustrative website audit summary for example.test, listing response-security checks.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111827"/><stop offset="1" stop-color="#0b1018"/></linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#65e1c1"/><stop offset="1" stop-color="#83a8ff"/></linearGradient>
+  </defs>
+  <rect x="1" y="1" width="1038" height="498" rx="20" fill="url(#bg)" stroke="#293449" stroke-width="2"/>
+  <path d="M20 1h1000a19 19 0 0 1 19 19v42H1V20A19 19 0 0 1 20 1Z" fill="#171f2c"/>
+  <circle cx="29" cy="31" r="6" fill="#ff6b6b"/><circle cx="51" cy="31" r="6" fill="#f7c66a"/><circle cx="73" cy="31" r="6" fill="#5bd3a7"/>
+  <text x="520" y="37" text-anchor="middle" fill="#a8b4c6" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">iris webscan https://example.test</text>
+  <rect x="36" y="78" width="968" height="3" rx="2" fill="url(#line)" opacity=".85"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16">
+    <text x="44" y="119" fill="#d9e2ef">$ iris webscan https://example.test --no-upload --no-color</text>
+    <text x="44" y="157" fill="#7ddbc0">Iris WebScan — deep website security audit</text>
+    <text x="44" y="185" fill="#9ba9bd">Target: https://example.test  ·  Read-only HTTP checks</text>
+    <text x="44" y="223" fill="#8291a7">CHECK AREA</text><text x="440" y="223" fill="#8291a7">RESULT</text>
+    <rect x="44" y="237" width="952" height="1" fill="#2a3445"/>
+    <text x="44" y="270" fill="#c5d0e0">TLS certificate validation</text><text x="440" y="270" fill="#5bd3a7">Verified</text>
+    <text x="44" y="302" fill="#c5d0e0">Redirect boundaries</text><text x="440" y="302" fill="#5bd3a7">Same-origin only</text>
+    <text x="44" y="334" fill="#c5d0e0">Security headers / CSP / cookies</text><text x="440" y="334" fill="#f4c66a">Review findings</text>
+    <text x="44" y="366" fill="#c5d0e0">CORS / exposed files / mixed content</text><text x="440" y="366" fill="#f4c66a">Review findings</text>
+    <rect x="44" y="390" width="952" height="1" fill="#2a3445"/>
+    <text x="44" y="426" fill="#7ddbc0">Use only on systems you own or are authorized to test.</text>
+    <text x="44" y="463" fill="#8291a7">Illustrative display · example.test is a reserved placeholder domain</text>
+  </g>
+</svg>

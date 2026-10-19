@@ -25,7 +25,7 @@ const PAL_ITEMS = [
   { t: 'Compare scans: pick A/B', k: 'D', run: () => { showSection('tools'); setTimeout(() => $('cmp-a').focus(), 120); } },
   { t: 'Refresh all data', k: 'R', run: () => { loadScans(); loadOverview(); loadTrend(); loadPlan(); if (state.me_admin) loadAdmin(); toast('Refreshed.'); } },
   { t: 'Toggle auto-refresh (20s)', k: 'A', run: () => toggleAutoRefresh() },
-  { t: 'Sign out', k: 'Q', run: () => { location.href = '/auth/logout'; } },
+  { t: 'Sign out', k: 'Q', run: () => fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }).then((res) => res.json()).then(({ logout_url }) => { location.href = logout_url; }) },
   { t: 'Admin: users', k: '', run: () => showSection('admin'), admin: true },
   { t: 'Admin: create user', k: '', run: () => { showSection('admin'); setTimeout(() => { if ($('admin-create').style.display === 'none') toggleCreateUser(); }, 120); }, admin: true },
   { t: 'Admin: all scans', k: '', run: () => { showSection('admin'); setTimeout(() => scrollToId('admin-scans-body'), 120); }, admin: true },

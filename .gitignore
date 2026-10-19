@@ -26,9 +26,9 @@ vendor/
 *.so
 *.dylib
 
-# DeepSec
-.deepsec/
-.deepsec.yaml
+# Iris
+.iris/
+.iris.yaml
 
 # Local build artifacts
 dashboard/dashboard

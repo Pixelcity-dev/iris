@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iris — Cyber Security Enterprise Tool | Docs</title>
-<meta name="description" content="Iris — Easy security checks for your code and websites. One tool, no setup, for any programming language and any website.">
+<title>Iris Security Scanner — Documentation</title>
+<meta name="description" content="Documentation for Iris, an open-source CLI for scanning source code, dependencies, infrastructure, containers, and websites.">
 <style>
 :root{--bg:#0a0a0f;--card:#11111b;--border:#1e1e2e;--text:#cdd6f4;--muted:#9ca3af;--accent:#89b4fa;--accent2:#74c7ec;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--radius:16px;--code:#181825}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -53,10 +53,10 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 </head>
 <body>
 <div class="topbar">
-  <div class="brand">⬢ <b>DEEPSEC</b> <span style="color:var(--muted);font-weight:600">DOCS</span></div>
+  <div class="brand"><img src="/assets/logo.svg" width="30" height="30" alt="" aria-hidden="true"> <b>IRIS</b> <span style="color:var(--muted);font-weight:600">DOCS</span></div>
   <div class="nav">
     <a href="https://pixelcity.top/docs/iris" class="active">Docs</a>
-    <a href="https://github.com/Pixelcity-dev/Deepsec">GitHub</a>
+    <a href="https://github.com/Pixelcity-dev/iris">GitHub</a>
     <a href="https://cdn.pixelcity.dev/iris/install.sh">Install</a>
     <a href="https://pixelcity.top">PixelCity</a>
   </div>
@@ -65,24 +65,24 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 <div class="container">
 
   <div class="hero">
-    <div class="badge">⬢ Cyber Security Enterprise Tool • v1.1.0 • One Binary, No Setup</div>
-    <h1>Security checks<br><span>made simple</span></h1>
-    <p class="subtitle">Iris checks your <b>code</b> and <b>websites</b> for security problems. Works with any programming language and any website. No complicated setup.</p>
+    <div class="badge">Open-source security scanning CLI • Go</div>
+    <h1>Security checks<br><span>for your workflow</span></h1>
+    <p class="subtitle">Iris helps developers identify potential issues in source code, dependencies, infrastructure, containers, and websites, then export findings for review and CI.</p>
     <div class="cta">
       <a class="btn btn-primary" href="#install">Install in 5 seconds →</a>
-      <a class="btn btn-ghost" href="https://github.com/Pixelcity-dev/Deepsec">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/Pixelcity-dev/iris">View on GitHub</a>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-top:14px">Free • Open Source • Works offline • Trusted by developers</p>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px">Apache 2.0 • Local CLI • JSON and SARIF reports</p>
   </div>
 
   <div class="card" style="border-left:4px solid var(--accent);background:linear-gradient(135deg,rgba(137,180,250,.08),transparent)">
-    <h3 style="margin:0 0 8px">What does Iris do? (In simple words)</h3>
-    <p style="font-size:14px;color:var(--muted)">Imagine you wrote a website or an app. Iris is like a <b>security inspector</b> that looks at your work and tells you: <em>"Hey, you left a door unlocked here", "This password is visible", "This website setting is not safe"</em>. It checks <b>your code</b> (like a spellchecker for security) and <b>your live website</b> (like testing if your doors and windows are locked).</p>
+    <h3 style="margin:0 0 8px">A focused security toolkit</h3>
+    <p style="font-size:14px;color:var(--muted)">Run targeted scanners from one CLI, review actionable findings, and integrate reports into your development workflow. Website scans make requests to their target; use them only where you have authorization. Results support investigation and do not certify that a system is secure.</p>
   </div>
 
   <section id="install" class="section">
     <h2>Install — 3 simple steps</h2>
-    <p class="lead">You only need to copy one line. Works on Linux, Mac, and Windows.</p>
+    <p class="lead">Install Iris on Linux, macOS, or Windows with the platform installer or Go.</p>
 
     <div class="steps">
       <div class="step">
@@ -101,19 +101,19 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
         <div class="num">3</div>
         <h3>Done!</h3>
         <p>Type <code>iris --help</code> to see it works.</p>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">No password needed, installs to ~/.local/bin</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px">Default install location: ~/.local/bin</p>
       </div>
     </div>
 
     <div class="highlight">
       <strong>Other ways to install (if you prefer):</strong><br>
-      <span style="font-size:13px">Go: <code>go install github.com/Pixelcity-dev/Deepsec/cmd/iris@latest</code> • Manual: <a href="https://cdn.pixelcity.dev/iris/releases/v1.1.0/">cdn.pixelcity.dev/iris/releases/</a></span>
+      <span style="font-size:13px">Go: <code>go install github.com/Pixelcity-dev/iris/cmd/iris@latest</code> • Releases: <a href="https://github.com/Pixelcity-dev/iris/releases">GitHub Releases</a></span>
     </div>
 
     <details style="margin-top:12px">
       <summary style="cursor:pointer;font-weight:700;font-size:13px">Need different version or folder? Click here</summary>
-      <div class="code">DEEPSEC_VERSION=latest curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
-INSTALL_DIR=/usr/local/bin curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+      <div class="code">curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | IRIS_VERSION=latest sh
+curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | INSTALL_DIR=/usr/local/bin sh
 curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help</div>
     </details>
   </section>
@@ -130,7 +130,7 @@ curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help</div>
     </div>
 
     <div class="card">
-      <h3>2. Check a website (any website)</h3>
+      <h3>2. Check an authorized website</h3>
       <p style="font-size:13px;color:var(--muted)">Iris visits the website and checks 20+ security settings.</p>
       <div class="code"><button class="copy" onclick="navigator.clipboard.writeText('iris webscan https://example.com')">Copy</button>iris webscan https://example.com</div>
       <p style="font-size:12px;color:var(--muted)">Try with your own site: <code>iris webscan https://pixelcity.top</code></p>
@@ -161,8 +161,8 @@ curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help</div>
     </table>
 
     <div class="card" style="border-left:4px solid var(--green)">
-      <h3>Any Language? Any Website?</h3>
-      <p style="font-size:13px;color:var(--muted)"><b>Any Language:</b> Go, Java, JavaScript, TypeScript, Python, Rust, PHP, Ruby, C/C++, C#, Kotlin, Swift — if you write code, we can check it.<br><b>Any Website:</b> Marketing pages, shops, SaaS apps, APIs — just give us the URL: <code>iris webscan https://any-site.com</code></p>
+      <h3>Language and target coverage</h3>
+      <p style="font-size:13px;color:var(--muted)">Iris includes language-aware checks for supported ecosystems and can audit websites you own or are explicitly authorized to test. Use <code>iris --help</code> and the scanner documentation for current coverage.</p>
     </div>
   </section>
 
@@ -183,8 +183,8 @@ curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help</div>
         <p style="font-size:13px;color:var(--muted)"><b>Exposed Files:</b> Is <code>/.env</code> or <code>/.git</code> visible? (very bad!)<br><b>Directory Listing:</b> Can people see your file list?<br><b>Security.txt:</b> Do you have a way for hackers to contact you?</p>
       </div>
       <div class="card">
-        <h3>Attacks (safe tests)</h3>
-        <p style="font-size:13px;color:var(--muted)"><b>Open Redirect:</b> Can someone redirect your users to evil.com?<br><b>XSS:</b> Can someone inject code into your page?<br><b>SQLi:</b> Does your site show database errors?<br>All tests are safe — we don't harm your site.</p>
+        <h3>Additional probes</h3>
+        <p style="font-size:13px;color:var(--muted)"><b>Redirect handling:</b> Inspect selected redirect parameters.<br><b>Reflection:</b> Check for a harmless marker in responses.<br><b>Error disclosure:</b> Look for database errors in selected responses.<br>These checks make requests and are not a substitute for a full authorized assessment.</p>
       </div>
     </div>
     <div class="code">iris webscan https://pixelcity.top --severity medium
@@ -252,7 +252,7 @@ filter:
   with: { sarif_file: results.sarif }</div>
     <h3>Pre-commit — Check before you commit</h3>
     <div class="code">repos:
-  - repo: https://github.com/Pixelcity-dev/Deepsec
+  - repo: https://github.com/Pixelcity-dev/iris
     rev: v1.1.0
     hooks: [{id: iris-secrets}, {id: iris-sast}]</div>
   </section>
@@ -266,11 +266,11 @@ filter:
       </div>
       <div class="faq-item">
         <h4>Does it work for my website, even if it's not code?</h4>
-        <p>Yes! <code>iris webscan https://your-site.com</code> works for any website — shop, blog, app, API. Just give it the URL.</p>
+        <p>WebScan can audit a website you own or have explicit authorization to test. It makes network requests and uses selected safe probes; it is not a certification or guarantee of security.</p>
       </div>
       <div class="faq-item">
         <h4>Does it work with my programming language?</h4>
-        <p>Almost certainly yes. We support 11+ languages: Go, Java, JavaScript, TypeScript, Python, Rust, PHP, Ruby, C/C++, C#, Kotlin, Swift — and 11 package systems.</p>
+        <p>Iris provides language-aware checks for a range of common languages and package ecosystems. Run <code>iris --help</code> and consult the scanner documentation for current coverage.</p>
       </div>
       <div class="faq-item">
         <h4>I see a lot of LOW/INFO findings. Should I worry?</h4>
@@ -278,15 +278,15 @@ filter:
       </div>
       <div class="faq-item">
         <h4>Is it safe? Will it hack my site?</h4>
-        <p>Yes, safe. All website checks are <b>read-only</b> (just GET requests). We don't delete or change anything. We use safe payloads like <code>irisXSS1337</code>.</p>
+        <p>WebScan is designed for security assessment and uses bounded probes, but it makes requests to the target and can trigger logs or application behavior. Run it only against systems you own or are authorized to test; review the checks before scanning sensitive production services.</p>
       </div>
       <div class="faq-item">
         <h4>Do I need to install anything else?</h4>
-        <p>No. One file, no dependencies. Works offline after install. Docker also available.</p>
+        <p>Iris is a Go CLI distributed as platform binaries. Most local checks run on your machine; some vulnerability data or website checks require network access. Review the command and scanner documentation for their specific requirements.</p>
       </div>
       <div class="faq-item">
         <h4>I found a problem / Need help</h4>
-        <p>Contact us: <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a> — we reply quickly. Or open an issue on <a href="https://github.com/Pixelcity-dev/Deepsec">GitHub</a>.</p>
+        <p>Contact us: <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a> — we reply quickly. Or open an issue on <a href="https://github.com/Pixelcity-dev/iris">GitHub</a>.</p>
       </div>
     </div>
   </section>
@@ -295,16 +295,16 @@ filter:
     <h2>Support & Contact</h2>
     <div class="card">
       <p><strong>Docs:</strong> <a href="https://pixelcity.top/docs/iris">pixelcity.top/docs/iris</a> • <a href="https://cdn.pixelcity.dev/docs/iris">cdn.pixelcity.dev/docs/iris</a> • <a href="https://cdn.pixelcity.top/docs/iris">cdn.pixelcity.top/docs/iris</a></p>
-      <p><strong>GitHub:</strong> <a href="https://github.com/Pixelcity-dev/Deepsec">Pixelcity-dev/Deepsec</a></p>
+      <p><strong>GitHub:</strong> <a href="https://github.com/Pixelcity-dev/iris">Pixelcity-dev/iris</a></p>
       <p><strong>Contact:</strong> <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a> — for questions, help, or enterprise support</p>
       <p><strong>Install:</strong> <code>curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh</code> • <code>~/.local/bin/iris</code></p>
-      <p style="font-size:12px;color:var(--muted);margin-top:10px">Iris is open source (Apache 2.0). Built by PixelCity. Your data stays on your machine — we don't send your code anywhere.</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">Iris is open source (Apache 2.0) and developed by PixelCity. Scans run locally; cloud features are optional and require sign-in.</p>
     </div>
   </section>
 
   <div class="footer">
-    <p><strong>Iris — Cyber Security Enterprise Tool</strong> v1.1.0 • Apache 2.0 • PixelCity • <a href="https://pixelcity.top">pixelcity.top</a></p>
-    <p style="margin-top:6px">Need help? Write to <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a> — we are happy to help, no question is too simple.</p>
+    <p><strong>Iris Security Scanner</strong> • Apache 2.0 • PixelCity • <a href="https://pixelcity.top">pixelcity.top</a></p>
+    <p style="margin-top:6px">For questions or support, contact <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a>.</p>
   </div>
 </main>
 </div>

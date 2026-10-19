@@ -167,8 +167,9 @@ func TestScanExportHandler(t *testing.T) {
 
 	get := func(url, cookie string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest("GET", url, nil)
+		req.Host = "dashboard.example.test"
 		if cookie != "" {
-			req.AddCookie(&http.Cookie{Name: "ds_session", Value: cookie})
+			req.AddCookie(&http.Cookie{Name: "iris_session", Value: cookie})
 		}
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
@@ -287,7 +288,8 @@ func TestScanExportHandlerCSVAndBadFormat(t *testing.T) {
 
 	get := func(url string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest("GET", url, nil)
-		req.AddCookie(&http.Cookie{Name: "ds_session", Value: owner})
+		req.Host = "dashboard.example.test"
+		req.AddCookie(&http.Cookie{Name: "iris_session", Value: owner})
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		return rec

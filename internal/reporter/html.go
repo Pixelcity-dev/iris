@@ -95,7 +95,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 </style>
 </head>
 <body>
-<div class="topbar"><div class="brand">⬢ DEEPSEC</div><div><a href="https://pixelcity.top/docs/iris">Docs</a><a href="https://github.com/Pixelcity-dev/Iris">GitHub</a></div></div>
+<div class="topbar"><div class="brand">⬢ IRIS</div><div><a href="https://pixelcity.top/docs/iris">Docs</a><a href="https://github.com/Pixelcity-dev/iris">GitHub</a></div></div>
 <div class="container">
 <div class="hero">
 <div><h1>Security Report</h1><p>Target: ` + templateEscape(targetStr) + ` • ` + time.Now().Format("Jan 2, 2006 15:04 MST") + ` • Duration: ` + fmt.Sprintf("%.2fs", duration) + `</p><p style="margin-top:10px;font-size:12px;opacity:.9">Coverage: SAST 11+ langs • SCA 11+ ecosystems • Secrets 200+ patterns • IaC/K8s/Docker • DAST/WebScan OWASP Top 10 • Network • License • SBOM</p></div>
@@ -204,7 +204,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 
 	sb.WriteString(`<div class="footer">
 <p><strong>Iris</strong> v1.1.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
-<p><a href="https://pixelcity.top/docs/iris" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/Iris" style="color:#58a6ff">GitHub</a></p>
+<p><a href="https://pixelcity.top/docs/iris" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/iris" style="color:#58a6ff">GitHub</a></p>
 </div></div></body></html>`)
 	return []byte(sb.String()), nil
 }
