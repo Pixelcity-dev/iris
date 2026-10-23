@@ -139,3 +139,8 @@ Contributions are welcome. Please open an issue to discuss larger changes and su
 ## License
 
 Iris is distributed under the [Apache License 2.0](LICENSE). Copyright © PixelCity.
+
+## PixelCity:
+ - [Homepage](https://pixelcity.dev)
+ - [DC - Support](https://discord.gg/8BxaVG6fFm)
+ - [Mail - Support](mailto:service@pixelcity.dev)
