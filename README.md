@@ -294,7 +294,7 @@ Iris is under active development. The most mature paths today are secret scannin
 
 Known limits:
 
-- SAST is rule-driven and pattern-based. It favors speed and transparency over deep data-flow analysis, so expect false positives and false negatives.
+- SAST is rule-driven and pattern-based. The built-in patterns target obvious single-line matches and should not replace a dedicated SAST tool; expect limited coverage and false positives.
 - SCA inventories dependency manifests. It does not yet correlate packages with CVE feeds.
 - Some convenience commands (`baseline`, `db`, `mcp`, `plugin`, `server`) are scaffolds; they do not provide production behavior yet.
 - Detection quality and coverage improve release by release. Validate findings before using them as a hard production gate.
