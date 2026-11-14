@@ -41,6 +41,7 @@ If Iris saves you time, a star helps other developers find it.
 - [Quick start](#quick-start)
 - [Scanner coverage](#scanner-coverage)
 - [Reports](#reports)
+- [Baselines](#baselines)
 - [CI integration](#ci-integration)
 - [Configuration](#configuration)
 - [Command reference](#command-reference)
@@ -184,6 +185,24 @@ With multiple formats and `--output`, Iris appends the format extension to each 
 iris scan . --severity high --exit-code
 ```
 
+## Baselines
+
+Accept the findings you already know about, then fail only on new ones:
+
+```sh
+# Capture the current state
+iris scan . --format json --output iris-current.json
+iris baseline create --from iris-current.json
+
+# Later: report and gate only new findings
+iris scan . --baseline .iris-baseline.json --exit-code
+
+# Inspect new findings from a saved scan
+iris baseline diff --from iris-current.json --exit-code
+```
+
+Baselines match on rule, file, and title, so moving code does not turn an accepted finding into a new one. Commit `.iris-baseline.json` if the team agrees the current findings are accepted, and review baseline changes like any other security decision.
+
 ## CI integration
 
 Iris ships a composite GitHub Action at [`.github/actions/iris`](.github/actions/iris/action.yml):
@@ -282,10 +301,12 @@ Iris looks for configuration in this order:
 | `iris explain <id>` | Show a rule's description, severity, and remediation |
 | `iris show <file>` | Pretty-print a saved result file |
 | `iris convert -i <file> -f <format>` | Convert between report formats |
+| `iris baseline create --from <scan.json>` | Save accepted findings as a baseline |
+| `iris baseline diff --from <scan.json>` | Show only findings that are new since the baseline |
 | `iris generate ...` | Generate GitHub Actions, GitLab CI, or pre-commit configuration |
 | `iris cloud login\|status\|usage\|show\|upgrade\|logout` | Optional PixelCity account and dashboard history |
 
-The following commands exist but are early scaffolding rather than finished features: `baseline`, `db`, `mcp`, `plugin`, and `server`. They are documented in [Project status](#project-status) and are not required for scanning.
+The following commands exist but are early scaffolding rather than finished features: `db`, `mcp`, `plugin`, and `server`. They are documented in [Project status](#project-status) and are not required for scanning.
 
 ## Privacy
 
@@ -297,13 +318,13 @@ The following commands exist but are early scaffolding rather than finished feat
 
 ## Project status
 
-Iris is under active development. The most mature paths today are secret scanning, Dockerfile/IaC checks, website header/TLS checks, formatting, and build/test failure reporting.
+Iris is under active development. The most mature paths today are secret scanning, Dockerfile/IaC checks, website header/TLS checks, formatting, build/test failure reporting, and baseline suppression.
 
 Known limits:
 
 - SAST is rule-driven and pattern-based. The built-in patterns target obvious single-line matches and should not replace a dedicated SAST tool; expect limited coverage and false positives.
 - SCA inventories dependency manifests. It does not yet correlate packages with CVE feeds.
-- Some convenience commands (`baseline`, `db`, `mcp`, `plugin`, `server`) are scaffolds; they do not provide production behavior yet.
+- Some convenience commands (`db`, `mcp`, `plugin`, `server`) are scaffolds; they do not provide production behavior yet.
 - Detection quality and coverage improve release by release. Validate findings before using them as a hard production gate.
 
 If you find a coverage gap or a false positive, a reproducible example in an issue is the most useful contribution.

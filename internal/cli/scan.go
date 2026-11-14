@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Pixelcity-dev/Iris/internal/baseline"
 	"github.com/Pixelcity-dev/Iris/internal/cloud"
 	"github.com/Pixelcity-dev/Iris/internal/core"
 	"github.com/Pixelcity-dev/Iris/internal/reporter"
@@ -140,6 +141,15 @@ func runScan(cmd *cobra.Command, args []string) error {
 		core.EnrichFixes(results[i].Findings)
 	}
 
+	suppressed := 0
+	if scanBaseline != "" {
+		bl, err := baseline.Load(scanBaseline)
+		if err != nil {
+			return fmt.Errorf("load baseline: %w", err)
+		}
+		results, suppressed = bl.Filter(results)
+	}
+
 	duration := time.Since(start).Seconds()
 
 	totalFindings := 0
@@ -149,6 +159,9 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintf(os.Stderr, "\n%s\n", ui.Gold(fmt.Sprintf("Scan completed in %.2f seconds", duration), stderrColor()))
 	fmt.Fprintf(os.Stderr, "%s\n", ui.Gold(fmt.Sprintf("Found %d issues", totalFindings), stderrColor()))
+	if scanBaseline != "" {
+		fmt.Fprintf(os.Stderr, "Baseline: %d known findings suppressed\n", suppressed)
+	}
 
 	for _, format := range scanFormats {
 		rpt := reporter.GetReporter(format)

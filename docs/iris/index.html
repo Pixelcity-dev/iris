@@ -264,6 +264,20 @@ scanners: { sast: true, sca: true, secrets: true, iac: true, container: true, da
     </table>
   </section>
 
+  <section id="baselines" class="section">
+    <h2>Baselines — Silence accepted findings</h2>
+    <p class="lead">Save the findings you already know about, then fail only on new ones.</p>
+    <div class="code">iris scan . --format json --output iris-current.json
+iris baseline create --from iris-current.json
+
+# Later: report and gate only new findings
+iris scan . --baseline .iris-baseline.json --exit-code
+
+# Inspect new findings from a saved scan
+iris baseline diff --from iris-current.json --exit-code</div>
+    <p style="font-size:12px;color:var(--muted)">Baselines match on rule, file, and title. Moving a finding does not make it new. Commit <code>.iris-baseline.json</code> when the team accepts the current findings, and review changes to it like any other security decision.</p>
+  </section>
+
   <section id="cicd" class="section">
     <h2>CI/CD — Check automatically</h2>
     <p class="lead">Make Iris run every time you push code and upload the SARIF report to GitHub Code Scanning. Gate merges with a required check or branch protection.</p>

@@ -3,12 +3,17 @@ package cli
 import (
 	"fmt"
 	"os"
-	"time"
 
+	"github.com/Pixelcity-dev/Iris/internal/baseline"
+	"github.com/Pixelcity-dev/Iris/internal/reporter"
 	"github.com/spf13/cobra"
 )
 
-var baselineFile string
+var (
+	baselineFile     string
+	baselineFrom     string
+	baselineExitCode bool
+)
 
 var baselineCmd = &cobra.Command{
 	Use:   "baseline",
@@ -18,19 +23,26 @@ var baselineCmd = &cobra.Command{
 
 var baselineCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a baseline from current scan",
+	Short: "Create a baseline from a scan JSON report",
 	RunE:  runBaselineCreate,
 }
 
 var baselineDiffCmd = &cobra.Command{
 	Use:   "diff",
-	Short: "Show new findings since baseline",
+	Short: "Show new findings since a baseline",
 	RunE:  runBaselineDiff,
 }
 
 func init() {
+	baselineCreateCmd.Flags().StringVar(&baselineFrom, "from", "", "scan JSON report to import (required)")
 	baselineCreateCmd.Flags().StringVarP(&baselineFile, "output", "o", ".iris-baseline.json", "baseline file path")
+
+	baselineDiffCmd.Flags().StringVar(&baselineFrom, "from", "", "scan JSON report to compare (required)")
 	baselineDiffCmd.Flags().StringVarP(&baselineFile, "baseline", "b", ".iris-baseline.json", "baseline file path")
+	baselineDiffCmd.Flags().BoolVar(&baselineExitCode, "exit-code", false, "exit non-zero when new findings are present")
+
+	_ = baselineCreateCmd.MarkFlagRequired("from")
+	_ = baselineDiffCmd.MarkFlagRequired("from")
 
 	baselineCmd.AddCommand(baselineCreateCmd)
 	baselineCmd.AddCommand(baselineDiffCmd)
@@ -38,30 +50,56 @@ func init() {
 }
 
 func runBaselineCreate(cmd *cobra.Command, args []string) error {
-	fmt.Println("Creating baseline...")
-
-	baseline := map[string]interface{}{
-		"version":  "1.2.0",
-		"created":  time.Now().Format(time.RFC3339),
-		"findings": []string{},
+	results, err := baseline.LoadResults(baselineFrom)
+	if err != nil {
+		return fmt.Errorf("load scan results: %w", err)
 	}
 
-	_ = baseline
-
-	if err := os.WriteFile(baselineFile, []byte("{}"), 0644); err != nil {
-		return fmt.Errorf("failed to write baseline: %w", err)
+	b := baseline.FromResults(results)
+	if err := baseline.Save(baselineFile, b); err != nil {
+		return err
 	}
 
-	fmt.Printf("Baseline created: %s\n", baselineFile)
+	fmt.Printf("Baseline created: %s (%d findings)\n", baselineFile, len(b.Findings))
 	return nil
 }
 
 func runBaselineDiff(cmd *cobra.Command, args []string) error {
-	if _, err := os.Stat(baselineFile); os.IsNotExist(err) {
-		return fmt.Errorf("baseline file not found: %s", baselineFile)
+	b, err := baseline.Load(baselineFile)
+	if err != nil {
+		return fmt.Errorf("load baseline: %w", err)
 	}
 
-	fmt.Println("Comparing with baseline...")
-	fmt.Println("No new findings since baseline.")
+	results, err := baseline.LoadResults(baselineFrom)
+	if err != nil {
+		return fmt.Errorf("load scan results: %w", err)
+	}
+
+	newResults, suppressed := b.Filter(results)
+	newFindings := 0
+	for _, r := range newResults {
+		newFindings += len(r.Findings)
+	}
+
+	if newFindings == 0 {
+		fmt.Printf("No new findings since baseline (%d known findings).\n", suppressed)
+		return nil
+	}
+
+	fmt.Printf("New findings since baseline: %d (%d known findings suppressed)\n\n", newFindings, suppressed)
+
+	rpt := reporter.GetReporter("table")
+	output, err := rpt.Generate(newResults, reporter.ReportOptions{
+		Format: "table",
+		Color:  !rootCmd.PersistentFlags().Changed("no-color"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render new findings: %w", err)
+	}
+	fmt.Print(string(output))
+
+	if baselineExitCode {
+		os.Exit(1)
+	}
 	return nil
 }
