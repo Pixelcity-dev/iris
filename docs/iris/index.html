@@ -275,6 +275,7 @@ scanners: { sast: true, sca: true, secrets: true, iac: true, container: true, da
     format: 'sarif'
     output: 'iris-results.sarif'
     upload-code-scanning: 'true'</div>
+    <p style="font-size:12px;color:var(--muted)">The job needs <code>permissions: security-events: write</code> for the SARIF upload.</p>
     <h3>Pre-commit — Check before you commit</h3>
     <div class="code">repos:
   - repo: local
