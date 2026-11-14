@@ -3,9 +3,11 @@ package webscan
 import (
 	"context"
 	"crypto/tls"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/Pixelcity-dev/Iris/internal/core"
@@ -93,6 +95,169 @@ func TestHasCSPDirectiveMatchesDirectiveNameOnly(t *testing.T) {
 	}
 	if !hasCSPDirective(policy+"; BASE-URI 'self'", "base-uri") {
 		t.Fatal("directive matching should be case-insensitive")
+	}
+}
+
+func TestOriginRootStripsPathQueryAndFragment(t *testing.T) {
+	target, err := url.Parse("https://example.test/en-us/services?campaign=x#top")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := originRoot(target).String(), "https://example.test/"; got != want {
+		t.Fatalf("originRoot = %q, want %q", got, want)
+	}
+}
+
+func TestCheckExposedFilesDoesNotReportPublicSitemap(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/sitemap.xml" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("<urlset></urlset>"))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/en-us")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkExposedFiles(target, server.Client()); hasFinding(findings, "webscan-exposed-sitemap") {
+		t.Fatalf("a public sitemap is expected and not an exposure finding: %#v", findings)
+	}
+}
+
+func TestCheckExposedFilesChecksSecurityTxtAtOriginRoot(t *testing.T) {
+	var requestedSecurityTxt string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/.well-known/security.txt") {
+			requestedSecurityTxt = r.URL.Path
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("Contact: mailto:security@example.test\n"))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/en-us/services")
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := checkExposedFiles(target, server.Client())
+	if requestedSecurityTxt != "/.well-known/security.txt" {
+		t.Fatalf("security.txt path = %q, want root well-known path", requestedSecurityTxt)
+	}
+	if hasFinding(findings, "webscan-missing-security-txt") {
+		t.Fatalf("present security.txt must not create a missing-file finding: %#v", findings)
+	}
+}
+
+func TestCheckHTTPMethodsDoesNotTreatRedirectAsTRACE(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodTrace {
+			http.Redirect(w, r, "/canonical", http.StatusMovedPermanently)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/page")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkHTTPMethods(target, server.Client()); hasFinding(findings, "webscan-trace-method-active") {
+		t.Fatalf("redirect response must not count as accepted TRACE: %#v", findings)
+	}
+}
+
+func TestCheckOpenRedirectIgnoresCanonicalRedirectContainingPayload(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://www.example.test"+r.URL.RequestURI(), http.StatusMovedPermanently)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkOpenRedirect(target, server.Client()); hasFinding(findings, "webscan-open-redirect") {
+		t.Fatalf("same-origin canonical redirect with evil.com in query must not be reported: %#v", findings)
+	}
+}
+
+func TestCheckSRIOnlyCountsExternalScriptTags(t *testing.T) {
+	body := `<script>inline()</script><script type="application/json">{"text":"<script>"}</script><script src="/app.js"></script><script src="https://cdn.example.test/a.js"></script><script src="https://cdn.example.test/b.js" integrity="sha384-abc"></script>`
+	target, _ := url.Parse("https://example.test/")
+	findings := checkSRI(body, target)
+	if len(findings) != 1 || findings[0].RuleID != "webscan-partial-sri" || !strings.Contains(findings[0].Title, "1 of 2 third-party scripts") {
+		t.Fatalf("checkSRI findings = %#v, want one missing of two third-party scripts", findings)
+	}
+	if got := checkSRI(`<script>inline()</script><script type="application/json">data</script>`, target); len(got) != 0 {
+		t.Fatalf("inline/data scripts should not cause SRI findings: %#v", got)
+	}
+}
+
+func TestCheckSRIFlagsExternalScriptsWithoutIntegrity(t *testing.T) {
+	findings := checkSRI(`<script src="https://cdn.example.test/app.js"></script><script src="https://cdn.example.test/vendor.js"></script>`, &url.URL{Scheme: "https", Host: "example.test"})
+	if len(findings) != 1 || findings[0].RuleID != "webscan-missing-sri" {
+		t.Fatalf("checkSRI findings = %#v, want missing SRI finding", findings)
+	}
+}
+
+func TestCheckSRIIgnoresSameOriginScripts(t *testing.T) {
+	target, _ := url.Parse("https://example.test/en-us")
+	if findings := checkSRI(`<script src="/_next/static/chunks/app.js"></script>`, target); len(findings) != 0 {
+		t.Fatalf("same-origin scripts should not cause third-party SRI finding: %#v", findings)
+	}
+}
+
+func TestCheckXSSReflectionDoesNotReportEscapedInput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<p>" + html.EscapeString(r.URL.Query().Get("q")) + "</p>"))
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkXSSReflection(target, server.Client()); len(findings) != 0 {
+		t.Fatalf("HTML-escaped marker must not be reported as XSS: %#v", findings)
+	}
+}
+
+func TestCheckOpenRedirectReportsExternalRedirect(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("next") != "" {
+			http.Redirect(w, r, r.URL.Query().Get("next"), http.StatusFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkOpenRedirect(target, server.Client()); !hasFinding(findings, "webscan-open-redirect") {
+		t.Fatalf("expected real external redirect finding, got %#v", findings)
+	}
+}
+
+func TestCheckHTTPMethodsReportsSuccessfulTRACE(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodTrace {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	target, err := url.Parse(server.URL + "/page")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findings := checkHTTPMethods(target, server.Client()); !hasFinding(findings, "webscan-trace-method-active") {
+		t.Fatalf("expected accepted TRACE finding, got %#v", findings)
 	}
 }
 

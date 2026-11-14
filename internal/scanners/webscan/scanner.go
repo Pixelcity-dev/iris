@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -122,7 +123,7 @@ func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []c
 	// 15. Mixed Content & SRI
 	if baseBody != "" && u.Scheme == "https" {
 		findings = append(findings, checkMixedContent(baseBody, u)...)
-		findings = append(findings, checkSRI(baseBody)...)
+		findings = append(findings, checkSRI(baseBody, u)...)
 	}
 	// 16. HTTP -> HTTPS redirect check
 	findings = append(findings, checkHTTPSRedirect(u, client)...)
@@ -163,6 +164,20 @@ func sameWebOrigin(target, next *url.URL) bool {
 		return "80"
 	}
 	return port(target) == port(next)
+}
+
+// originRoot returns the target origin without its page path, query, or fragment.
+// Well-known resources and common exposure paths are rooted at the site origin,
+// not beneath whichever page happened to be scanned.
+func originRoot(target *url.URL) *url.URL {
+	root := *target
+	root.Path = "/"
+	root.RawPath = ""
+	root.RawQuery = ""
+	root.ForceQuery = false
+	root.Fragment = ""
+	root.RawFragment = ""
+	return &root
 }
 
 func fetchURL(raw string, client *http.Client) (*http.Response, string) {
@@ -747,18 +762,24 @@ func checkHTTPMethods(target *url.URL, client *http.Client) []core.Finding {
 			})
 		}
 	}
-	// Direct TRACE test
+	// A redirect response does not prove TRACE is accepted: canonical-host,
+	// locale, and authentication middleware can redirect before method handling.
+	// Only a successful 2xx TRACE response is evidence that the method is active.
+	traceClient := *client
+	traceClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 	req2, _ := http.NewRequest("TRACE", target.String(), nil)
-	resp2, err := client.Do(req2)
+	resp2, err := traceClient.Do(req2)
 	if err == nil && resp2 != nil {
 		defer resp2.Body.Close()
-		if resp2.StatusCode < 400 {
+		if resp2.StatusCode >= 200 && resp2.StatusCode < 300 {
 			findings = append(findings, core.Finding{
 				RuleID:      "webscan-trace-method-active",
 				Severity:    core.SeverityHigh,
 				Category:    "http-methods",
-				Title:       "TRACE method is active",
-				Description: fmt.Sprintf("TRACE returned %d", resp2.StatusCode),
+				Title:       "HTTP TRACE accepted",
+				Description: fmt.Sprintf("TRACE returned successful status %d", resp2.StatusCode),
 				Fix:         "Disable TRACE in web server config",
 				Confidence:  1.0,
 			})
@@ -770,7 +791,7 @@ func checkHTTPMethods(target *url.URL, client *http.Client) []core.Finding {
 // 7. Exposed Files
 func checkExposedFiles(target *url.URL, client *http.Client) []core.Finding {
 	var findings []core.Finding
-	base := strings.TrimRight(target.String(), "/")
+	base := strings.TrimRight(originRoot(target).String(), "/")
 	paths := []struct {
 		path     string
 		severity core.Severity
@@ -787,7 +808,6 @@ func checkExposedFiles(target *url.URL, client *http.Client) []core.Finding {
 		{"/phpinfo.php", core.SeverityHigh, "phpinfo.php exposed", "Remove phpinfo.php"},
 		{"/.DS_Store", core.SeverityLow, "Potential .DS_Store exposed", "Block .DS_Store"},
 		{"/package.json", core.SeverityMedium, "package.json exposed", "Block package.json"},
-		{"/sitemap.xml", core.SeverityInfo, "sitemap.xml disclosure", "Ensure sitemap does not expose sensitive URLs"},
 		{"/.aws/credentials", core.SeverityCritical, "Potential AWS credentials exposed", "Block"},
 	}
 	for _, p := range paths {
@@ -811,21 +831,6 @@ func checkExposedFiles(target *url.URL, client *http.Client) []core.Finding {
 					Confidence:  1.0,
 				})
 			}
-			continue
-		}
-		// sitemap.xml also informational if present? we mark as info but not critical
-		if p.path == "/sitemap.xml" && resp.StatusCode == 200 {
-			// not a vulnerability, just informational disclosure
-			// skip to avoid noise? Keep as info
-			findings = append(findings, core.Finding{
-				RuleID:      "webscan-exposed-sitemap",
-				Severity:    core.SeverityInfo,
-				Category:    "information-disclosure",
-				Title:       "sitemap.xml accessible",
-				Description: "sitemap.xml is publicly accessible",
-				Fix:         "Ensure sitemap doesn't list sensitive URLs",
-				Confidence:  1.0,
-			})
 			continue
 		}
 		if resp.StatusCode == 200 {
@@ -917,7 +922,13 @@ func checkOpenRedirect(target *url.URL, client *http.Client) []core.Finding {
 				continue
 			}
 			loc := resp.Header.Get("Location")
-			if (resp.StatusCode == 301 || resp.StatusCode == 302 || resp.StatusCode == 303 || resp.StatusCode == 307 || resp.StatusCode == 308) && strings.Contains(loc, "evil.com") {
+			redirectTarget, parseErr := url.Parse(loc)
+			redirectsOffOrigin := false
+			if parseErr == nil {
+				resolvedTarget := u2.ResolveReference(redirectTarget)
+				redirectsOffOrigin = strings.EqualFold(resolvedTarget.Hostname(), "evil.com") && (resolvedTarget.Scheme == "http" || resolvedTarget.Scheme == "https")
+			}
+			if (resp.StatusCode == 301 || resp.StatusCode == 302 || resp.StatusCode == 303 || resp.StatusCode == 307 || resp.StatusCode == 308) && redirectsOffOrigin {
 				findings = append(findings, core.Finding{
 					RuleID:      "webscan-open-redirect",
 					Severity:    core.SeverityHigh,
@@ -968,17 +979,8 @@ func checkXSSReflection(target *url.URL, client *http.Client) []core.Finding {
 				References:  []string{"https://owasp.org/www-community/attacks/xss/"},
 				Confidence:  0.75,
 			})
-		} else if strings.Contains(body, marker) {
-			findings = append(findings, core.Finding{
-				RuleID:      "webscan-reflected-xss-encoded",
-				Severity:    core.SeverityLow,
-				Category:    "xss",
-				Title:       "Reflected input (potential XSS, but encoded)",
-				Description: fmt.Sprintf("Marker %s reflected but HTML encoded", marker),
-				Fix:         "Ensure proper output encoding",
-				Confidence:  0.5,
-			})
 		}
+
 	}
 	return findings
 }
@@ -1022,7 +1024,7 @@ func checkDirectoryListing(target *url.URL, client *http.Client) []core.Finding 
 	var findings []core.Finding
 	// Try common dirs
 	paths := []string{"/images/", "/assets/", "/static/", "/uploads/"}
-	base := strings.TrimRight(target.String(), "/")
+	base := strings.TrimRight(originRoot(target).String(), "/")
 	for _, p := range paths {
 		_, body := fetchURL(base+p, client)
 		lower := strings.ToLower(body)
@@ -1044,7 +1046,7 @@ func checkDirectoryListing(target *url.URL, client *http.Client) []core.Finding 
 // 13. Security.txt & robots.txt
 func checkSecurityTxt(target *url.URL, client *http.Client) []core.Finding {
 	var findings []core.Finding
-	base := strings.TrimRight(target.String(), "/")
+	base := strings.TrimRight(originRoot(target).String(), "/")
 	// robots.txt
 	resp, body := fetchURL(base+"/robots.txt", client)
 	if resp != nil && resp.StatusCode == 200 && body != "" {
@@ -1089,35 +1091,66 @@ func checkMixedContent(body string, u *url.URL) []core.Finding {
 }
 
 // 15. SRI
-func checkSRI(body string) []core.Finding {
+var (
+	scriptTagPattern       = regexp.MustCompile(`(?is)<script\b[^>]*>`)
+	scriptSrcPattern       = regexp.MustCompile(`(?is)\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`)
+	scriptIntegrityPattern = regexp.MustCompile(`(?is)\bintegrity\s*=`)
+)
+
+func checkSRI(body string, target *url.URL) []core.Finding {
 	var findings []core.Finding
-	lower := strings.ToLower(body)
-	// Look for script tags without integrity
-	if strings.Contains(lower, "<script") {
-		// crude: count scripts and integrity
-		scripts := strings.Count(lower, "<script")
-		integrity := strings.Count(lower, "integrity=")
-		if scripts > 0 && integrity == 0 {
-			findings = append(findings, core.Finding{
-				RuleID:      "webscan-missing-sri",
-				Severity:    core.SeverityLow,
-				Category:    "integrity",
-				Title:       "No Subresource Integrity (SRI) for scripts",
-				Description: fmt.Sprintf("%d script tags without integrity attribute", scripts),
-				Fix:         "Add integrity hashes to external scripts",
-				Confidence:  0.6,
-			})
-		} else if scripts > integrity {
-			findings = append(findings, core.Finding{
-				RuleID:      "webscan-partial-sri",
-				Severity:    core.SeverityInfo,
-				Category:    "integrity",
-				Title:       fmt.Sprintf("Partial SRI: %d scripts, %d with integrity", scripts, integrity),
-				Description: "Some scripts missing SRI",
-				Fix:         "Add integrity to all external scripts",
-				Confidence:  0.6,
-			})
+	externalScripts, scriptsWithoutIntegrity := 0, 0
+	for _, tag := range scriptTagPattern.FindAllString(body, -1) {
+		// Inline bootstrap/data scripts do not load a subresource and cannot use SRI.
+		matches := scriptSrcPattern.FindStringSubmatch(tag)
+		if len(matches) == 0 {
+			continue
 		}
+		src := matches[1]
+		if src == "" {
+			src = matches[2]
+		}
+		if src == "" {
+			src = matches[3]
+		}
+		resource, err := url.Parse(src)
+		if err != nil {
+			continue
+		}
+		resolved := target.ResolveReference(resource)
+		// Same-origin assets are covered by the site's own deployment/build
+		// integrity controls; SRI is most important for third-party scripts.
+		if resolved.Scheme != "https" || sameWebOrigin(target, resolved) {
+			continue
+		}
+		externalScripts++
+		if !scriptIntegrityPattern.MatchString(tag) {
+			scriptsWithoutIntegrity++
+		}
+	}
+	if scriptsWithoutIntegrity == 0 {
+		return findings
+	}
+	if scriptsWithoutIntegrity == externalScripts {
+		findings = append(findings, core.Finding{
+			RuleID:      "webscan-missing-sri",
+			Severity:    core.SeverityLow,
+			Category:    "integrity",
+			Title:       "Third-party scripts lack Subresource Integrity (SRI)",
+			Description: fmt.Sprintf("%d third-party script tags without integrity attributes", scriptsWithoutIntegrity),
+			Fix:         "Add integrity hashes to external scripts, or apply an equivalent integrity mechanism in the build pipeline",
+			Confidence:  0.6,
+		})
+	} else {
+		findings = append(findings, core.Finding{
+			RuleID:      "webscan-partial-sri",
+			Severity:    core.SeverityInfo,
+			Category:    "integrity",
+			Title:       fmt.Sprintf("Partial SRI: %d of %d third-party scripts lack integrity", scriptsWithoutIntegrity, externalScripts),
+			Description: "Some third-party scripts are missing SRI",
+			Fix:         "Add integrity to external scripts, or apply an equivalent integrity mechanism in the build pipeline",
+			Confidence:  0.6,
+		})
 	}
 	return findings
 }
