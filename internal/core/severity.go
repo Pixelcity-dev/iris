@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Severity int
@@ -57,6 +59,21 @@ func (s *Severity) UnmarshalJSON(data []byte) error {
 	}
 	*s = ParseSeverity(str)
 	return nil
+}
+
+// UnmarshalYAML accepts severity names ("critical") in rule files, matching
+// the JSON representation used by findings.
+func (s *Severity) UnmarshalYAML(value *yaml.Node) error {
+	var str string
+	if err := value.Decode(&str); err != nil {
+		return err
+	}
+	*s = ParseSeverity(str)
+	return nil
+}
+
+func (s Severity) MarshalYAML() (interface{}, error) {
+	return s.String(), nil
 }
 
 func ParseSeverity(s string) Severity {

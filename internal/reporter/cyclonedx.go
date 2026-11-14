@@ -66,7 +66,7 @@ func (r *CycloneDXReporter) Generate(results []core.ScanResult, opts ReportOptio
 				{
 					Vendor:  "Iris",
 					Name:    "iris",
-					Version: "1.1.0",
+					Version: "1.2.0",
 				},
 			},
 		},

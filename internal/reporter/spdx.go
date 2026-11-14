@@ -64,9 +64,9 @@ func (r *SPDXReporter) Generate(results []core.ScanResult, opts ReportOptions) (
 		DataLicense:       "CC0-1.0",
 		SPDXID:            "SPDXRef-DOCUMENT",
 		DocumentName:      "Iris Scan Results",
-		DocumentNamespace: "https://iris.pixelcity.dev/scan/" + time.Now().Format("20060102"),
+		DocumentNamespace: "https://pixelcity.top/docs/iris/scan/" + time.Now().Format("20060102"),
 		Created:           time.Now().UTC().Format(time.RFC3339),
-		Creator:           "Tool: iris-1.1.0",
+		Creator:           "Tool: iris-1.2.0",
 	}
 
 	return json.MarshalIndent(output, "", "  ")

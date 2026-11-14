@@ -25,7 +25,7 @@ type JSONOutput struct {
 
 func (r *JSONReporter) Generate(results []core.ScanResult, opts ReportOptions) ([]byte, error) {
 	output := JSONOutput{
-		Version: "1.1.0",
+		Version: "1.2.0",
 		Summary: core.NewScanSummary(results),
 		Results: results,
 	}

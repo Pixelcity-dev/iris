@@ -70,7 +70,7 @@ func (r *GitLabReporter) Generate(results []core.ScanResult, opts ReportOptions)
 			Scanner: GitLabScanner{
 				ID:      "iris",
 				Name:    "Iris",
-				Version: "1.1.0",
+				Version: "1.2.0",
 			},
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 		},

@@ -33,7 +33,7 @@ rules:
     category: container-security
     scanner_type: iac
     description: Container running in privileged mode
-    fix: Remove privileged: true and use specific capabilities
+    fix: "Remove privileged: true and use specific capabilities"
     references:
       - https://kubernetes.io/docs/concepts/security/pod-security-standards/
     tags:

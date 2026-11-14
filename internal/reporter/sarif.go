@@ -100,8 +100,8 @@ func (r *SARIFReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 			Tool: SARIFTool{
 				Driver: SARIFDriver{
 					Name:           "iris",
-					Version:        "1.1.0",
-					InformationURI: "https://iris.pixelcity.dev",
+					Version:        "1.2.0",
+					InformationURI: "https://pixelcity.top/docs/iris",
 				},
 			},
 		}

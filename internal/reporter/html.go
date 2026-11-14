@@ -203,7 +203,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 	}
 
 	sb.WriteString(`<div class="footer">
-<p><strong>Iris</strong> v1.1.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
+<p><strong>Iris</strong> v1.2.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
 <p><a href="https://pixelcity.top/docs/iris" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/iris" style="color:#58a6ff">GitHub</a></p>
 </div></div></body></html>`)
 	return []byte(sb.String()), nil

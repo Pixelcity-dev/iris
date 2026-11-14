@@ -41,15 +41,23 @@ func init() {
 
 func runGeneratePreCommit(cmd *cobra.Command, args []string) error {
 	content := `repos:
-  - repo: https://github.com/irissec/iris
-    rev: v1.1.0
+  - repo: local
     hooks:
       - id: iris-secrets
-        name: Iris Secrets Scan
+        name: Iris secret scan
+        entry: iris scan . --scanner secrets --severity high --exit-code
+        language: system
+        pass_filenames: false
       - id: iris-sast
-        name: Iris SAST Scan
+        name: Iris SAST scan
+        entry: iris scan . --scanner sast --severity high --exit-code
+        language: system
+        pass_filenames: false
       - id: iris-iac
-        name: Iris IaC Scan
+        name: Iris IaC scan
+        entry: iris scan . --scanner iac --severity high --exit-code
+        language: system
+        pass_filenames: false
 `
 
 	if err := os.WriteFile(".pre-commit-config.yaml", []byte(content), 0644); err != nil {
@@ -88,7 +96,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Iris SAST
-        uses: irissec/iris-action@v1
+        uses: Pixelcity-dev/iris/.github/actions/iris@v1.2.0
         with:
           scan-type: 'sast'
           format: 'sarif'
@@ -101,7 +109,7 @@ jobs:
         if: always()
 
       - name: Run Iris SCA
-        uses: irissec/iris-action@v1
+        uses: Pixelcity-dev/iris/.github/actions/iris@v1.2.0
         with:
           scan-type: 'sca'
           format: 'sarif'
@@ -114,7 +122,7 @@ jobs:
         if: always()
 
       - name: Run Iris Secrets
-        uses: irissec/iris-action@v1
+        uses: Pixelcity-dev/iris/.github/actions/iris@v1.2.0
         with:
           scan-type: 'secrets'
           format: 'sarif'
@@ -140,38 +148,40 @@ func runGenerateGitLabCI(cmd *cobra.Command, args []string) error {
 	content := `stages:
   - security
 
-iris-sast:
-  stage: security
-  image: irissec/iris:latest
-  script:
-    - iris scan fs --format sarif --output gl-sast-report.json --scanner sast
-  artifacts:
-    reports:
-      sast: gl-sast-report.json
+.iris:
+  image: golang:1.27
+  before_script:
+    - go install github.com/Pixelcity-dev/Iris/cmd/iris@latest
+    - export PATH="$PATH:$(go env GOPATH)/bin"
   only:
     - branches
+
+iris-sast:
+  extends: .iris
+  stage: security
+  script:
+    - iris scan . --format sarif --output gl-sast-report.sarif --scanner sast
+  artifacts:
+    paths:
+      - gl-sast-report.sarif
 
 iris-sca:
+  extends: .iris
   stage: security
-  image: irissec/iris:latest
   script:
-    - iris scan fs --format cyclonedx --output gl-dependency-report.json --scanner sca
+    - iris scan . --format cyclonedx --output gl-dependency-report.json --scanner sca
   artifacts:
-    reports:
-      dependency_scanning: gl-dependency-report.json
-  only:
-    - branches
+    paths:
+      - gl-dependency-report.json
 
 iris-secrets:
+  extends: .iris
   stage: security
-  image: irissec/iris:latest
   script:
-    - iris scan fs --format json --output gl-secret-detection-report.json --scanner secrets
+    - iris scan . --format json --output gl-secret-detection-report.json --scanner secrets
   artifacts:
-    reports:
-      secret_detection: gl-secret-detection-report.json
-  only:
-    - branches
+    paths:
+      - gl-secret-detection-report.json
 `
 
 	if err := os.WriteFile(".gitlab-ci.yml", []byte(content), 0644); err != nil {
