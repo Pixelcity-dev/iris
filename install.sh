@@ -15,7 +15,7 @@ set -e
 #   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | INSTALL_DIR=/usr/local/bin sh
 #
 # Other methods:
-#   go install github.com/Pixelcity-dev/iris/cmd/iris@latest
+#   go install github.com/Pixelcity-dev/Iris/cmd/iris@latest
 #   docker pull pixelcity/iris:latest && docker run --rm pixelcity/iris --help
 #   brew install pixelcity/tap/iris  (coming soon)
 
@@ -222,7 +222,7 @@ install_binary() {
     - $GITHUB_URL
   Check your network or try manual download:
     curl -fsSL $PRIMARY_URL -o iris && chmod +x iris && sudo mv iris /usr/local/bin/
-  Or via go: go install github.com/Pixelcity-dev/iris/cmd/iris@latest
+  Or via go: go install github.com/Pixelcity-dev/Iris/cmd/iris@latest
   Or docker: docker run --rm pixelcity/iris --help
   Issues: https://github.com/Pixelcity-dev/iris/issues"
   fi

@@ -29,7 +29,7 @@ var fmtCmd = &cobra.Command{
 	Short: "Check and fix code formatting",
 	Long: `Check code formatting and optionally fix issues.
 
-Zero-dependency, fast (<50ms), 6 checks:
+Zero-dependency, fast (<50ms), 7 checks:
   - trailing whitespace
   - missing newline at EOF
   - CRLF line endings (Windows)

@@ -16,7 +16,7 @@ inputs:
     required: false
     default: 'low'
   format:
-    description: 'Output format (sarif, json, table, html, csv; check iris scan --help for additional formats)'
+    description: 'Output format (table, json, sarif, cyclonedx, spdx, html, csv, junit)'
     required: false
     default: 'sarif'
   output:

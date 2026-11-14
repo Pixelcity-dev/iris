@@ -42,9 +42,9 @@ All-in-one security platform. One binary, zero dependencies, covers code + suppl
 
 CAPABILITIES
   Code & Supply Chain  SAST (11+ langs: Go, Java, JS/TS, Python, Rust, PHP, Ruby, C/C++, C#, Kotlin, Swift)
-                      SCA (11+ ecosystems: npm, pip, Maven, Go, Cargo, Composer, NuGet, etc.)
-                      Secrets (200+ patterns, entropy + verified), License (SPDX/CycloneDX)
-  Cloud & Containers   IaC (Terraform, CloudFormation, K8s, Dockerfile), Container (image & Dockerfile), Network
+                      SCA (dependency inventory: Go, npm, pip, Maven, Gradle, Cargo, RubyGems, Composer, NuGet)
+                      Secrets (18 credential patterns, redacted output), License (license types + copyleft flag)
+  Cloud & Containers   IaC (Terraform, Kubernetes, Dockerfile), Container (Dockerfile), Network
   Web & API            DAST + WebScan (OWASP Top 10, 20+ deep checks: headers, TLS, CORS, CSP, auth, etc.)
   Quality              Format (7 checks: trailing ws, EOF newline, CRLF, mixed indent, long lines, gofmt, blanks) • iris fmt
 
@@ -54,11 +54,11 @@ EXAMPLES
   iris fmt . --check                               # formatting gate (CI)
   iris fmt . --fix                                 # auto-fix formatting
   iris webscan https://example.com --format sarif --output ws.sarif
-  iris scan https://example.com --scanner webscan,dast --compliance soc2
+  iris scan https://example.com --scanner webscan,dast --format sarif --output web.sarif
   iris scan ./app --format html --output report.html
 
-Learn more: https://pixelcity.top/iris  •  Docs: https://pixelcity.top/docs/iris
-Support: service@pixelcity.dev  •  MCP: iris mcp start for AI agents`,
+Learn more: https://pixelcity.top/docs/iris
+Support: service@pixelcity.dev`,
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		initConfig()
@@ -80,7 +80,7 @@ func Execute() {
 	rootCmd.SetVersionTemplate(ui.Gold("Iris ", vc) + `{{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
   commit: ` + commit + `
   built:  ` + buildTime + `
-  scanners: 10  •  langs: 11+  •  ` + ui.Gold(`https://pixelcity.top/docs/iris`, vc) + `
+  scanners: 11  •  langs: 11+  •  ` + ui.Gold(`https://pixelcity.top/docs/iris`, vc) + `
 `)
 
 	// cobra's error print is silenced; print once here.
@@ -102,7 +102,7 @@ func init() {
 	rootCmd.SetVersionTemplate(`Iris {{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
   commit: ` + commit + `
   built:  ` + buildTime + `
-  scanners: 10  •  langs: 11+  •  https://pixelcity.top/docs/iris
+  scanners: 11  •  langs: 11+  •  https://pixelcity.top/docs/iris
 `)
 }
 
