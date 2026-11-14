@@ -16,11 +16,23 @@
   <a href="https://discord.gg/8BxaVG6fFm"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square"></a>
 </p>
 
+<p align="center">
+  <code>curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh</code>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Pixelcity-dev/iris/stargazers">Star the repo</a> ·
+  <a href="https://discord.gg/8BxaVG6fFm">Join Discord</a> ·
+  <a href="https://pixelcity.top/docs/iris">Read the docs</a>
+</p>
+
 **Iris** is an open-source security toolkit for source code, dependencies, infrastructure, containers, and websites. It brings a set of focused scanners together in one Go CLI, so a first-pass security check does not require installing a toolchain for every language you use.
 
 Run it locally, use it as a CI gate, or point it at a site you are authorized to test. The built-in scanners are self-contained and work offline; nothing is uploaded unless you explicitly sign in to the optional PixelCity dashboard. Iris is developed by [PixelCity](https://pixelcity.dev) and released under the Apache 2.0 license.
 
 > **Test only what you own or are authorized to test.** Iris reports potential security issues to help you investigate and remediate them. A clean scan is not a guarantee of security or compliance.
+
+If Iris saves you time, a star helps other developers find it.
 
 ## Contents
 
@@ -227,7 +239,7 @@ Or install the CLI yourself and upload the report separately:
 
 ## Configuration
 
-Run `iris init` to create `.iris.yaml`, then adjust the scanners and thresholds you need:
+Run `iris init` to scaffold `.iris.yaml`. The scanner toggles are applied when Iris starts; control each run with `--severity`, `--format`, and `--output`.
 
 ```yaml
 version: 1.2.0
@@ -244,14 +256,9 @@ scanners:
   webscan: true
   format: true
   buildtest: false
-
-report:
-  format: table
-  color: true
-
-filter:
-  min_severity: INFO
 ```
+
+The scaffold also contains report and filter sections; those remain reserved until the configuration layer is wired to per-run output.
 
 Iris looks for configuration in this order:
 

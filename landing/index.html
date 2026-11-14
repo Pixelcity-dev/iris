@@ -4,7 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iris — Open-Source Security Scanning CLI</title>
-    <meta name="description" content="Scan source code, dependencies, infrastructure, containers, and websites with Iris, an open-source security CLI and CI tool.">
+    <meta name="description" content="Scan source code, secrets, dependencies, infrastructure, containers, and websites with Iris, an open-source security CLI and CI tool.">
+    <link rel="canonical" href="https://pixelcity.dev/iris">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Iris">
+    <meta property="og:title" content="Iris — Open-Source Security Scanning CLI">
+    <meta property="og:description" content="One Go binary for secret scanning, SAST, dependency inventory, IaC, Dockerfile, DAST/WebScan, licenses, formatting, and SARIF output.">
+    <meta property="og:url" content="https://pixelcity.dev/iris">
+    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Iris — one binary, eleven security scans">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Iris — Open-Source Security Scanning CLI">
+    <meta name="twitter:description" content="One Go binary for secret scanning, SAST, dependency inventory, IaC, Dockerfile, DAST/WebScan, licenses, formatting, and SARIF output.">
+    <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Iris",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Linux, macOS, Windows",
+      "softwareVersion": "1.2.0",
+      "description": "Open-source security toolkit for source code, secrets, dependencies, infrastructure, containers, and websites.",
+      "url": "https://pixelcity.dev/iris",
+      "codeRepository": "https://github.com/Pixelcity-dev/iris",
+      "downloadUrl": "https://github.com/Pixelcity-dev/iris/releases",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
     <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -576,8 +607,8 @@
                     </svg>
                     Install Now
                 </a>
-                <a href="https://github.com/Pixelcity-dev/iris" class="btn btn-secondary" target="_blank">
-                    View Source
+                <a href="https://github.com/Pixelcity-dev/iris/stargazers" class="btn btn-secondary" target="_blank">
+                    Star on GitHub
                 </a>
             </div>
             <div class="install-section">
@@ -586,6 +617,7 @@
                     <span class="command" id="install-cmd">curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh</span>
                     <button class="copy-btn" onclick="copyInstall()">Copy</button>
                 </div>
+                <p style="margin-top:14px;color:var(--text-secondary);font-size:13px">No telemetry · No account required · Apache-2.0</p>
             </div>
         </div>
     </section>
@@ -600,12 +632,12 @@
                 <div class="feature-card">
                     <div class="feature-icon sast">🔍</div>
                     <h3>SAST</h3>
-                    <p>Static analysis rules identify common risks such as SQL injection, cross-site scripting, and command injection in supported source code.</p>
+                    <p>Rule-based checks surface common risky patterns in supported source code. Built-in rule coverage is intentionally limited.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon sca">📦</div>
                     <h3>SCA</h3>
-                    <p>Inspect supported package manifests for known vulnerable or outdated dependencies and review results before deployment.</p>
+                    <p>Inventory supported package manifests so you can review dependencies before deployment.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon secrets">🔑</div>
@@ -620,7 +652,7 @@
                 <div class="feature-card">
                     <div class="feature-icon container">🐳</div>
                     <h3>Container</h3>
-                    <p>Check supported container image metadata and Docker-related configuration for common risks.</p>
+                    <p>Inspect Dockerfiles and container configuration for root users, exposed SSH, privileged mode, and host networking.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon dast">🌐</div>
@@ -664,7 +696,7 @@
                     <span class="comment"># Output to SARIF for GitHub</span><br>
                     <span class="command">$</span> iris scan . <span class="flag">--format</span> sarif <span class="flag">--output</span> results.sarif<br><br>
                     <span class="comment"># Filter by severity</span><br>
-                    <span class="command">$</span> iris scan . <span class="flag">--severity</span> critical,high
+                    <span class="command">$</span> iris scan . <span class="flag">--severity</span> high
                 </div>
             </div>
         </div>

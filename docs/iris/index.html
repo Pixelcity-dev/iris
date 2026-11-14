@@ -4,7 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iris Security Scanner — Documentation</title>
-<meta name="description" content="Documentation for Iris, an open-source CLI for scanning source code, dependencies, infrastructure, containers, and websites.">
+<meta name="description" content="Documentation for Iris, an open-source CLI for scanning source code, secrets, dependencies, infrastructure, containers, and websites.">
+<link rel="canonical" href="https://pixelcity.top/docs/iris">
+<meta name="theme-color" content="#0a0a0f">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Iris">
+<meta property="og:title" content="Iris Security Scanner — Documentation">
+<meta property="og:description" content="Install Iris, run your first scan, understand findings, and add it to CI with SARIF output.">
+<meta property="og:url" content="https://pixelcity.top/docs/iris">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Iris — one binary, eleven security scans">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Iris Security Scanner — Documentation">
+<meta name="twitter:description" content="Install Iris, run your first scan, understand findings, and add it to CI with SARIF output.">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Iris Security Scanner — Documentation",
+  "description": "Install Iris, run your first scan, understand findings, and add it to CI with SARIF output.",
+  "url": "https://pixelcity.top/docs/iris",
+  "author": { "@type": "Organization", "name": "PixelCity" },
+  "about": { "@type": "SoftwareApplication", "name": "Iris", "applicationCategory": "SecurityApplication", "operatingSystem": "Linux, macOS, Windows" }
+}
+</script>
 <style>
 :root{--bg:#0a0a0f;--card:#11111b;--border:#1e1e2e;--text:#cdd6f4;--muted:#9ca3af;--accent:#89b4fa;--accent2:#74c7ec;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--radius:16px;--code:#181825}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -70,7 +96,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
     <p class="subtitle">Iris helps developers identify potential issues in source code, dependencies, infrastructure, containers, and websites, then export findings for review and CI.</p>
     <div class="cta">
       <a class="btn btn-primary" href="#install">Install in 5 seconds →</a>
-      <a class="btn btn-ghost" href="https://github.com/Pixelcity-dev/iris">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/Pixelcity-dev/iris/stargazers">Star on GitHub</a>
     </div>
     <p style="font-size:12px;color:var(--muted);margin-top:14px">Apache 2.0 • Local CLI • JSON and SARIF reports</p>
   </div>
@@ -95,7 +121,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
         <div class="num">2</div>
         <h3>Paste & Enter</h3>
         <p>Open your terminal and paste it, press Enter.</p>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">Also works: <code>pixelcity.top/iris/install.sh</code> or <code>cdn.pixelcity.top</code></p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px">Also works: <code>https://cdn.pixelcity.top/iris/install.sh</code></p>
       </div>
       <div class="step">
         <div class="num">3</div>
@@ -107,7 +133,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 
     <div class="highlight">
       <strong>Other ways to install (if you prefer):</strong><br>
-      <span style="font-size:13px">Go: <code>go install github.com/Pixelcity-dev/iris/cmd/iris@latest</code> • Releases: <a href="https://github.com/Pixelcity-dev/iris/releases">GitHub Releases</a></span>
+      <span style="font-size:13px">Go: <code>go install github.com/Pixelcity-dev/Iris/cmd/iris@latest</code> • Releases: <a href="https://github.com/Pixelcity-dev/iris/releases">GitHub Releases</a></span>
     </div>
 
     <details style="margin-top:12px">
@@ -150,11 +176,11 @@ curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh -s -- --help</div>
 
     <table class="table">
       <tr><th>Check Name</th><th>What it means (simple)</th><th>Example</th></tr>
-      <tr><td>SAST</td><td>Looks at your code for bugs hackers could use</td><td>Finds SQL injection, XSS in your Java/Python/Go code</td></tr>
-      <tr><td>SCA</td><td>Checks your libraries (like npm packages) for known bad versions</td><td>Tells you if you use an old, hacked version of lodash</td></tr>
+      <tr><td>SAST</td><td>Rule-based checks for risky code patterns</td><td>Surfaces common patterns when a matching rule is loaded</td></tr>
+      <tr><td>SCA</td><td>Inventories your dependencies</td><td>Lists package names and versions from supported manifests for review</td></tr>
       <tr><td>Secrets</td><td>Finds passwords or keys you accidentally left in code</td><td>Finds <code>aws_secret = "AKIA..."</code></td></tr>
       <tr><td>IaC</td><td>Checks your server setup files (Terraform, Docker)</td><td>Warns if you copy all files including secrets</td></tr>
-      <tr><td>Container</td><td>Checks your Docker images</td><td>Finds risky base images</td></tr>
+      <tr><td>Container</td><td>Checks Dockerfiles and container configuration</td><td>Flags root users, exposed SSH, privileged mode, host networking</td></tr>
       <tr><td>DAST</td><td>Checks website headers & TLS (basic)</td><td>Missing security headers</td></tr>
       <tr><td><b>WebScan — Deep</b></td><td><b>Deep website check — 20+ tests (our best!)</b></td><td>Headers, cookies, CORS, exposed files, XSS, etc.</td></tr>
       <tr><td>Network & License</td><td>Checks ports and licenses</td><td>Warns about GPL license risk</td></tr>
@@ -208,7 +234,7 @@ iris webscan https://example.com --format sarif --output ws.sarif</div>
       </div>
       <div class="card">
         <h3>What to do?</h3>
-        <p style="font-size:13px;color:var(--muted)">Each finding has:<br>• <b>Title</b> — what is wrong<br>• <b>Description</b> — where it is<br>• <b>Fix</b> — how to fix it (in green)<br>• <b>Rule</b> — technical ID<br>Just follow the <b>Fix</b> line. If you use <code>--format html</code>, you get a nice report with a risk score and compliance mapping.</p>
+        <p style="font-size:13px;color:var(--muted)">Each finding has:<br>• <b>Title</b> — what is wrong<br>• <b>Description</b> — where it is<br>• <b>Fix</b> — how to fix it (in green)<br>• <b>Rule</b> — technical ID<br>Just follow the <b>Fix</b> line. If you use <code>--format html</code>, you get a report with a risk score and compliance mapping.</p>
       </div>
     </div>
     <div class="card">
@@ -221,13 +247,9 @@ iris webscan https://example.com --format sarif --output ws.sarif</div>
     <h2>Configuration — For advanced users (optional)</h2>
     <p class="lead">You don't need this, Iris works without it. But if you want to customize:</p>
     <div class="code"><button class="copy" onclick="navigator.clipboard.writeText('iris init')">Copy</button>iris init   # creates .iris.yaml — edit it if you want</div>
-    <div class="code">version: "1.1.0"
-scanners: { sast: true, sca: true, secrets: true, iac: true, container: true, dast: true, webscan: true, network: true, license: true }
-report: { format: html, color: true }
-filter:
-  min_severity: low
-  exclude_rules: [webscan-missing-security-txt]  # hide this rule if you don't care</div>
-    <p style="font-size:12px;color:var(--muted)">You can also use <code>--severity high</code> or <code>--profile enterprise</code> directly in the command without a file.</p>
+    <div class="code">version: "1.2.0"
+scanners: { sast: true, sca: true, secrets: true, iac: true, container: true, dast: true, webscan: true, network: true, license: true, format: true, buildtest: false }</div>
+    <p style="font-size:12px;color:var(--muted)">Scanner toggles are applied at startup. Pass <code>--severity high</code>, <code>--format sarif</code>, or <code>--output results.sarif</code> directly on the command line to control a run.</p>
   </section>
 
   <section id="reporting" class="section">
@@ -244,17 +266,29 @@ filter:
 
   <section id="cicd" class="section">
     <h2>CI/CD — Check automatically</h2>
-    <p class="lead">Make Iris run every time you push code. If it finds a big problem, it stops the deploy.</p>
+    <p class="lead">Make Iris run every time you push code and upload the SARIF report to GitHub Code Scanning. Gate merges with a required check or branch protection.</p>
     <h3>GitHub Actions — Add this to your repo</h3>
-    <div class="code">- uses: iris/iris-action@v1
-  with: { scan-type: 'sast,sca,secrets,webscan', severity: 'high,critical', format: 'sarif' }
-- uses: github/codeql-action/upload-sarif@v3
-  with: { sarif_file: results.sarif }</div>
+    <div class="code">- uses: Pixelcity-dev/iris/.github/actions/iris@v1.2.0
+  with:
+    scan-type: 'sast,sca,secrets'
+    severity: 'high'
+    format: 'sarif'
+    output: 'iris-results.sarif'
+    upload-code-scanning: 'true'</div>
     <h3>Pre-commit — Check before you commit</h3>
     <div class="code">repos:
-  - repo: https://github.com/Pixelcity-dev/iris
-    rev: v1.1.0
-    hooks: [{id: iris-secrets}, {id: iris-sast}]</div>
+  - repo: local
+    hooks:
+      - id: iris-secrets
+        name: Iris secrets
+        entry: iris scan . --scanner secrets --exit-code
+        language: system
+        pass_filenames: false
+      - id: iris-sast
+        name: Iris SAST
+        entry: iris scan . --scanner sast --exit-code
+        language: system
+        pass_filenames: false</div>
   </section>
 
   <section id="faq" class="section">
@@ -299,6 +333,7 @@ filter:
       <p><strong>Contact:</strong> <a href="mailto:service@pixelcity.dev">service@pixelcity.dev</a> — for questions, help, or enterprise support</p>
       <p><strong>Install:</strong> <code>curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh</code> • <code>~/.local/bin/iris</code></p>
       <p style="font-size:12px;color:var(--muted);margin-top:10px">Iris is open source (Apache 2.0) and developed by PixelCity. Scans run locally; cloud features are optional and require sign-in.</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">If Iris saves you time, <a href="https://github.com/Pixelcity-dev/iris/stargazers">star the repo</a> to help other developers find it.</p>
     </div>
   </section>
 

@@ -4,7 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iris Releases — Security Scanner Downloads</title>
-<meta name="description" content="Download Iris, an open-source security scanner for code, dependencies, infrastructure, containers, and websites.">
+<meta name="description" content="Download Iris v1.2.0 for Linux, macOS, and Windows, or install it with one command.">
+<link rel="canonical" href="https://pixelcity.top/releases">
+<meta name="theme-color" content="#0a0a0f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Iris">
+<meta property="og:title" content="Iris Releases — Security Scanner Downloads">
+<meta property="og:description" content="Download Iris v1.2.0 for Linux, macOS, and Windows, or install it with one command.">
+<meta property="og:url" content="https://pixelcity.top/releases">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Iris — one binary, eleven security scans">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Iris Releases — Security Scanner Downloads">
+<meta name="twitter:description" content="Download Iris v1.2.0 for Linux, macOS, and Windows, or install it with one command.">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Pixelcity-dev/iris@master/assets/social-preview.png">
 <style>
 :root{--bg:#0a0a0f;--card:#11111b;--border:#1e1e2e;--text:#cdd6f4;--muted:#9ca3af;--accent:#89b4fa;--radius:16px;--code:#181825}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -54,18 +69,17 @@ a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
 
     <h3 style="margin-top:16px">Quick Install (Recommended)</h3>
     <div class="code">curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
-# also: https://cdn.pixelcity.top/iris/install.sh
-# also: https://pixelcity.top/iris/install.sh</div>
+# also: https://cdn.pixelcity.top/iris/install.sh</div>
     <p style="font-size:12px;color:var(--muted)">The installer selects a compatible release asset and verifies the download checksum.</p>
 
     <h3 style="margin-top:16px">Manual Download — Pick your system</h3>
     <table class="table">
       <tr><th>System</th><th>File</th><th>Download</th><th>Checksum</th></tr>
-      <tr><td>Linux Intel/AMD 64-bit</td><td>iris-linux-amd64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-linux-amd64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-linux-amd64.sha256">.sha256</a></td></tr>
-      <tr><td>Linux ARM 64-bit (Raspberry Pi, ARM servers)</td><td>iris-linux-arm64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-linux-arm64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-linux-arm64.sha256">.sha256</a></td></tr>
-      <tr><td>macOS Intel</td><td>iris-darwin-amd64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-darwin-amd64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-darwin-amd64.sha256">.sha256</a></td></tr>
-      <tr><td>macOS Apple Silicon (M1/M2/M3)</td><td>iris-darwin-arm64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-darwin-arm64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-darwin-arm64.sha256">.sha256</a></td></tr>
-      <tr><td>Windows 64-bit</td><td>iris-windows-amd64.exe</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-windows-amd64.exe">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-windows-amd64.exe.sha256">.sha256</a></td></tr>
+      <tr><td>Linux Intel/AMD 64-bit</td><td>iris-linux-amd64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-linux-amd64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-linux-amd64.sha256">.sha256</a></td></tr>
+      <tr><td>Linux ARM 64-bit (Raspberry Pi, ARM servers)</td><td>iris-linux-arm64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-linux-arm64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-linux-arm64.sha256">.sha256</a></td></tr>
+      <tr><td>macOS Intel</td><td>iris-darwin-amd64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-darwin-amd64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-darwin-amd64.sha256">.sha256</a></td></tr>
+      <tr><td>macOS Apple Silicon (M1/M2/M3)</td><td>iris-darwin-arm64</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-darwin-arm64">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-darwin-arm64.sha256">.sha256</a></td></tr>
+      <tr><td>Windows 64-bit</td><td>iris-windows-amd64.exe</td><td><a class="btn" href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-windows-amd64.exe">Download</a></td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-windows-amd64.exe.sha256">.sha256</a></td></tr>
     </table>
 
     <h3>After downloading (Manual)</h3>
@@ -74,25 +88,26 @@ sudo mv iris-linux-amd64 /usr/local/bin/iris
 iris --version</div>
 
     <h3>Verify download (optional, recommended)</h3>
-    <div class="code">curl -fsSL https://cdn.pixelcity.dev/iris/releases/v1.0.0/iris-linux-amd64.sha256 -o sha256.txt
+    <div class="code">curl -fsSL https://cdn.pixelcity.dev/iris/releases/v1.2.0/iris-linux-amd64.sha256 -o sha256.txt
 sha256sum -c sha256.txt
 # should show: OK</div>
 
     <h3>Other ways</h3>
-    <div class="code">go install github.com/Pixelcity-dev/iris/cmd/iris@latest
+    <div class="code">go install github.com/Pixelcity-dev/Iris/cmd/iris@latest
 git clone https://github.com/Pixelcity-dev/iris.git
 git clone git@github.com:Pixelcity-dev/iris.git
 cd iris && make build && ./bin/iris --version</div>
 
-    <p style="font-size:12px;color:var(--muted);margin-top:12px">Mirrors: <a href="https://cdn.pixelcity.top/iris/releases/v1.0.0/">cdn.pixelcity.top/iris/releases/v1.0.0/</a> • <a href="https://pixelcity.top/iris/releases/v1.0.0/">pixelcity.top/iris/releases/v1.0.0/</a> • Served via Caddy (443) → Nginx pixelcity-cdn from /opt/pixelcity/cdn/assets/iris/releases/</p>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px">Mirrors: replace <code>cdn.pixelcity.dev</code> with <code>cdn.pixelcity.top</code> for the same release assets. Checksums and binaries are also attached to <a href="https://github.com/Pixelcity-dev/iris/releases">GitHub Releases</a>.</p>
   </div>
 
   <div class="card">
     <h3>All Releases</h3>
     <table class="table">
       <tr><th>Version</th><th>Date</th><th>Notes</th><th>Links</th></tr>
-      <tr><td><strong>v1.1.0</strong></td><td>22 Sep 2026</td><td>Formatter — iris fmt, 7 checks, auto-fix, 9 scanners</td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.1.0/">Folder</a> • <a href="https://github.com/Pixelcity-dev/iris/releases/tag/v1.1.0">GitHub</a></td></tr>
-      <tr><td><strong>v1.0.0</strong></td><td>22 Sep 2026</td><td>Initial release — security scanners and HTML reporting</td><td><a href="https://cdn.pixelcity.dev/iris/releases/v1.0.0/">Folder</a> • <a href="https://github.com/Pixelcity-dev/iris/releases/tag/v1.0.0">GitHub</a></td></tr>
+      <tr><td><strong>v1.2.0</strong></td><td>14 Nov 2026</td><td>Iris rename, WebScan without login, dashboard scan history, hardened probes, CI fixes</td><td><a href="https://github.com/Pixelcity-dev/iris/releases/tag/v1.2.0">Release notes</a></td></tr>
+      <tr><td><strong>v1.1.0</strong></td><td>22 Sep 2026</td><td>Formatter — iris fmt, 7 checks, auto-fix, 9 scanners</td><td><a href="https://github.com/Pixelcity-dev/iris/releases/tag/v1.1.0">Release notes</a></td></tr>
+      <tr><td><strong>v1.0.0</strong></td><td>22 Sep 2026</td><td>Initial release — security scanners and HTML reporting</td><td><a href="https://github.com/Pixelcity-dev/iris/releases/tag/v1.0.0">Release notes</a></td></tr>
     </table>
     <p style="font-size:12px;color:var(--muted)">See <a href="https://github.com/Pixelcity-dev/iris/releases">GitHub Releases</a> for the latest versions and assets.</p>
   </div>
