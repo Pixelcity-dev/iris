@@ -4,8 +4,11 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Apache 2.0 license" src="https://img.shields.io/badge/license-Apache--2.0-5bd3a7?style=flat-square"></a>
+  <a href="https://github.com/Pixelcity-dev/iris/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Pixelcity-dev/iris/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/Pixelcity-dev/iris/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Pixelcity-dev/iris?style=flat-square"></a>
-  <a href="https://goreportcard.com/report/github.com/Pixelcity-dev/Iris"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Pixelcity-dev/Iris"></a>
+  <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/Pixelcity-dev/iris?style=flat-square">
+  <a href="https://goreportcard.com/report/github.com/Pixelcity-dev/Iris"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Pixelcity-dev/Iris?style=flat-square"></a>
+  <a href="https://discord.gg/8BxaVG6fFm"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square"></a>
 </p>
 
 # Iris
@@ -14,7 +17,12 @@
 
 Run scans locally, use them as CI gates, or export results for your existing security workflow. Iris supports Linux, macOS, and Windows; the project is developed by [PixelCity](https://pixelcity.top) and released under the Apache 2.0 license.
 
+**Why another scanner?** Iris is a single static binary with the scanners built in. There is no `pip install`, no `npm install`, no Docker pull of a toolchain, and nothing is uploaded anywhere. A rule-only scan finishes in milliseconds, which makes it usable in a pre-commit hook as well as in CI.
+
 > Iris reports potential security issues to help teams investigate and remediate them. Scan only systems and applications you own or are authorized to test. A clean scan is not a guarantee of security or compliance.
+
+If Iris saves you time, a star helps other people find it.
+
 
 ## At a glance
 
@@ -43,9 +51,10 @@ The following terminal-style panels illustrate sample output. The code scan uses
 
 ```sh
 curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+iris --version
 ```
 
-The installer selects a release for your platform and verifies its SHA-256 checksum. It installs to `~/.local/bin` by default; set `INSTALL_DIR` to choose another destination.
+The installer picks the release asset for your platform (`iris-<os>-<arch>`), verifies its SHA-256 checksum, and installs to `~/.local/bin` by default; set `INSTALL_DIR` to choose another destination. Pin a version with `IRIS_VERSION=v1.2.0 sh`.
 
 ### Go
 
@@ -134,7 +143,9 @@ Run `iris init` to scaffold `.iris.yaml`. Configure scanners, severity threshold
 
 ## Contributing and security
 
-Contributions are welcome. Please open an issue to discuss larger changes and submit pull requests with relevant tests. Report security concerns privately to [service@pixelcity.dev](mailto:service@pixelcity.dev) rather than posting exploit details publicly.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the setup, the testing bar, and the redaction rule. Questions and rule ideas are fine in [Discussions](https://github.com/Pixelcity-dev/iris/discussions); larger changes should start as an issue.
+
+Please report vulnerabilities privately via [SECURITY.md](SECURITY.md) or [GitHub advisories](https://github.com/Pixelcity-dev/iris/security/advisories/new), not in a public issue. Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

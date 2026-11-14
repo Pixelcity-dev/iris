@@ -1,0 +1,57 @@
+name: Rule or detection request
+description: Iris should detect something it currently misses.
+labels: ["detection"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Detection requests are the most useful kind of contribution we get. A
+        small synthetic example is worth more than a long description.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Scanner area
+      options:
+        - SAST
+        - SCA
+        - Secrets
+        - IaC
+        - Container
+        - DAST / WebScan
+        - Network
+        - License
+        - Format / buildtest
+    validations:
+      required: true
+  - type: textarea
+    id: pattern
+    attributes:
+      label: What should be detected
+      description: Describe the vulnerable or risky pattern. Name the CWE if you know it.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Synthetic sample
+      description: |
+        Input where Iris should raise a finding. Replace all real values with
+        placeholders (`example.test`, `AKIAIOSFODNN7EXAMPLE`, fake tokens).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: falsepositives
+    attributes:
+      label: Cases that must NOT be flagged
+      description: Safe code that looks similar, so the rule does not become noisy.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The sample is synthetic and contains no live secrets or third-party data.
+          required: true
+        - label: I searched existing issues and rules for this detection.
+          required: true
