@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/iris-wordmark.svg" alt="Iris Security Platform" width="360">
+  <img src="assets/iris-wordmark.svg" alt="Iris" width="300">
 </p>
 
 <p align="center">
