@@ -3,8 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>One binary. Eleven scan types. No runtime dependencies for the built-in scanners.</strong><br>
-  SAST · Secrets · Dependency inventory · IaC · Containers · DAST/WebScan · Licenses · Formatting · Build gates
+  Security scanning for source code, dependencies, infrastructure, containers, and websites.
 </p>
 
 <p align="center">
@@ -13,7 +12,6 @@
   <a href="https://github.com/Pixelcity-dev/iris/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Pixelcity-dev/iris?style=flat-square"></a>
   <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/Pixelcity-dev/iris?style=flat-square">
   <a href="https://goreportcard.com/report/github.com/Pixelcity-dev/iris"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Pixelcity-dev/iris?style=flat-square"></a>
-  <a href="https://discord.gg/8BxaVG6fFm"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -21,22 +19,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Pixelcity-dev/iris/stargazers">Star the repo</a> ·
-  <a href="https://discord.gg/8BxaVG6fFm">Join Discord</a> ·
-  <a href="https://pixelcity.top/docs/iris">Read the docs</a>
+  <a href="https://pixelcity.top/docs/iris">Documentation</a>
 </p>
 
-**Iris** is an open-source security toolkit for source code, dependencies, infrastructure, containers, and websites. It brings a set of focused scanners together in one Go CLI, so a first-pass security check does not require installing a toolchain for every language you use.
+Iris is an open-source security scanner for source code, dependencies, infrastructure, containers, and websites. The built-in scanners are compiled into one Go binary and work offline.
 
-Run it locally, use it as a CI gate, or point it at a site you are authorized to test. The built-in scanners are self-contained and work offline; nothing is uploaded unless you explicitly sign in to the optional PixelCity dashboard. Iris is developed by [PixelCity](https://pixelcity.dev) and released under the Apache 2.0 license.
+Run it locally, use it as a CI gate, or point it at a site you are authorized to test. Nothing is uploaded unless you sign in to the optional PixelCity dashboard. Iris is developed by [PixelCity](https://pixelcity.dev) and released under Apache 2.0.
 
 > **Test only what you own or are authorized to test.** Iris reports potential security issues to help you investigate and remediate them. A clean scan is not a guarantee of security or compliance.
 
-If Iris saves you time, a star helps other developers find it.
-
 ## Contents
 
-- [Why Iris](#why-iris)
+- [What it does](#what-it-does)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Scanner coverage](#scanner-coverage)
@@ -51,13 +45,13 @@ If Iris saves you time, a star helps other developers find it.
 - [Contributing and security](#contributing-and-security)
 - [License](#license)
 
-## Why Iris
+## What it does
 
-- **One static binary.** The scanners are compiled in. There is no `pip install`, `npm install`, or container pull needed for the built-in checks.
-- **Local-first.** Source code and findings stay on your machine. Network access is used only by the website and network scanners, and by the installer.
-- **Fast enough to run often.** Rule-based scans finish in milliseconds, so Iris works in a pre-commit hook as well as in CI.
-- **CI-native output.** SARIF for GitHub Code Scanning, JUnit for test reporters, exit codes for policy gates, and JSON for anything else.
-- **Rules are data.** Add or adjust detections in `rules/*.yaml` instead of recompiling a scanner.
+- **One static binary.** The scanners are compiled in; the built-in checks need no language toolchain.
+- **Local-first.** Source and findings stay on your machine. Only the website and network scanners make outbound requests.
+- **Fast enough to run often.** Rule-based scans finish in milliseconds, which makes pre-commit and CI use practical.
+- **CI output.** SARIF for GitHub Code Scanning, JUnit for test reporters, exit codes for gates, and JSON for everything else.
+- **Rules are data.** Built-in rules are embedded in the binary; project rules in `rules.paths` override them by ID.
 - **Cross-platform.** Release builds for Linux (amd64/arm64), macOS (amd64/arm64), and Windows (amd64).
 
 ## Install
@@ -277,7 +271,18 @@ scanners:
   buildtest: false
 ```
 
-The scaffold also contains report and filter sections; those remain reserved until the configuration layer is wired to per-run output.
+The scaffold also contains report and filter sections. `report.format`, `filter.min_severity`, and `filter.compliance` are applied when the matching flag is not passed on the command line.
+
+Built-in rules are compiled into the binary, so `iris scan .` works from any directory and offline. To add project-specific rules, point `rules.paths` at a directory of YAML files:
+
+```yaml
+rules:
+  builtin: true
+  paths:
+    - ./.iris-rules
+```
+
+A rule with the same `id` as a built-in replaces it, which is how you tune a noisy detection without forking the scanner. Patterns are Go regular expressions; `||` is accepted as an alternation for older rule files.
 
 Iris looks for configuration in this order:
 
@@ -292,14 +297,14 @@ Iris looks for configuration in this order:
 
 | Command | What it does |
 | --- | --- |
-| `iris scan <target>` | Run one or more scanners against a directory, repository, container, or URL |
+| `iris scan <target>` | Run one or more scanners against a directory, repository, container, or URL. `--exclude`/`--include` accept file globs (`**` supported); `--profile startup\|business\|enterprise` applies scanner and threshold presets |
 | `iris webscan <url>` | Deep website security audit |
 | `iris fmt <path>` | Check or fix formatting (`--check`, `--fix`, `--diff`) |
 | `iris buildtest <path>` | Run the detected build and test commands as a gate |
 | `iris init` | Create `.iris.yaml` |
 | `iris rule list\|search\|info\|stats` | Inspect the built-in rule set |
 | `iris explain <id>` | Show a rule's description, severity, and remediation |
-| `iris show <file>` | Pretty-print a saved result file |
+| `iris show <file>` | Render a saved JSON scan in any report format (`--format`, `--output`) |
 | `iris convert -i <file> -f <format>` | Convert between report formats |
 | `iris baseline create --from <scan.json>` | Save accepted findings as a baseline |
 | `iris baseline diff --from <scan.json>` | Show only findings that are new since the baseline |
@@ -323,7 +328,7 @@ Iris is under active development. The most mature paths today are secret scannin
 Known limits:
 
 - SAST is rule-driven and pattern-based. The built-in patterns target obvious single-line matches and should not replace a dedicated SAST tool; expect limited coverage and false positives.
-- SCA inventories dependency manifests. It does not yet correlate packages with CVE feeds.
+- SCA inventories dependency manifests (including `go.mod` require blocks). It does not yet correlate packages with CVE feeds.
 - Some convenience commands (`db`, `mcp`, `plugin`, `server`) are scaffolds; they do not provide production behavior yet.
 - Detection quality and coverage improve release by release. Validate findings before using them as a hard production gate.
 

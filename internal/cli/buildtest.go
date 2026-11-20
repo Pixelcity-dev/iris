@@ -113,7 +113,7 @@ func runBuildTest(cmd *cobra.Command, args []string) error {
 	} else if total > 0 {
 		fmt.Fprintf(os.Stderr, "⚠  %s (no hard failures)\n", pluralize(total, "note"))
 	} else {
-		fmt.Fprintf(os.Stderr, "✅ All build tests passed\n")
+		fmt.Fprintf(os.Stderr, "All build tests passed\n")
 	}
 
 	// Persist to dashboard history (best-effort) before any CI exit.

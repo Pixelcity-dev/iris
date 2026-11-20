@@ -33,9 +33,11 @@ change and not the installed release.
   output — see the redaction rule below.
 - **Formatting and vet.** `gofmt -l .` must print nothing and `go vet ./...` must
   pass; CI enforces both.
-- **Rules are data.** Prefer adding a rule to `rules/` over hard-coding a check
-  in Go. Include the rule ID, severity, CWE where applicable, and a short
-  description.
+- **Rules are data.** Prefer adding a rule to `rules/builtin/` over hard-coding
+  a check in Go. Include the rule ID, severity, CWE where applicable, and a
+  short description. Rule patterns are Go regular expressions. Built-in rules
+  are embedded with `go:embed`, so run `make build` after editing a YAML file;
+  a running binary will not see uncommitted rule edits until it is rebuilt.
 - **No new runtime dependencies** unless there is no reasonable way to avoid
   them. Iris ships as a single static binary and that is a feature.
 - **Commit messages** follow `type(scope): summary`, for example

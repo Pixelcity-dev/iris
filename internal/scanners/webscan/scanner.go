@@ -42,9 +42,9 @@ func (s *WebScanScanner) Scan(ctx context.Context, target core.Target, rules []c
 	// Accept both URL and FS where URI looks like URL
 	raw := target.URI
 	if target.Kind == core.TargetFS && !isURL(raw) {
-		// for fs target, try to interpret as URL if user passed --scanner webscan on fs
-		// if not URL, return no findings but no error (skip)
-		return nil, nil
+		// Asking webscan for a filesystem path is a usage error; staying
+		// silent would look like a clean website scan.
+		return nil, fmt.Errorf("webscan needs a URL target, got filesystem path %q (did you mean: iris webscan https://%s)", raw, raw)
 	}
 	if !isURL(raw) {
 		return nil, fmt.Errorf("webscan requires URL target (http:// or https://), got: %s", raw)

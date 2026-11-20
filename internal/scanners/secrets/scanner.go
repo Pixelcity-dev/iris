@@ -49,7 +49,9 @@ func (s *SecretsScanner) loadPatterns() {
 		{Name: "Heroku API Key", Pattern: regexp.MustCompile(`(?i)heroku.*[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`), Severity: core.SeverityHigh, Category: "api-key"},
 		{Name: "Private Key Header", Pattern: regexp.MustCompile(`-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----`), Severity: core.SeverityCritical, Category: "private-key"},
 		{Name: "JWT Token", Pattern: regexp.MustCompile(`eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_.+/=]+`), Severity: core.SeverityMedium, Category: "token"},
-		{Name: "Password in URL", Pattern: regexp.MustCompile(`(?i)://[^:]+:[^@]+@`), Severity: core.SeverityCritical, Category: "credentials"},
+		// Restrict userinfo to URL-safe characters so a regex literal such as
+		// `://[^:]+:[^@]+@` in source code is not reported as a credential.
+		{Name: "Password in URL", Pattern: regexp.MustCompile(`(?i)://[\w.%+-]+:[^@\s"'<>()\[\]{}\\]+@`), Severity: core.SeverityCritical, Category: "credentials"},
 		{Name: "Generic Secret", Pattern: regexp.MustCompile(`(?i)(?:secret|password|passwd|pwd)\s*[=:]\s*['"]([^'"]+)['"]`), Severity: core.SeverityMedium, Category: "credentials"},
 		{Name: "Connection String", Pattern: regexp.MustCompile(`(?i)(?:jdbc|mysql|postgres|mongodb|redis)://[^\s'"]+`), Severity: core.SeverityHigh, Category: "database"},
 	}
@@ -75,13 +77,13 @@ func (s *SecretsScanner) Scan(ctx context.Context, target core.Target, rules []c
 			return nil
 		}
 		if info.IsDir() {
-			if info.Name() == ".git" || info.Name() == "node_modules" || info.Name() == "vendor" {
+			if core.ShouldSkipDir(info.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if !isScannable(path) {
+		if !isScannable(path) || info.Size() > core.MaxScanFileBytes {
 			return nil
 		}
 
@@ -108,26 +110,70 @@ func (s *SecretsScanner) scanFile(path string, lines []string) []core.Finding {
 
 	for i, line := range lines {
 		for _, pattern := range s.patterns {
-			if pattern.Pattern.MatchString(line) {
-				finding := core.Finding{
-					RuleID:      "secrets-" + strings.ToLower(strings.ReplaceAll(pattern.Name, " ", "-")),
-					Severity:    pattern.Severity,
-					Category:    pattern.Category,
-					Title:       pattern.Name,
-					Description: "Potential " + pattern.Name + " detected",
-					File:        path,
-					Line:        i + 1,
-					Code:        redactSecret(strings.TrimSpace(line)),
-					Fix:         "Remove the secret from code and use environment variables or a secrets manager",
-					Confidence:  0.9,
-				}
-				finding.GenerateFingerprint()
-				findings = append(findings, finding)
+			spans := pattern.Pattern.FindAllStringIndex(line, -1)
+			if len(spans) == 0 {
+				continue
 			}
+			if isPlaceholderSecret(pattern.Name, line) {
+				continue
+			}
+			finding := core.Finding{
+				RuleID:      "secrets-" + strings.ToLower(strings.ReplaceAll(pattern.Name, " ", "-")),
+				Severity:    pattern.Severity,
+				Category:    pattern.Category,
+				Title:       pattern.Name,
+				Description: "Potential " + pattern.Name + " detected",
+				File:        path,
+				Line:        i + 1,
+				Column:      spans[0][0] + 1,
+				Code:        redactSecret(line, spans),
+				Fix:         "Remove the secret from code and use environment variables or a secrets manager",
+				Confidence:  0.9,
+			}
+			finding.GenerateFingerprint()
+			findings = append(findings, finding)
 		}
 	}
 
 	return findings
+}
+
+// placeholderMarkers are values that documentation, templates and test
+// fixtures use to mean "not a real credential". Reporting them makes a first
+// scan look alarming for no reason — the Iris repository itself tripped on the
+// AWS example key its contributing guide tells people to use.
+var placeholderMarkers = []string{
+	"example",
+	"xxxx",
+	"your_",
+	"your-",
+	"<redacted>",
+	"[redacted]",
+	"changeme",
+	"change-me",
+	"placeholder",
+	"dummy",
+	"fake",
+	"sample",
+}
+
+func isPlaceholderSecret(patternName, line string) bool {
+	lower := strings.ToLower(line)
+	for _, marker := range placeholderMarkers {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	// Documentation URLs for the "password in URL" rule typically use
+	// user:pass@example.com or a localhost placeholder.
+	if patternName == "Password in URL" {
+		for _, host := range []string{"example.com", "example.test", "localhost", "127.0.0.1"} {
+			if strings.Contains(lower, host) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func isScannable(path string) bool {
@@ -151,9 +197,28 @@ func isScannable(path string) bool {
 	return extensions[ext]
 }
 
-func redactSecret(line string) string {
-	if len(line) > 100 {
-		return line[:50] + "...[REDACTED]..." + line[len(line)-20:]
+// redactSecret replaces every matched span with a fixed marker. The previous
+// implementation returned short lines unchanged, which printed the credential
+// itself into terminals, SARIF files and HTML reports.
+func redactSecret(line string, spans [][]int) string {
+	var b strings.Builder
+	last := 0
+	for _, span := range spans {
+		if span[0] < last || span[1] > len(line) {
+			continue
+		}
+		b.WriteString(line[last:span[0]])
+		b.WriteString("[REDACTED]")
+		last = span[1]
 	}
-	return line
+	b.WriteString(line[last:])
+	return truncateRunes(strings.TrimSpace(b.String()), 160)
+}
+
+func truncateRunes(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max]) + "…"
 }

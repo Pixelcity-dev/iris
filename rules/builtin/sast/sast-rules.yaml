@@ -15,7 +15,7 @@ rules:
       - injection
       - owasp-top10
     enabled: true
-    pattern: "SELECT.*FROM.*+|INSERT.*INTO.*+|UPDATE.*SET.*+|DELETE.*FROM.*+"
+    pattern: '(?i)\b(SELECT\b[^;]*\bFROM|INSERT\s+INTO|UPDATE\s+[A-Za-z0-9_.]+\s+SET|DELETE\s+FROM)\b'
 
   - id: sast-xss-detection
     name: Cross-Site Scripting (XSS)
@@ -33,7 +33,7 @@ rules:
       - injection
       - owasp-top10
     enabled: true
-    pattern: "innerHTML|document.write|eval(|setTimeout(|setInterval("
+    pattern: '(?i)(\.innerHTML\s*=|document\.write\s*\(|\beval\s*\(|setTimeout\s*\(\s*["'']|dangerouslySetInnerHTML)'
 
   - id: sast-command-injection
     name: Command Injection
@@ -49,7 +49,7 @@ rules:
       - command-injection
       - os-command
     enabled: true
-    pattern: "exec(|system(|os.system(|subprocess.call(|child_process"
+    pattern: '(?i)(\bexec\s*\(|\bsystem\s*\(|os\.system\s*\(|subprocess\.(call|run|Popen)\s*\(|child_process)'
 
   - id: sast-path-traversal
     name: Path Traversal
@@ -65,7 +65,7 @@ rules:
       - path-traversal
       - directory-traversal
     enabled: true
-    pattern: "\\.\\./|\\.\\.\\\\|readFile|open(|fopen("
+    pattern: '(?i)((?:readFile|readFileSync|fopen|os\.Open|ioutil\.ReadFile|filepath\.Join|path\.Join)\s*\([^)\n]*\.\.)'
 
   - id: sast-insecure-crypto
     name: Insecure Cryptographic Algorithm
@@ -81,7 +81,7 @@ rules:
       - cryptography
       - weak-crypto
     enabled: true
-    pattern: "MD5|SHA1|DES|RC4|ECB"
+    pattern: '(?i)\b(MD5|SHA1|DES|RC4|ECB)\b'
 
   - id: sast-hardcoded-credential
     name: Hardcoded Credential
@@ -97,4 +97,4 @@ rules:
       - credentials
       - hardcoded
     enabled: true
-    pattern: "password\\s*=\\s*['\"]|secret\\s*=\\s*['\"]|api_key\\s*=\\s*['\"]"
+    pattern: '(?i)\b(password|passwd|secret|api_key|apikey|access_key|token)\s*[:=]\s*["'']([^"'']{4,})["'']'

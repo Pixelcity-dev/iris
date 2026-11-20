@@ -39,3 +39,7 @@ jobs:
 
       - name: Test
         run: go test ./...
+
+      - name: Test dashboard module
+        working-directory: dashboard
+        run: go test ./...

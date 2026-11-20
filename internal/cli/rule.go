@@ -2,7 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
+	"os"
 	"strings"
 
 	"github.com/Pixelcity-dev/Iris/internal/core"
@@ -63,12 +63,27 @@ func init() {
 	rootCmd.AddCommand(ruleCmd)
 }
 
-func initRuleEngine() {
-	rules = core.NewRuleEngine()
-	rules.LoadRulesFromDir("rules")
-	for _, p := range cfg.Rules.Paths {
-		rules.LoadRulesFromDir(p)
+// loadRuleEngine builds the rule set used by scans: the rules compiled into
+// the binary first, then any external rule files from the configuration.
+// Loading the built-ins is not optional — without it a released binary would
+// find no SAST rules at all outside a repository checkout.
+func loadRuleEngine() *core.RuleEngine {
+	engine := core.NewRuleEngine()
+	if err := engine.LoadBuiltinRules(); err != nil {
+		fmt.Fprintf(os.Stderr, "warn: could not load built-in rules: %v\n", err)
 	}
+	if cfg != nil {
+		for _, p := range cfg.Rules.Paths {
+			if err := engine.LoadRulesFromDir(p); err != nil {
+				fmt.Fprintf(os.Stderr, "warn: could not load rules from %s: %v\n", p, err)
+			}
+		}
+	}
+	return engine
+}
+
+func initRuleEngine() {
+	rules = loadRuleEngine()
 }
 
 func runRuleList(cmd *cobra.Command, args []string) error {
@@ -79,6 +94,9 @@ func runRuleList(cmd *cobra.Command, args []string) error {
 
 	var filtered []core.Rule
 	for _, r := range allRules {
+		if ruleEnabled && !r.Enabled {
+			continue
+		}
 		if ruleLanguage != "" && !strings.EqualFold(r.Language, ruleLanguage) {
 			continue
 		}
@@ -159,8 +177,4 @@ func runRuleStats(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func init() {
-	_ = filepath.Join("", "")
 }

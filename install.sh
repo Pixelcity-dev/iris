@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Iris Installer v2 - Ultra Easy Install
-# All-in-one Cybersecurity CLI Tool
+# Iris installer: downloads the release binary for this platform, verifies
+# its SHA-256 checksum, and installs it.
 #
 # Quick Install (pick one):
 #   curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
@@ -72,14 +72,8 @@ for arg in "$@"; do
 done
 
 echo ""
-echo -e "${CYAN}  ____                           ____  ______  __ __ ${NC}"
-echo -e "${CYAN} |  _ \\  ___  ___ _   _ _ __ ___|  _ \\|  _ \\ \\ V / |${NC}"
-echo -e "${CYAN} | | | |/ _ \\/ __| | | | '__/ __| | | | | | | | |  |${NC}"
-echo -e "${CYAN} | |_| |  __/\\__ \\ |_| | | | (__| |_| | |_| | | |  |${NC}"
-echo -e "${CYAN} |____/ \\___||___/\\__,_|_|  \\___|____/|____/ |_|__|${NC}"
-echo -e "${CYAN}                                     ${IRIS_VERSION}${NC}"
-echo ""
-echo -e "  ${DIM}All-in-one Cybersecurity CLI — SAST/SCA/Secrets/IaC/Container/DAST/Network/License + WebScan${NC}"
+echo -e "  ${CYAN}Iris installer${NC}  ${DIM}${IRIS_VERSION}${NC}"
+echo -e "  ${DIM}Security scans for code, dependencies, containers, and websites${NC}"
 echo ""
 
 check_deps() {
@@ -296,8 +290,15 @@ install_binary() {
 }
 
 update_path() {
-  # if already in PATH, done
+  # Check membership before exporting, otherwise the prepend below always
+  # makes the install dir look like it is already on PATH.
+  ALREADY_ON_PATH=0
   if [[ ":$PATH:" == *":$INSTALL_DIR:"* ]]; then
+    ALREADY_ON_PATH=1
+  fi
+  # Make the binary usable in the current shell before returning.
+  export PATH="$INSTALL_DIR:$PATH"
+  if [ "$ALREADY_ON_PATH" = "1" ]; then
     return 0
   fi
   # detect shell rc files
@@ -331,17 +332,14 @@ update_path() {
     if ! grep -q "$INSTALL_DIR" "$TARGET_RC" 2>/dev/null; then
       echo "" >> "$TARGET_RC"
       echo "# Iris" >> "$TARGET_RC"
-      echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$TARGET_RC"
+      echo 'export PATH="'"$INSTALL_DIR"':$PATH"' >> "$TARGET_RC"
       warn "Added $INSTALL_DIR to PATH in $TARGET_RC"
       warn "Run: source $TARGET_RC  or restart your terminal"
     fi
   else
     warn "Add $INSTALL_DIR to your PATH manually:"
-    warn "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    warn "  export PATH=\"$INSTALL_DIR:\$PATH\""
   fi
-
-  # also export for current session
-  export PATH="$INSTALL_DIR:$PATH"
 }
 
 verify_install() {

@@ -40,6 +40,12 @@ func (s *LicenseScanner) Scan(ctx context.Context, target core.Target, rules []c
 		if err != nil {
 			return nil
 		}
+		if info.IsDir() {
+			if core.ShouldSkipDir(info.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 
 		if info.Name() == "LICENSE" || info.Name() == "LICENSE.md" || info.Name() == "LICENSE.txt" || info.Name() == "COPYING" {
 			data, err := os.ReadFile(path)
@@ -60,6 +66,8 @@ func (s *LicenseScanner) Scan(ctx context.Context, target core.Target, rules []c
 					Description: "License file found: " + licenseType,
 					File:        relPath,
 					Confidence:  0.9,
+					// Detection is inventory, not a defect: only a copyleft
+					// license below carries a remediation.
 					Metadata: map[string]interface{}{
 						"license_type": licenseType,
 					},

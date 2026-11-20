@@ -116,7 +116,7 @@ func RiskScore(findings []Finding) (score int, level string) {
 	}
 	switch {
 	case score == 0:
-		return 0, "Excellent"
+		return 0, "None"
 	case score < 5:
 		return score, "Low"
 	case score < 20:

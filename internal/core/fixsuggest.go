@@ -59,7 +59,7 @@ func suggest(f *Finding) string {
 		headerFix(&b, f)
 	case f.Category == "open-redirect":
 		redirectFix(&b, f, lang)
-	case f.Category == "license":
+	case f.Category == "license" && strings.Contains(f.RuleID, "copyleft"):
 		licenseFix(&b, f)
 	default:
 		return ""
@@ -220,6 +220,22 @@ func sastFix(b *strings.Builder, f *Finding, lang string) {
 			fmt.Fprintf(b, "  Use prepared statements / bound parameters for every value.\n")
 		}
 		fmt.Fprintf(b, "Also validate IDs against an allowlist before querying.")
+	case "sast-xss-detection", "xss":
+		fmt.Fprintf(b, "Render the flagged value as text or encode it for its context at %s:%d:\n", f.File, f.Line)
+		switch lang {
+		case "js", "ts":
+			fmt.Fprintf(b, "  element.textContent = value   // instead of innerHTML\n")
+			fmt.Fprintf(b, "  For rich HTML use a sanitizer (DOMPurify) and a CSP without 'unsafe-inline'.\n")
+		case "go":
+			fmt.Fprintf(b, "  html/template auto-escapes; never build HTML with fmt.Sprintf, and set a CSP.\n")
+		default:
+			fmt.Fprintf(b, "  Use context-aware output encoding and never eval untrusted input.\n")
+		}
+		fmt.Fprintf(b, "Add a test with a payload such as <script>alert(1)</script> and assert it is escaped.")
+	case "sast-command-injection", "command-injection":
+		fmt.Fprintf(b, "Do not build a shell command from input at %s:%d:\n", f.File, f.Line)
+		fmt.Fprintf(b, "  Pass arguments as a list to an exec API (exec.Command / subprocess.run([...])) with shell=False.\n")
+		fmt.Fprintf(b, "  If a shell is unavoidable, allowlist the accepted values instead of escaping.\n")
 	case "sast-hardcoded-credentials", "hardcoded-credential":
 		fmt.Fprintf(b, "Move the credential out of source into the environment:\n")
 		fmt.Fprintf(b, "  1. Replace the literal with os.Getenv / process.env at %s:%d\n", f.File, f.Line)

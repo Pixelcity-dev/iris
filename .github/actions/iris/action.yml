@@ -35,6 +35,9 @@ runs:
       shell: bash
       run: |
         curl -fsSL https://cdn.pixelcity.dev/iris/install.sh | sh
+        # The installer writes PATH changes to a shell rc file, which the
+        # next step does not source. Publish the install dir for later steps.
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
     - name: Run Iris Scan
       shell: bash

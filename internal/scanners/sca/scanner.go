@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/Pixelcity-dev/Iris/internal/core"
@@ -33,46 +34,58 @@ func (s *SCAScanner) SupportedTargets() []core.TargetKind {
 	return []core.TargetKind{core.TargetFS, core.TargetRepo}
 }
 
-func (s *SCAScanner) Scan(ctx context.Context, target core.Target, rules []core.Rule) ([]core.Finding, error) {
-	var findings []core.Finding
+// manifestScanners maps a manifest file name to the parser that understands
+// it. Keeping this as one list means the directory is walked once instead of
+// once per ecosystem, and output order is stable.
+var manifestScanners = map[string]func(string) ([]core.Finding, error){
+	"go.mod":           scanGoModules,
+	"package.json":     scanNPM,
+	"requirements.txt": scanPython,
+	"Pipfile":          scanPython,
+	"pom.xml":          scanMaven,
+	"build.gradle":     scanGradle,
+	"build.gradle.kts": scanGradle,
+	"Cargo.toml":       scanCargo,
+	"Gemfile":          scanRuby,
+	"composer.json":    scanPHP,
+}
 
-	ecosystems := map[string]func(string) ([]core.Finding, error){
-		"go.mod":           scanGoModules,
-		"package.json":     scanNPM,
-		"requirements.txt": scanPython,
-		"Pipfile":          scanPython,
-		"pom.xml":          scanMaven,
-		"build.gradle":     scanGradle,
-		"Cargo.toml":       scanCargo,
-		"Gemfile":          scanRuby,
-		"composer.json":    scanPHP,
-		"*.csproj":         scanDotNet,
+func (s *SCAScanner) Scan(ctx context.Context, target core.Target, rules []core.Rule) ([]core.Finding, error) {
+	var paths []string
+
+	err := filepath.Walk(target.URI, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			if core.ShouldSkipDir(info.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		base := filepath.Base(path)
+		if _, ok := manifestScanners[base]; ok || strings.HasSuffix(base, ".csproj") {
+			paths = append(paths, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	for pattern, scanner := range ecosystems {
-		if strings.Contains(pattern, "*") {
-			ext := strings.TrimPrefix(pattern, "*")
-			filepath.Walk(target.URI, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return nil
-				}
-				if strings.HasSuffix(path, ext) {
-					f, err := scanner(path)
-					if err == nil {
-						findings = append(findings, f...)
-					}
-				}
-				return nil
-			})
-		} else {
-			path := filepath.Join(target.URI, pattern)
-			if _, err := os.Stat(path); err == nil {
-				f, err := scanner(path)
-				if err == nil {
-					findings = append(findings, f...)
-				}
-			}
+	sort.Strings(paths)
+
+	var findings []core.Finding
+	for _, path := range paths {
+		scanner := manifestScanners[filepath.Base(path)]
+		if scanner == nil {
+			scanner = scanDotNet
 		}
+		f, err := scanner(path)
+		if err != nil {
+			continue
+		}
+		findings = append(findings, f...)
 	}
 
 	return findings, nil
@@ -89,27 +102,51 @@ func scanGoModules(path string) ([]core.Finding, error) {
 	content := string(data)
 	lines := strings.Split(content, "\n")
 
-	for i, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "require") {
-			parts := strings.Fields(line)
-			if len(parts) >= 2 {
-				findings = append(findings, core.Finding{
-					RuleID:      "sca-go-dependency",
-					Severity:    core.SeverityInfo,
-					Category:    "dependency",
-					Title:       "Go Dependency Detected",
-					Description: "Dependency: " + parts[1],
-					File:        path,
-					Line:        i + 1,
-					Code:        line,
-					Confidence:  1.0,
-				})
+	// go.mod lists dependencies either inline ("require x v1.0.0") or in a
+	// parenthesised block. Handling only the inline form missed nearly every
+	// real module.
+	inRequireBlock := false
+	for i, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+		if inRequireBlock {
+			if line == ")" {
+				inRequireBlock = false
+				continue
 			}
+			addGoDependency(&findings, path, line, i+1)
+			continue
+		}
+		if line == "require (" {
+			inRequireBlock = true
+			continue
+		}
+		if strings.HasPrefix(line, "require ") {
+			addGoDependency(&findings, path, strings.TrimSpace(strings.TrimPrefix(line, "require")), i+1)
 		}
 	}
 
 	return findings, nil
+}
+
+func addGoDependency(findings *[]core.Finding, path, line string, lineNo int) {
+	parts := strings.Fields(line)
+	if len(parts) < 2 {
+		return
+	}
+	*findings = append(*findings, core.Finding{
+		RuleID:      "sca-go-dependency",
+		Severity:    core.SeverityInfo,
+		Category:    "dependency",
+		Title:       "Go Dependency Detected",
+		Description: "Dependency: " + parts[0],
+		File:        path,
+		Line:        lineNo,
+		Code:        line,
+		Confidence:  1.0,
+	})
 }
 
 func scanNPM(path string) ([]core.Finding, error) {

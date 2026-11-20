@@ -20,11 +20,14 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 	var allFindings []core.Finding
 	duration := 0.0
 	targets := []string{}
+	seenTargets := map[string]bool{}
 	for _, res := range results {
 		totalFindings += len(res.Findings)
 		allFindings = append(allFindings, res.Findings...)
 		duration += res.Duration
-		if res.Target.URI != "" {
+		// One result per scanner shares the same target; print it once.
+		if res.Target.URI != "" && !seenTargets[res.Target.URI] {
+			seenTargets[res.Target.URI] = true
 			targets = append(targets, res.Target.URI)
 		}
 	}
@@ -33,22 +36,18 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 	// Header
 	sb.WriteString("\n")
 	if opts.Color {
-		sb.WriteString("\033[1;34m╔════════════════════════════════════════════════════════════════╗\033[0m\n")
-		sb.WriteString("\033[1;34m║\033[0m \033[1;37m⬡ Iris — Cyber Security Enterprise Tool                 \033[0m\033[1;34m║\033[0m\n")
-		sb.WriteString("\033[1;34m║\033[0m  \033[2mSAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format • BuildTest\033[0m  \033[1;34m║\033[0m\n")
-		sb.WriteString("\033[1;34m╚════════════════════════════════════════════════════════════════╝\033[0m\n")
+		sb.WriteString("\033[1;34mIris\033[0m — security scan\n")
 	} else {
-		sb.WriteString("Iris — Cyber Security Enterprise Tool\n")
-		sb.WriteString("SAST • SCA • Secrets • IaC • Containers • DAST • WebScan • Network • Format • BuildTest\n")
+		sb.WriteString("Iris — security scan\n")
 	}
-	sb.WriteString(fmt.Sprintf("  Target: %s  •  %s  •  %.2fs\n", strings.Join(targets, ", "), time.Now().Format("2006-01-02 15:04 MST"), duration))
+	sb.WriteString(fmt.Sprintf("Target: %s  •  %s  •  %.2fs\n", strings.Join(targets, ", "), time.Now().Format("2006-01-02 15:04 MST"), duration))
 	// Risk rating
 	riskColor := ""
 	reset := ""
 	if opts.Color {
 		reset = "\033[0m"
 		switch level {
-		case "Excellent":
+		case "None":
 			riskColor = "\033[1;32m"
 		case "Low":
 			riskColor = "\033[32m"
@@ -60,9 +59,9 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 			riskColor = "\033[1;31m"
 		}
 	}
-	sb.WriteString(fmt.Sprintf("  Risk Score: %s%d (%s)%s", riskColor, score, level, reset))
+	sb.WriteString(fmt.Sprintf("Risk score: %s%d (%s)%s", riskColor, score, level, reset))
 	if totalFindings == 0 {
-		sb.WriteString("  ✅ Excellent — No actionable findings\n\n")
+		sb.WriteString("  •  no findings at the configured severity\n\n\n")
 		return []byte(sb.String()), nil
 	}
 	sb.WriteString(fmt.Sprintf("  •  %d findings\n\n", totalFindings))
@@ -155,7 +154,11 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 			}
 			sb.WriteString(fmt.Sprintf("  [%s] %s\n", sev, f.Title))
 			if f.File != "" {
-				sb.WriteString(fmt.Sprintf("       File: %s:%d\n", f.File, f.Line))
+				if f.Line > 0 {
+					sb.WriteString(fmt.Sprintf("       File: %s:%d\n", f.File, f.Line))
+				} else {
+					sb.WriteString(fmt.Sprintf("       File: %s\n", f.File))
+				}
 			}
 			sb.WriteString(fmt.Sprintf("       Rule: %s  •  Category: %s", f.RuleID, f.Category))
 			if cm, ok := config.ComplianceByCategory[f.Category]; ok {
@@ -179,8 +182,7 @@ func (r *TableReporter) Generate(results []core.ScanResult, opts ReportOptions) 
 		}
 	}
 	sb.WriteString("────────────────────────────────────────────────────────────────\n")
-	sb.WriteString("  Next: iris scan --format sarif --output results.sarif  → GitHub Code Scanning\n")
-	sb.WriteString("        iris scan --format html --output report.html   → Report\n")
-	sb.WriteString("  Docs: https://pixelcity.top/docs/iris  •  https://github.com/Pixelcity-dev/Iris\n")
+	sb.WriteString("Next: --format sarif for GitHub Code Scanning, --format html for a shareable report\n")
+	sb.WriteString("Docs: https://pixelcity.top/docs/iris  •  https://github.com/Pixelcity-dev/Iris\n")
 	return []byte(sb.String()), nil
 }

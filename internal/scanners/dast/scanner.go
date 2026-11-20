@@ -61,10 +61,11 @@ func (s *DASTScanner) Scan(ctx context.Context, target core.Target, rules []core
 		},
 	}
 
-	// Fetch once for header checks
+	// Fetch once for header checks. A failed fetch is an error, not a clean
+	// scan: reporting "no findings" for an unreachable site is misleading.
 	resp, err := client.Get(targetURL.String())
 	if err != nil {
-		return findings, nil
+		return nil, fmt.Errorf("could not reach %s: %w", targetURL, err)
 	}
 	defer resp.Body.Close()
 	// Drain body for keep-alive but keep headers

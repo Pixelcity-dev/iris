@@ -74,46 +74,6 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* Background Effects */
-        .bg-grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .glow-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .glow-orb.blue {
-            width: 600px;
-            height: 600px;
-            background: var(--accent);
-            top: -200px;
-            right: -200px;
-        }
-
-        .glow-orb.purple {
-            width: 500px;
-            height: 500px;
-            background: var(--purple);
-            bottom: -150px;
-            left: -150px;
-        }
-
         /* Container */
         .container {
             max-width: 1200px;
@@ -223,28 +183,13 @@
             margin-bottom: 32px;
         }
 
-        .hero-badge .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         .hero h1 {
-            font-size: 72px;
+            font-size: 56px;
             font-weight: 700;
             line-height: 1.1;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 50%, var(--purple) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            max-width: 760px;
+            margin: 0 auto 24px;
+            color: var(--text-primary);
         }
 
         .hero p {
@@ -276,14 +221,12 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--purple));
+            background: var(--accent);
             color: white;
-            box-shadow: 0 4px 20px var(--accent-glow);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px var(--accent-glow);
+            background: #2563eb;
         }
 
         .btn-secondary {
@@ -378,27 +321,7 @@
 
         .feature-card:hover {
             border-color: var(--accent);
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        .feature-icon.sast { background: rgba(239, 68, 68, 0.1); }
-        .feature-icon.sca { background: rgba(249, 115, 22, 0.1); }
-        .feature-icon.secrets { background: rgba(245, 158, 11, 0.1); }
-        .feature-icon.iac { background: rgba(16, 185, 129, 0.1); }
-        .feature-icon.container { background: rgba(6, 182, 212, 0.1); }
-        .feature-icon.dast { background: rgba(139, 92, 246, 0.1); }
 
         .feature-card h3 {
             font-size: 20px;
@@ -458,37 +381,6 @@
         .code-content .flag { color: #3b82f6; }
         .code-content .string { color: #f59e0b; }
         .code-content .output { color: #9ca3af; }
-
-        /* Stats */
-        .stats {
-            padding: 80px 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 32px;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 32px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        .stat-value {
-            font-size: 48px;
-            font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
 
         /* Formats */
         .formats {
@@ -553,10 +445,6 @@
                 font-size: 42px;
             }
 
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
             nav {
                 display: none;
             }
@@ -564,10 +452,6 @@
     </style>
 </head>
 <body>
-    <div class="bg-grid"></div>
-    <div class="glow-orb blue"></div>
-    <div class="glow-orb purple"></div>
-
     <header>
         <div class="container">
             <div class="header-content">
@@ -592,12 +476,9 @@
 
     <section class="hero">
         <div class="container">
-            <div class="hero-badge">
-                <span class="dot"></span>
-                Open-source security scanning for developers
-            </div>
+            <div class="hero-badge">Open-source · Apache-2.0</div>
             <h1>Security scanning for code and websites</h1>
-            <p>Find potential vulnerabilities across source code, dependencies, infrastructure, containers, and web applications with one Go-based command-line toolkit.</p>
+            <p>Find potential vulnerabilities in source code, dependencies, infrastructure, containers, and websites from one Go binary. Results stay local unless you choose to upload them.</p>
             <div class="hero-actions">
                 <a href="#install" class="btn btn-primary">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -605,10 +486,10 @@
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    Install Now
+                    Install
                 </a>
-                <a href="https://github.com/Pixelcity-dev/iris/stargazers" class="btn btn-secondary" target="_blank">
-                    Star on GitHub
+                <a href="https://github.com/Pixelcity-dev/iris" class="btn btn-secondary" target="_blank">
+                    View source
                 </a>
             </div>
             <div class="install-section">
@@ -625,37 +506,31 @@
     <section class="features" id="features">
         <div class="container">
             <div class="section-header">
-                <h2>Comprehensive Security Scanning</h2>
+                <h2>What it scans</h2>
                 <p>Focused checks for application code, dependencies, infrastructure, and running web services</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon sast">🔍</div>
                     <h3>SAST</h3>
                     <p>Rule-based checks surface common risky patterns in supported source code. Built-in rule coverage is intentionally limited.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon sca">📦</div>
                     <h3>SCA</h3>
                     <p>Inventory supported package manifests so you can review dependencies before deployment.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon secrets">🔑</div>
                     <h3>Secrets</h3>
                     <p>Identify potential leaked credentials, API keys, and private keys in project files.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon iac">🏗️</div>
                     <h3>IaC</h3>
                     <p>Review supported infrastructure and container configuration for risky defaults and exposure.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon container">🐳</div>
                     <h3>Container</h3>
                     <p>Inspect Dockerfiles and container configuration for root users, exposed SSH, privileged mode, and host networking.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon dast">🌐</div>
                     <h3>DAST & WebScan</h3>
                     <p>Assess authorized web targets for TLS, headers, cookies, CORS, and selected application exposure risks.</p>
                 </div>
@@ -679,7 +554,7 @@
     <section class="code-section" id="install">
         <div class="container">
             <div class="section-header">
-                <h2>Get Started in Seconds</h2>
+                <h2>Install and run</h2>
                 <p>Install the CLI, scan locally, and export findings for your workflow</p>
             </div>
             <div class="code-block">
@@ -702,33 +577,10 @@
         </div>
     </section>
 
-    <section class="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">Code + Web</div>
-                    <div class="stat-label">Security coverage</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">One CLI</div>
-                    <div class="stat-label">Multiple scanners</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">SARIF</div>
-                    <div class="stat-label">CI-ready reporting</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">Local</div>
-                    <div class="stat-label">Developer workflow</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <section class="formats" id="formats">
         <div class="container">
             <div class="section-header">
-                <h2>Structured reports for your workflow</h2>
+                <h2>Report formats</h2>
                 <p>Export findings in common formats for CI, review, and security tooling</p>
             </div>
             <div class="format-grid">

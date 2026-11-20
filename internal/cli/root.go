@@ -35,33 +35,35 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "iris",
-	Short: "Iris — Cyber Security Enterprise Tool",
-	Long: `Iris — Cyber Security Enterprise Tool
+	Short: "Scan code, dependencies, containers, and websites",
+	Long: `Iris scans source code, dependencies, infrastructure, containers, and websites.
+The built-in scanners are compiled in and work offline.
 
-All-in-one security platform. One binary, zero dependencies, covers code + supply chain + cloud + web + formatting.
-
-CAPABILITIES
-  Code & Supply Chain  SAST (11+ langs: Go, Java, JS/TS, Python, Rust, PHP, Ruby, C/C++, C#, Kotlin, Swift)
-                      SCA (dependency inventory: Go, npm, pip, Maven, Gradle, Cargo, RubyGems, Composer, NuGet)
-                      Secrets (18 credential patterns, redacted output), License (license types + copyleft flag)
-  Cloud & Containers   IaC (Terraform, Kubernetes, Dockerfile), Container (Dockerfile), Network
-  Web & API            DAST + WebScan (OWASP Top 10, 20+ deep checks: headers, TLS, CORS, CSP, auth, etc.)
-  Quality              Format (7 checks: trailing ws, EOF newline, CRLF, mixed indent, long lines, gofmt, blanks) • iris fmt
+SCANNERS
+  sast       pattern rules for risky code (Go, Java, JS/TS, Python, Rust, PHP, Ruby, C/C++, C#, Kotlin, Swift)
+  secrets    credentials and private keys; matched values are redacted
+  sca        dependency inventory from Go, npm, pip, Maven, Cargo, RubyGems, Composer, NuGet manifests
+  iac        Dockerfile, Terraform, and Kubernetes checks
+  container  Dockerfile hardening checks
+  dast       HTTP security headers, TLS, cookies, and CORS
+  webscan    dast plus CSP, exposed files, security.txt, and safe probes
+  network    common exposed TCP services
+  license    license detection and copyleft flag
+  format     whitespace, line endings, indentation, and gofmt
+  buildtest  run the project's build and test commands as a gate
 
 EXAMPLES
-  iris scan .                                      # scan current repo
-  iris scan . --severity high --exit-code           # gate on high/critical
-  iris fmt . --check                               # formatting gate (CI)
-  iris fmt . --fix                                 # auto-fix formatting
+  iris scan .
+  iris scan . --severity high --exit-code
+  iris fmt . --check
+  iris fmt . --fix
   iris webscan https://example.com --format sarif --output ws.sarif
-  iris scan https://example.com --scanner webscan,dast --format sarif --output web.sarif
-  iris scan ./app --format html --output report.html
+  iris scan . --format html --output report.html
 
-Learn more: https://pixelcity.top/docs/iris
-Support: service@pixelcity.dev`,
+Docs: https://pixelcity.top/docs/iris`,
 	Version: version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		initConfig()
+		initConfig(cmd)
 		initScanners()
 	},
 }
@@ -77,10 +79,10 @@ func Execute() {
 		}
 	}
 	vc := ui.ColorOK(noColor, os.Stdout)
-	rootCmd.SetVersionTemplate(ui.Gold("Iris ", vc) + `{{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
+	rootCmd.SetVersionTemplate(ui.Gold("Iris ", vc) + `{{.Version}} ({{.Name}})
   commit: ` + commit + `
   built:  ` + buildTime + `
-  scanners: 11  •  langs: 11+  •  ` + ui.Gold(`https://pixelcity.top/docs/iris`, vc) + `
+  docs:   ` + ui.Gold(`https://pixelcity.top/docs/iris`, vc) + `
 `)
 
 	// cobra's error print is silenced; print once here.
@@ -98,11 +100,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose diagnostics")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "quiet — errors only")
 	rootCmd.PersistentFlags().String("profile", "", "profile (enterprise) — overrides scanners & thresholds")
-	rootCmd.PersistentFlags().String("compliance", "", "compliance mapping: soc2, iso27001, gdpr, hipaa, owasp")
-	rootCmd.SetVersionTemplate(`Iris {{.Version}} ({{.Name}}) — Cyber Security Enterprise Tool
+	rootCmd.PersistentFlags().String("compliance", "", "annotate findings with control mappings: cwe, iso27001, owasp, soc2")
+	rootCmd.SetVersionTemplate(`Iris {{.Version}} ({{.Name}})
   commit: ` + commit + `
   built:  ` + buildTime + `
-  scanners: 11  •  langs: 11+  •  https://pixelcity.top/docs/iris
+  docs:   https://pixelcity.top/docs/iris
 `)
 }
 
@@ -118,7 +120,19 @@ func quietEnabled() bool {
 	return err == nil && v
 }
 
-func initConfig() {
+func initConfig(cmd *cobra.Command) {
+	loadConfigFile()
+
+	profile, _ := cmd.Flags().GetString("profile")
+	if profile != "" {
+		if err := config.ApplyProfile(cfg, profile); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func loadConfigFile() {
 	if cfgFile != "" {
 		var err error
 		cfg, err = config.LoadConfig(cfgFile)
@@ -171,12 +185,10 @@ func initScanners() {
 	if cfg.Scanners.Format {
 		registry.Register(format.NewFormatScanner())
 	}
-	if cfg.Scanners.WebScan {
-		registry.Register(webscan.NewWebScanScanner())
-	} else {
-		// always register webscan even if disabled in config, so --scanner webscan works
-		registry.Register(webscan.NewWebScanScanner())
-	}
+	// webscan is always registered so an explicit --scanner webscan works even
+	// when the config disables it; the config toggle is honoured when the
+	// default scanner set for a URL target is chosen.
+	registry.Register(webscan.NewWebScanScanner())
 	// Build tests: analyze project language/structure and run build + tests
 	// (registered always; only runs when explicitly requested via --scanner buildtest
 	// or enabled in .iris.yaml, since executing builds is opt-in)

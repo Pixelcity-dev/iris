@@ -54,7 +54,7 @@ var cloudLoginCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, "Logged in (could not fetch profile details)")
 			return nil
 		}
-		fmt.Fprintf(os.Stderr, "✅ Logged in as %s <%s>\n", claims.PreferredUsername, claims.Email)
+		fmt.Fprintf(os.Stderr, "Logged in as %s <%s>\n", claims.PreferredUsername, claims.Email)
 		fmt.Fprintf(os.Stderr, "Plan & usage: iris cloud status\n")
 		return nil
 	},

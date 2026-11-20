@@ -41,6 +41,9 @@ func (s *IACScanner) Scan(ctx context.Context, target core.Target, rules []core.
 			return nil
 		}
 		if info.IsDir() {
+			if core.ShouldSkipDir(info.Name()) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 

@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -112,7 +114,7 @@ func ProfileConfig(profile string) *Config {
 		cfg.Filter.FailOn = "HIGH"
 	case "enterprise":
 		cfg.Filter.MinSeverity = "LOW"
-		cfg.Filter.Compliance = []string{"soc2", "iso27001", "gdpr", "owasp"}
+		cfg.Filter.Compliance = []string{"soc2", "iso27001", "owasp"}
 		cfg.Report.Format = "html"
 		cfg.Filter.FailOn = "MEDIUM"
 		cfg.Scanners.SAST = true
@@ -126,6 +128,29 @@ func ProfileConfig(profile string) *Config {
 		cfg.Scanners.License = true
 	}
 	return cfg
+}
+
+// ApplyProfile overlays a named profile (startup, business, enterprise) onto
+// an already loaded configuration. Scanner toggles are additive, so a profile
+// never silently turns off a scanner the project enabled.
+func ApplyProfile(c *Config, name string) error {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "startup", "business", "enterprise":
+	default:
+		return fmt.Errorf("unknown profile %q (available: business, enterprise, startup)", name)
+	}
+
+	p := ProfileConfig(strings.ToLower(strings.TrimSpace(name)))
+	c.Filter.MinSeverity = p.Filter.MinSeverity
+	c.Filter.FailOn = p.Filter.FailOn
+	if len(p.Filter.Compliance) > 0 {
+		c.Filter.Compliance = p.Filter.Compliance
+	}
+	if p.Report.Format != "" {
+		c.Report.Format = p.Report.Format
+	}
+	c.MergeWith(p)
+	return nil
 }
 
 func DefaultConfig() *Config {

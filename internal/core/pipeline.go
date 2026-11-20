@@ -113,7 +113,8 @@ func (p *Pipeline) ScanAll(ctx context.Context, target Target) ([]ScanResult, er
 }
 
 type FindingFilter struct {
-	MinSeverity        Severity
+	MinSeverity Severity
+
 	ExcludedRules      []string
 	IncludedRules      []string
 	ExcludedFiles      []string
@@ -132,7 +133,7 @@ func (f *FindingFilter) Filter(findings []Finding) []Finding {
 		return findings
 	}
 
-	var filtered []Finding
+	filtered := make([]Finding, 0, len(findings))
 	for _, finding := range findings {
 		if !f.shouldInclude(finding) {
 			continue
@@ -168,12 +169,12 @@ func (f *FindingFilter) shouldInclude(finding Finding) bool {
 		}
 	}
 
-	if len(f.ExcludedFiles) > 0 {
-		for _, file := range f.ExcludedFiles {
-			if finding.File == file {
-				return false
-			}
-		}
+	if MatchFilePatterns(finding.File, f.ExcludedFiles) {
+		return false
+	}
+
+	if len(f.IncludedFiles) > 0 && !MatchFilePatterns(finding.File, f.IncludedFiles) {
+		return false
 	}
 
 	if len(f.ExcludedCategories) > 0 {
@@ -187,28 +188,28 @@ func (f *FindingFilter) shouldInclude(finding Finding) bool {
 	return true
 }
 
-type Deduplicator struct {
-	seen map[string]bool
-}
+// Deduplicator removes findings that share a fingerprint. It keeps no state
+// between calls: the pipeline runs scanners concurrently, so a shared map here
+// would be a data race.
+type Deduplicator struct{}
 
 func NewDeduplicator() *Deduplicator {
-	return &Deduplicator{
-		seen: make(map[string]bool),
-	}
+	return &Deduplicator{}
 }
 
 func (d *Deduplicator) Deduplicate(findings []Finding) []Finding {
-	d.seen = make(map[string]bool)
-	var unique []Finding
+	seen := make(map[string]bool, len(findings))
+	unique := make([]Finding, 0, len(findings))
 
 	for _, f := range findings {
 		if f.Fingerprint == "" {
 			f.GenerateFingerprint()
 		}
-		if !d.seen[f.Fingerprint] {
-			d.seen[f.Fingerprint] = true
-			unique = append(unique, f)
+		if seen[f.Fingerprint] {
+			continue
 		}
+		seen[f.Fingerprint] = true
+		unique = append(unique, f)
 	}
 
 	return unique

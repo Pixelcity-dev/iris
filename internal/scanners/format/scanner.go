@@ -80,6 +80,12 @@ func (s *FormatScanner) Scan(ctx context.Context, target core.Target, rules []co
 	return findings, err
 }
 
+// IsSupported reports whether the formatter handles this file. It is exported
+// so the CLI uses exactly the same allow-list as the scanner.
+func IsSupported(path string) bool {
+	return isFormattable(path)
+}
+
 func isFormattable(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	base := filepath.Base(path)
@@ -310,60 +316,33 @@ func truncate(s string, n int) string {
 	return s[:n]
 }
 
-// FixFile applies auto-fix for formatting issues: trailing whitespace, EOF newline, CRLF, and gofmt.
-// Returns true if file was changed.
-func FixFile(path string) (bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false, err
-	}
-	content := string(data)
-	original := content
+// FixedContent returns the content with the safe formatting fixes applied:
+// LF line endings, no trailing whitespace, at most one consecutive blank line,
+// exactly one trailing newline, and gofmt for Go files.
+func FixedContent(path, content string) string {
+	content = strings.ReplaceAll(content, "\r\n", "\n")
+	content = strings.ReplaceAll(content, "\r", "\n")
 
-	// Normalize CRLF to LF
-	if strings.Contains(content, "\r\n") {
-		content = strings.ReplaceAll(content, "\r\n", "\n")
-		content = strings.ReplaceAll(content, "\r", "\n")
-	}
 	lines := strings.Split(content, "\n")
-	fixedLines := make([]string, len(lines))
-	for i, line := range lines {
-		// Remove trailing whitespace
-		fixedLines[i] = strings.TrimRightFunc(line, func(r rune) bool { return r == ' ' || r == '\t' })
-		// Collapse consecutive blank lines to one? For fmt --fix, we remove extra blanks
-		if i > 0 && fixedLines[i] == "" && fixedLines[i-1] == "" {
-			// Mark for removal by setting to sentinel, later filter
-			fixedLines[i] = "__REMOVE_BLANK__"
-		}
-	}
-	// Filter removed blanks
-	var filtered []string
-	for _, l := range fixedLines {
-		if l == "__REMOVE_BLANK__" {
+	fixed := make([]string, 0, len(lines))
+	prevBlank := false
+	for _, line := range lines {
+		line = strings.TrimRightFunc(line, func(r rune) bool { return r == ' ' || r == '\t' })
+		blank := line == ""
+		// Collapse a run of blank lines into a single one. The previous
+		// implementation used a placeholder and left two blank lines behind
+		// for runs of three or more.
+		if blank && prevBlank {
 			continue
 		}
-		filtered = append(filtered, l)
+		prevBlank = blank
+		fixed = append(fixed, line)
 	}
-	content = strings.Join(filtered, "\n")
-	// Ensure single newline at EOF
-	if !strings.HasSuffix(content, "\n") {
-		content += "\n"
-	}
-	// Ensure no double newline at EOF? Keep single
-	for strings.HasSuffix(content, "\n\n") {
-		content = strings.TrimSuffix(content, "\n")
-	}
-	content += "\n"
-	// Actually we want exactly one newline: the loop above ensures one, but we added extra. Fix:
-	// After ensuring suffix, we have at least one. Remove duplicate logic: simplify
-	// Re-normalize: ensure ends with single \n
-	content = strings.TrimRight(content, "\n") + "\n"
+	content = strings.TrimRight(strings.Join(fixed, "\n"), "\n") + "\n"
 
-	// For Go files, run gofmt
 	if strings.HasSuffix(path, ".go") {
 		fset := token.NewFileSet()
-		f, err := parser.ParseFile(fset, path, content, parser.ParseComments)
-		if err == nil {
+		if f, err := parser.ParseFile(fset, path, content, parser.ParseComments); err == nil {
 			var buf bytes.Buffer
 			if err := format.Node(&buf, fset, f); err == nil {
 				content = buf.String()
@@ -371,16 +350,26 @@ func FixFile(path string) (bool, error) {
 		}
 	}
 
+	return content
+}
+
+// FixFile applies the safe formatting fixes in place. Returns true if the file
+// changed.
+func FixFile(path string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	original := string(data)
+	content := FixedContent(path, original)
 	if content == original {
 		return false, nil
 	}
-	// Preserve file mode
 	info, err := os.Stat(path)
 	if err != nil {
 		return false, err
 	}
-	mode := info.Mode()
-	if err := os.WriteFile(path, []byte(content), mode); err != nil {
+	if err := os.WriteFile(path, []byte(content), info.Mode()); err != nil {
 		return false, err
 	}
 	return true, nil

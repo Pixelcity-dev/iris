@@ -95,11 +95,11 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 </style>
 </head>
 <body>
-<div class="topbar"><div class="brand">⬢ IRIS</div><div><a href="https://pixelcity.top/docs/iris">Docs</a><a href="https://github.com/Pixelcity-dev/iris">GitHub</a></div></div>
+<div class="topbar"><div class="brand">IRIS</div><div><a href="https://pixelcity.top/docs/iris">Docs</a><a href="https://github.com/Pixelcity-dev/iris">GitHub</a></div></div>
 <div class="container">
 <div class="hero">
-<div><h1>Security Report</h1><p>Target: ` + templateEscape(targetStr) + ` • ` + time.Now().Format("Jan 2, 2006 15:04 MST") + ` • Duration: ` + fmt.Sprintf("%.2fs", duration) + `</p><p style="margin-top:10px;font-size:12px;opacity:.9">Coverage: SAST 11+ langs • SCA 11+ ecosystems • Secrets 200+ patterns • IaC/K8s/Docker • DAST/WebScan OWASP Top 10 • Network • License • SBOM</p></div>
-<div style="background:rgba(255,255,255,.08);border-radius:12px;padding:18px;text-align:center"><div style="font-size:12px;opacity:.8;letter-spacing:.08em;text-transform:uppercase">Risk Rating</div><div style="font-size:42px;font-weight:900;color:` + riskColor + `">` + level + `</div><div style="font-size:13px;opacity:.9">Risk Score: ` + fmt.Sprintf("%d", score) + ` • ` + fmt.Sprintf("%d", total) + ` findings</div><div style="font-size:11px;opacity:.7;margin-top:6px">0 Excellent • &lt;5 Low • &lt;20 Medium • &lt;50 High • 50+ Critical</div></div>
+<div><h1>Security Report</h1><p>Target: ` + templateEscape(targetStr) + ` • ` + time.Now().Format("Jan 2, 2006 15:04 MST") + ` • Duration: ` + fmt.Sprintf("%.2fs", duration) + `</p><p style="margin-top:10px;font-size:12px;opacity:.9">Scanners: SAST • SCA • Secrets • IaC • Container • DAST/WebScan • Network • License</p></div>
+<div style="background:rgba(255,255,255,.08);border-radius:12px;padding:18px;text-align:center"><div style="font-size:12px;opacity:.8;letter-spacing:.08em;text-transform:uppercase">Risk Rating</div><div style="font-size:42px;font-weight:900;color:` + riskColor + `">` + level + `</div><div style="font-size:13px;opacity:.9">Risk Score: ` + fmt.Sprintf("%d", score) + ` • ` + fmt.Sprintf("%d", total) + ` findings</div><div style="font-size:11px;opacity:.7;margin-top:6px">0 None • &lt;5 Low • &lt;20 Medium • &lt;50 High • 50+ Critical</div></div>
 </div>
 `)
 	// Metrics
@@ -137,13 +137,13 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 		}
 		sb.WriteString(fmt.Sprintf(`<div style="width:%.1f%%;background:%s" title="%s %d"></div>`, w, color, sev, c))
 	}
-	sb.WriteString(`</div><div style="font-size:12px;color:#8b949e;margin-top:8px">Prioritize: Critical → High → Medium. Gate: --fail-on HIGH.</div></div>`)
+	sb.WriteString(`</div><div style="font-size:12px;color:#8b949e;margin-top:8px">Prioritize: Critical → High → Medium. Gate: --exit-code --severity high.</div></div>`)
 
 	// Compliance overview
 	sb.WriteString(`<div class="grid2">
 <div class="card"><h3>Compliance Mapping</h3>`)
 	if total == 0 {
-		sb.WriteString(`<div style="color:#3fb950;font-weight:700">✅ No gaps — SOC 2 CC6/CC7, ISO 27001 A.14/A.13, OWASP Top 10 clear</div>`)
+		sb.WriteString(`<div style="color:#8b949e">No findings to map.</div>`)
 	} else {
 		for cat, cnt := range byCat {
 			m := config.ComplianceByCategory[cat]
@@ -153,11 +153,10 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 			sb.WriteString(fmt.Sprintf(`<div class="kv"><span>%s <span style="color:#8b949e">×%d</span></span><span class="comp">OWASP %s · CWE %s · SOC2 %s · ISO %s</span></div>`, templateEscape(cat), cnt, m.OWASP, m.CWE, m.SOC2, m.ISO27001))
 		}
 	}
-	sb.WriteString(`</div><div class="card"><h3>Action Plan</h3>
-<div class="kv"><span>1. Immediate (Critical/High)</span><span>24h</span></div>
-<div class="kv"><span>2. Scheduled (Medium)</span><span>7 days</span></div>
-<div class="kv"><span>3. Hardening (Low/Info)</span><span>30 days</span></div>
-<div style="font-size:12px;color:#8b949e;margin-top:8px">Export: <code>--format sarif</code> → Code Scanning • <code>--format cyclonedx</code> → SBOM • <code>iris mcp start</code> → AI agents</div>
+	sb.WriteString(`</div><div class="card"><h3>Export</h3>
+<div class="kv"><span>GitHub Code Scanning</span><code>--format sarif</code></div>
+<div class="kv"><span>SBOM</span><code>--format cyclonedx</code></div>
+<div class="kv"><span>Shareable report</span><code>--format html</code></div>
 </div></div>`)
 
 	// Findings
@@ -175,7 +174,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 		}
 	}
 	if len(sorted) == 0 {
-		sb.WriteString(`<div class="finding" style="border-left:4px solid #3fb950"><div class="title">✅ No actionable findings — Excellent posture</div><div class="meta">Target clean. Keep scanning in CI: <code>iris scan --fail-on high</code></div></div>`)
+		sb.WriteString(`<div class="finding" style="border-left:4px solid #3fb950"><div class="title">No findings at the configured severity</div><div class="meta">Gate in CI with <code>iris scan . --severity high --exit-code</code></div></div>`)
 	}
 	for _, f := range sorted {
 		cls := strings.ToLower(f.Severity.String())
@@ -203,7 +202,7 @@ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 	}
 
 	sb.WriteString(`<div class="footer">
-<p><strong>Iris</strong> v1.2.0 — Cyber Security Enterprise Tool • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
+<p><strong>Iris</strong> v1.2.0 • Generated ` + time.Now().Format(time.RFC3339) + ` • Target: ` + templateEscape(targetStr) + `</p>
 <p><a href="https://pixelcity.top/docs/iris" style="color:#58a6ff">Docs</a> • <a href="https://github.com/Pixelcity-dev/iris" style="color:#58a6ff">GitHub</a></p>
 </div></div></body></html>`)
 	return []byte(sb.String()), nil
